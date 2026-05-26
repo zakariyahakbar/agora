@@ -5,7 +5,7 @@
 
 .root {
   min-height: 100dvh;
-  background: #070705;
+  background: #06070a;
   color: #f0ece4;
   font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
   overflow-x: hidden;
@@ -29,7 +29,7 @@
 /* ─── NAV ─────────────────────────────── */
 .nav {
   position: sticky; top: 0; z-index: 200;
-  background: rgba(7,7,5,0.92);
+  background: rgba(5,6,9,0.96);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -44,9 +44,9 @@
   display: inline-flex; align-items: center; gap: 0.44rem;
   text-decoration: none;
 }
-.navLogoIcon {
-  width: 18px; height: 18px;
-  color: rgba(240,236,228,0.82);
+.navLogoImg {
+  width: 22px; height: 22px;
+  object-fit: contain;
 }
 .navLogoText {
   font-family: var(--font-display, "Cormorant Garamond", serif);
