@@ -2,25 +2,18 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import styles from "./page.module.css";
 
+const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
+
 const AGENT_MODES = [
-  {
-    id: "request", label: "Request",
-    tag: "Define the job. Set the budget.",
-    body: "AGORA autonomously broadcasts compute jobs to the network — specifying units, latency requirements, and maximum spend. No human writes the RFP.",
-  },
-  {
-    id: "bid", label: "Compete",
-    tag: "Providers bid. Best price wins.",
-    body: "Provider nodes respond with price, GPU specs, and reputation scores. AGORA evaluates all bids autonomously and selects the optimal provider in milliseconds.",
-  },
-  {
-    id: "settle", label: "Settle",
-    tag: "Verify. Release. Done.",
-    body: "Output is cryptographically verified. Escrow releases via x402 on GOAT Network. Bitcoin-backed settlement, zero human approval, full on-chain auditability.",
-  },
+  { id: "request", label: "Request", tag: "Define the job. Set the budget.",
+    body: "AGORA autonomously broadcasts compute jobs to the network — specifying units, latency requirements, and maximum spend. No human writes the RFP." },
+  { id: "bid", label: "Compete", tag: "Providers bid. Best price wins.",
+    body: "Provider nodes respond with price, GPU specs, and reputation scores. AGORA evaluates all bids autonomously and selects the optimal provider in milliseconds." },
+  { id: "settle", label: "Settle", tag: "Verify. Release. Done.",
+    body: "Output is cryptographically verified. Escrow releases via x402 on GOAT Network. Bitcoin-backed settlement, zero human approval, full on-chain auditability." },
 ];
 
 const FEED_EVENTS = [
@@ -41,30 +34,63 @@ const STEPS = [
   { n: "06", label: "Settle",   body: "x402 releases escrow. Bitcoin-backed payment. On-chain forever." },
 ];
 
-/* ── Pyko-style blur-up reveal ── */
-function BlurUp({ children, className, delay = 0, style }) {
+const MARQUEE_ITEMS = [
+  "Autonomous Economy", "GOAT Network", "ERC-8004 Identity",
+  "x402 Payments", "Zero Humans", "Bitcoin Settlement",
+  "Compute Marketplace", "Agent-to-Agent", "Cryptographic Proof",
+];
+
+/* ── Char-split blur-up — Pyko signature ── */
+function SplitText({ text, className, delay = 0, as: Tag = "span" }) {
   return (
-    <motion.div
-      className={className} style={style}
-      initial={{ opacity: 0, filter: "blur(12px)", y: 16 }}
-      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-      transition={{ delay, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
+    <Tag className={className}>
+      {text.split("").map((char, i) => (
+        <motion.span key={i}
+          style={{ display: "inline-block", willChange: "transform, opacity, filter" }}
+          initial={{ opacity: 0, y: "40%", filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: "0%", filter: "blur(0px)" }}
+          transition={{
+            delay: delay + i * 0.022,
+            duration: 0.55,
+            ease: [0.16, 1, 0.3, 1],
+          }}>
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </Tag>
+  );
+}
+
+/* ── Marquee strip ── */
+function Marquee() {
+  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  return (
+    <div className={styles.marqueeWrap}>
+      <div className={styles.marqueeFade} />
+      <div className={styles.marqueeFadeRight} />
+      <motion.div
+        className={styles.marqueeTrack}
+        animate={{ x: ["0%", "-33.33%"] }}
+        transition={{ duration: 22, ease: "linear", repeat: Infinity }}>
+        {items.map((item, i) => (
+          <span key={i} className={styles.marqueeItem}>
+            {item}
+            <span className={styles.marqueeDot}>·</span>
+          </span>
+        ))}
+      </motion.div>
+    </div>
   );
 }
 
 /* ── Scroll-triggered blur-up ── */
 function InView({ children, className, delay = 0, style }) {
   return (
-    <motion.div
-      className={className} style={style}
+    <motion.div className={className} style={style}
       initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
       whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
-      transition={{ delay, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-    >
+      transition={{ delay, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}>
       {children}
     </motion.div>
   );
@@ -74,64 +100,39 @@ function InView({ children, className, delay = 0, style }) {
 function SlideUp({ children, className, delay = 0 }) {
   return (
     <div style={{ overflow: "hidden" }}>
-      <motion.div
-        className={className}
+      <motion.div className={className}
         initial={{ y: "108%", opacity: 0 }}
         whileInView={{ y: "0%", opacity: 1 }}
         viewport={{ once: true, amount: 0.1 }}
-        transition={{ delay, duration: 0.78, ease: [0.16, 1, 0.3, 1] }}
-      >
+        transition={{ delay, duration: 0.78, ease: [0.16, 1, 0.3, 1] }}>
         {children}
       </motion.div>
     </div>
   );
 }
 
-/* ── Magnetic button — Pyko signature effect ── */
-function MagneticBtn({ children, className, href, onClick }) {
+/* ── Magnetic button ── */
+function MagneticBtn({ children, className, href, onClick, target }) {
   const ref = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 280, damping: 22 });
   const sy = useSpring(y, { stiffness: 280, damping: 22 });
-
   const handleMove = (e) => {
     const r = ref.current.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    x.set((e.clientX - cx) * 0.32);
-    y.set((e.clientY - cy) * 0.32);
+    x.set((e.clientX - (r.left + r.width / 2)) * 0.3);
+    y.set((e.clientY - (r.top + r.height / 2)) * 0.3);
   };
   const handleLeave = () => { x.set(0); y.set(0); };
-
   const Tag = href ? "a" : "button";
   return (
     <motion.div style={{ x: sx, y: sy, display: "inline-block" }}
       onMouseMove={handleMove} onMouseLeave={handleLeave} ref={ref}>
-      <Tag href={href} className={className} onClick={onClick}>
+      <Tag href={href} target={target} rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        className={className} onClick={onClick}>
         {children}
       </Tag>
     </motion.div>
-  );
-}
-
-/* ── Cursor glow ── */
-function CursorGlow() {
-  const [pos, setPos] = useState({ x: -200, y: -200 });
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const move = (e) => { setPos({ x: e.clientX, y: e.clientY }); setVisible(true); };
-    const leave = () => setVisible(false);
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseleave", leave);
-    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseleave", leave); };
-  }, []);
-  return (
-    <motion.div
-      className={styles.cursorGlow}
-      animate={{ x: pos.x - 160, y: pos.y - 160, opacity: visible ? 1 : 0 }}
-      transition={{ type: "spring", stiffness: 120, damping: 28, opacity: { duration: 0.3 } }}
-    />
   );
 }
 
@@ -280,7 +281,6 @@ export default function AgoraPage() {
   return (
     <div className={styles.root}>
       <GlobalVideo />
-      <CursorGlow />
       <div className={styles.grain} aria-hidden />
 
       {/* NAV */}
@@ -296,9 +296,13 @@ export default function AgoraPage() {
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
-            <a href="/marketplace" className={styles.navLinkMarket}>Marketplace ↗</a>
+            <a href="/marketplace" className={styles.navLink}>Marketplace</a>
           </div>
           <div className={styles.navActions}>
+            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.navTelegram}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
+              Try Agent
+            </a>
             <div className={styles.livePill}>
               <span className={styles.liveDot} />
               GOAT Mainnet
@@ -311,65 +315,68 @@ export default function AgoraPage() {
 
       <div className={styles.viewport} ref={viewportRef}>
 
-        {/* ── S1 HERO — asymmetric left-aligned ── */}
+        {/* ── S1 HERO ── */}
         <section className={`${styles.section} ${styles.s1}`} ref={el => sectionRefs.current[0] = el}>
           <div className={styles.s1Veil} />
           <div className={styles.orb} style={{ "--ox": "72%", "--oy": "55%", "--os": "52vw", "--oc": "rgba(200,70,10,0.18)" }} />
-          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "25%", "--os": "34vw", "--oc": "rgba(20,60,140,0.14)", animationDelay: "-8s" }} />
+          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "22%", "--os": "34vw", "--oc": "rgba(20,60,140,0.14)", animationDelay: "-8s" }} />
+
           <div className={styles.s1Inner}>
-            {/* Left — title */}
+            {/* Left */}
             <div className={styles.s1Left}>
-              <BlurUp delay={0.05}>
-                <p className={styles.eyebrow}>Autonomous Compute Economy · GOAT Network</p>
-              </BlurUp>
-              <div style={{ overflow: "hidden" }}>
-                <motion.h1 className={styles.hl1}
-                  initial={{ y: "110%", opacity: 0 }}
-                  animate={{ y: "0%", opacity: 1 }}
-                  transition={{ delay: 0.18, duration: 0.82, ease: [0.16, 1, 0.3, 1] }}>
-                  The marketplace
-                </motion.h1>
+              <motion.p className={styles.eyebrow}
+                initial={{ opacity: 0, filter: "blur(8px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+                Autonomous Compute Economy · GOAT Network
+              </motion.p>
+
+              {/* Char-split hero lines */}
+              <div className={styles.hlWrap}>
+                <SplitText text="The marketplace" className={styles.hl1} as="h1" delay={0.18} />
               </div>
-              <div style={{ overflow: "hidden" }}>
-                <motion.h1 className={styles.hl2}
-                  initial={{ y: "110%", opacity: 0 }}
-                  animate={{ y: "0%", opacity: 1 }}
-                  transition={{ delay: 0.26, duration: 0.82, ease: [0.16, 1, 0.3, 1] }}>
-                  machines built
-                </motion.h1>
+              <div className={styles.hlWrap}>
+                <SplitText text="machines built" className={styles.hl2} as="h1" delay={0.35} />
               </div>
-              <div style={{ overflow: "hidden" }}>
-                <motion.h1 className={styles.hl1}
-                  initial={{ y: "110%", opacity: 0 }}
-                  animate={{ y: "0%", opacity: 1 }}
-                  transition={{ delay: 0.34, duration: 0.82, ease: [0.16, 1, 0.3, 1] }}>
-                  for machines.
-                </motion.h1>
+              <div className={styles.hlWrap}>
+                <SplitText text="for machines." className={styles.hl1} as="h1" delay={0.52} />
               </div>
-              <BlurUp delay={0.55} className={styles.s1Sub}>
-                <p>One agent. Autonomous bids. Bitcoin-backed settlement.<br />Zero human approvals required.</p>
-              </BlurUp>
-              <BlurUp delay={0.72} className={styles.s1Btns}>
-                <MagneticBtn href="/demo" className={styles.btnRed}>
+
+              <motion.p className={styles.s1Sub}
+                initial={{ opacity: 0, filter: "blur(8px)", y: 12 }}
+                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                transition={{ delay: 0.82, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
+                One agent. Autonomous bids. Bitcoin-backed settlement.<br />
+                Zero human approvals required.
+              </motion.p>
+
+              <motion.div className={styles.s1Btns}
+                initial={{ opacity: 0, filter: "blur(8px)", y: 12 }}
+                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                transition={{ delay: 1.0, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
+                <MagneticBtn href={TELEGRAM_URL} target="_blank" className={styles.btnRed}>
                   <span className={styles.btnRedGlow} />
-                  <span>Watch Demo</span>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 10L10 1M10 1H3M10 1V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
+                  <span>Try AGORA Agent</span>
                 </MagneticBtn>
                 <MagneticBtn href="/marketplace" className={styles.btnGhost}>
                   Live Marketplace
                 </MagneticBtn>
-              </BlurUp>
+              </motion.div>
             </div>
 
             {/* Right — floating stats card */}
-            <BlurUp delay={0.65} className={styles.s1Right}>
+            <motion.div className={styles.s1Right}
+              initial={{ opacity: 0, filter: "blur(14px)", x: 24 }}
+              animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
+              transition={{ delay: 0.75, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}>
               <div className={styles.heroCard}>
                 <div className={styles.heroCardEdge} />
                 <p className={styles.heroCardLabel}>Live Network</p>
                 <div className={styles.heroStats}>
                   <div className={styles.heroStat}>
                     <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
                         <Counter value={vol} decimals={2} />
                       </motion.span>
                     </span>
@@ -378,7 +385,7 @@ export default function AgoraPage() {
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
                     <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
                         <Counter value={txns} />
                       </motion.span>
                     </span>
@@ -387,19 +394,24 @@ export default function AgoraPage() {
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
                     <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>
                         99.9%
                       </motion.span>
                     </span>
                     <span className={styles.heroStatL}>uptime</span>
                   </div>
                 </div>
-                <div className={styles.heroPill}>
+                <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
                   <span className={styles.liveDot} />
-                  <span>3 agents active</span>
-                </div>
+                  <span>3 agents active · Try it →</span>
+                </a>
               </div>
-            </BlurUp>
+            </motion.div>
+          </div>
+
+          {/* Marquee at bottom of hero */}
+          <div className={styles.heroMarquee}>
+            <Marquee />
           </div>
         </section>
 
@@ -476,7 +488,12 @@ export default function AgoraPage() {
                 <div className={styles.modePanelEdge} />
                 <p className={styles.modePanelTag}>{AGENT_MODES[selectedMode].tag}</p>
                 <p className={styles.modePanelBody}>{AGENT_MODES[selectedMode].body}</p>
-                <p className={styles.agentAddr}>AGORA · 0x3a4F…c91b · ERC-8004 · GOAT Mainnet 2345</p>
+                <div className={styles.modePanelFooter}>
+                  <p className={styles.agentAddr}>AGORA · 0x3a4F…c91b · ERC-8004 · GOAT Mainnet 2345</p>
+                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.panelTgLink}>
+                    Talk to AGORA →
+                  </a>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -493,9 +510,8 @@ export default function AgoraPage() {
             <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>Zero humans.</em></SlideUp>
             <div className={styles.stepGrid}>
               {STEPS.map((s, i) => (
-                <motion.div key={s.n}
-                  className={styles.stepItem}
-                  initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+                <motion.div key={s.n} className={styles.stepItem}
+                  initial={{ opacity: 0, y: 28, filter: "blur(10px)" }}
                   whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   viewport={{ once: true, amount: 0.1 }}
                   transition={{ delay: i * 0.08, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}>
@@ -552,10 +568,10 @@ export default function AgoraPage() {
                   ))}
                 </div>
                 <div className={styles.s5CardBtns}>
-                  <MagneticBtn href="/demo" className={styles.btnRed}>
+                  <MagneticBtn href={TELEGRAM_URL} target="_blank" className={styles.btnRed}>
                     <span className={styles.btnRedGlow} />
-                    <span>Watch Demo</span>
-                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 10L10 1M10 1H3M10 1V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
+                    <span>Try AGORA Agent</span>
                   </MagneticBtn>
                   <MagneticBtn href="/marketplace" className={styles.btnGhost}>
                     Live Marketplace
