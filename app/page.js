@@ -91,7 +91,7 @@ function SlideUp({ children, className, delay = 0 }) {
     <div style={{ overflow:"hidden" }}>
       <motion.div className={className}
         initial={{ y:"105%" }} whileInView={{ y:"0%" }}
-        viewport={{ once:true, amount:0.9 }}
+        viewport={{ once:true, amount:0.1 }}
         transition={{ delay, duration:0.75, ease:[0.16,1,0.3,1] }}>
         {children}
       </motion.div>
@@ -321,10 +321,10 @@ export default function AgoraPage() {
         {/* ── S2 LIVE FEED ── */}
         <section className={`${styles.section} ${styles.s2}`} ref={el => sectionRefs.current[1] = el}>
           <div className={styles.tint} />
-          <div className={styles.orb} style={{"--ox":"8%","--oy":"20%","--os":"48vw","--oc":"rgba(180,65,10,0.12)",animationDelay:"-4s"}} />
-          <div className={styles.orb} style={{"--ox":"92%","--oy":"82%","--os":"36vw","--oc":"rgba(160,50,8,0.08)",animationDelay:"-11s"}} />
+          <div className={styles.orb} style={{"--ox":"8%","--oy":"20%","--os":"48vw","--oc":"rgba(180,65,10,0.14)",animationDelay:"-4s"}} />
+          <div className={styles.orb} style={{"--ox":"92%","--oy":"80%","--os":"36vw","--oc":"rgba(160,50,8,0.09)",animationDelay:"-11s"}} />
           <div className={styles.s2Inner}>
-            <div className={styles.s2Left}>
+            <div className={styles.s2Top}>
               <InView>
                 <p className={styles.sectionLabel}>Live Economy</p>
               </InView>
@@ -332,32 +332,40 @@ export default function AgoraPage() {
               <SlideUp className={styles.sectionTitleItalic} delay={0.12}><em>in motion.</em></SlideUp>
               <InView delay={0.2}>
                 <p className={styles.sectionSub}>
-                  Every line is a real autonomous decision.<br />No human clicked anything.
+                  Every line is a real autonomous decision — no human clicked anything.
                 </p>
               </InView>
-              <InView delay={0.3} className={styles.s2Stats}>
+            </div>
+            <div className={styles.s2Bottom}>
+              <InView delay={0.1} className={styles.feedCard}>
+                <div className={styles.feedEdge} />
+                {entries.map(e => (
+                  <motion.div key={e.id}
+                    className={`${styles.feedEntry} ${styles["fe"+e.t]}`}
+                    initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
+                    transition={{ duration:0.35, ease:[0.16,1,0.3,1] }}>
+                    <span className={styles.feedTs}>{e.ts}</span>
+                    <span className={styles.feedMsg}>{e.msg}</span>
+                  </motion.div>
+                ))}
+              </InView>
+              <InView delay={0.15} className={styles.s2Stats}>
                 <div className={styles.s2StatItem}>
                   <span className={styles.s2StatN}>{vol.toFixed(2)}</span>
                   <span className={styles.s2StatL}>USDC settled</span>
                 </div>
+                <div className={styles.statDivider} />
                 <div className={styles.s2StatItem}>
                   <span className={styles.s2StatN}>{txns}</span>
                   <span className={styles.s2StatL}>transactions</span>
                 </div>
+                <div className={styles.statDivider} />
+                <div className={styles.s2StatItem}>
+                  <span className={styles.s2StatN}>3</span>
+                  <span className={styles.s2StatL}>active agents</span>
+                </div>
               </InView>
             </div>
-            <InView delay={0.1} className={styles.feedCard}>
-              <div className={styles.feedEdge} />
-              {entries.map(e => (
-                <motion.div key={e.id}
-                  className={`${styles.feedEntry} ${styles["fe"+e.t]}`}
-                  initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
-                  transition={{ duration:0.35, ease:[0.16,1,0.3,1] }}>
-                  <span className={styles.feedTs}>{e.ts}</span>
-                  <span className={styles.feedMsg}>{e.msg}</span>
-                </motion.div>
-              ))}
-            </InView>
           </div>
         </section>
 
