@@ -751,3 +751,172 @@
   .hl1, .hl2 { font-size: clamp(2.4rem, 9.5vw, 3.2rem); }
   .cursorGlow { display: none; }
 }
+
+/* ══ PYKO V2 ADDITIONS ═══════════════════════ */
+
+/* hlWrap — contains each headline line for char split */
+.hlWrap {
+  display: block;
+  overflow: visible;
+}
+
+/* Marquee strip at bottom of hero */
+.heroMarquee {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.marqueeWrap {
+  position: relative;
+  overflow: hidden;
+  padding: 0.7rem 0;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(10px);
+}
+.marqueeFade {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 6rem; z-index: 2;
+  background: linear-gradient(to right, rgba(5,6,9,0.95), transparent);
+}
+.marqueeFadeRight {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 6rem; z-index: 2;
+  background: linear-gradient(to left, rgba(5,6,9,0.95), transparent);
+}
+.marqueeTrack {
+  display: flex; align-items: center;
+  white-space: nowrap;
+  width: max-content;
+}
+.marqueeItem {
+  display: inline-flex; align-items: center;
+  font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(240,236,228,0.3);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  padding: 0 0.2rem;
+}
+.marqueeDot {
+  margin: 0 1.2rem;
+  color: #e8650a;
+  opacity: 0.7;
+}
+
+/* Telegram nav button */
+.navTelegram {
+  display: inline-flex; align-items: center; gap: 0.38rem;
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+  font-size: 0.6rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(240,236,228,0.75); text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  transition: all 150ms ease; white-space: nowrap;
+}
+.navTelegram:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.22);
+  color: #fff;
+}
+
+/* Agent panel footer with Telegram link */
+.modePanelFooter {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 0.3rem; gap: 1rem;
+}
+.panelTgLink {
+  font-size: 0.68rem; font-weight: 600;
+  color: #e8650a; text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: opacity 150ms ease;
+  white-space: nowrap;
+}
+.panelTgLink:hover { opacity: 0.7; }
+
+/* Hero pill with Telegram link */
+.heroPill {
+  display: inline-flex; align-items: center; gap: 0.38rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(46,213,115,0.2); border-radius: 999px;
+  background: rgba(46,213,115,0.06);
+  font-size: 0.57rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(110,225,155,0.9);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  width: fit-content; text-decoration: none;
+  transition: background 150ms ease;
+}
+.heroPill:hover { background: rgba(46,213,115,0.12); }
+
+/* Override s1Inner for asymmetric hero */
+.s1Inner {
+  position: relative; z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  padding: 0 clamp(2rem, 6vw, 5rem);
+  max-width: 1100px; width: 100%;
+  margin-top: -3rem;
+  padding-bottom: 5rem;
+}
+.s1Left {
+  display: flex; flex-direction: column;
+  align-items: flex-start; text-align: left;
+  flex: 1; max-width: 580px;
+}
+.s1Right { flex-shrink: 0; }
+
+/* Hero floating card */
+.heroCard {
+  padding: 1.5rem 1.4rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.058);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 20px 56px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; gap: 1rem;
+  position: relative; overflow: hidden;
+  min-width: 220px; transform: translateZ(0);
+}
+.heroCardEdge {
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220,90,15,0.5) 30%, rgba(255,255,255,0.6) 50%, rgba(160,130,80,0.5) 70%, transparent);
+}
+.heroCardLabel {
+  font-size: 0.56rem; font-weight: 600;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: #e8650a;
+  text-shadow: 0 0 16px rgba(220,90,15,0.7);
+  font-family: var(--font-mono, "DM Mono", monospace); margin: 0;
+}
+.heroStats { display: flex; flex-direction: column; gap: 0.8rem; }
+.heroStat { display: flex; flex-direction: column; gap: 0.16rem; }
+.heroStatN {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 1.5rem; font-weight: 500; color: #f0ece4;
+}
+.heroStatL {
+  font-size: 0.54rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(240,236,228,0.42);
+  font-family: var(--font-mono, "DM Mono", monospace);
+}
+.heroStatDiv { width: 100%; height: 1px; background: rgba(255,255,255,0.07); }
+
+/* Responsive */
+@media (max-width: 860px) {
+  .s1Inner { flex-direction: column; align-items: flex-start; padding: 0 1.5rem; gap: 1.8rem; padding-bottom: 5rem; }
+  .s1Left { max-width: 100%; }
+  .s1Right { width: 100%; }
+  .heroCard { min-width: unset; width: 100%; }
+  .heroStats { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
+  .heroStatDiv { display: none; }
+}
+@media (max-width: 640px) {
+  .s1Inner { padding: 0 1rem; margin-top: 1rem; padding-bottom: 5rem; }
+  .hl1, .hl2 { font-size: clamp(2.2rem, 9vw, 3rem) !important; }
+  .heroMarquee { display: block; }
+  .navTelegram span { display: none; }
+}
