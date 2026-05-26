@@ -67,7 +67,8 @@
 /* BUTTONS */
 .btnRed { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: .46rem; min-height: 2.5rem; padding: 0 1.4rem; border: none; border-radius: 999px; background: transparent; color: #fff; font-size: .65rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; cursor: pointer; font-family: var(--font-ui,"DM Sans",sans-serif); transition: transform 220ms cubic-bezier(.34,1.2,.64,1); }
 .btnRed:hover { transform: translateY(-1px); }
-.btnRedGlow { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, #f07020 0%, #b84d08 100%); box-shadow: 0 4px 20px rgba(220,90,15,.55), inset 0 1px 0 rgba(255,160,80,.2); transition: filter 180ms ease; }
+.btnRedGlow { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: linear-gradient(135deg, #f07020 0%, #b84d08 100%); box-shadow: 0 4px 20px rgba(220,90,15,.55), inset 0 1px 0 rgba(255,160,80,.2); transition: filter 180ms ease; }
+.btnRed > * { position: relative; z-index: 1; }
 .btnRed:hover .btnRedGlow { filter: brightness(1.12); }
 .btnGhost { display: inline-flex; align-items: center; padding: 0 1.3rem; min-height: 2.5rem; background: transparent; border: 1px solid rgba(240,236,228,.18); border-radius: 999px; color: rgba(240,236,228,.62); font-size: .65rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; text-decoration: none; font-family: var(--font-ui,"DM Sans",sans-serif); transition: all 180ms ease; }
 .btnGhost:hover { border-color: rgba(240,236,228,.4); color: rgba(240,236,228,.92); }
@@ -128,8 +129,9 @@
 .sponsorTrackWrap { flex: 1; overflow: hidden; }
 .sponsorTrack { display: flex; align-items: center; white-space: nowrap; width: max-content; }
 .sponsorItem { display: inline-flex; align-items: center; gap: .5rem; padding: 0 1.8rem; }
-.sponsorDot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.sponsorName { font-size: .65rem; font-weight: 600; letter-spacing: .06em; white-space: nowrap; font-family: var(--font-ui,"DM Sans",sans-serif); }
+.sponsorLogo { height: 28px; width: auto; object-fit: contain; mix-blend-mode: screen; filter: brightness(0.9) saturate(0.8); opacity: 0.85; transition: opacity 200ms ease; }
+.sponsorLogo:hover { opacity: 1; }
+.sponsorTextLogo { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(240,236,228,.5); font-family: var(--font-ui,"DM Sans",sans-serif); white-space: nowrap; }
 
 /* ─── S2 ─── */
 .s2Inner { position: relative; z-index: 2; width: 100%; max-width: 760px; padding: 0 clamp(1.5rem,5vw,3.5rem); display: flex; flex-direction: column; gap: clamp(1rem,2dvh,1.5rem); }
