@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 32" fill="none">
-  <rect x="1" y="8" width="16" height="16" rx="4" fill="#00CFCF" opacity="0.2" stroke="#00CFCF" stroke-width="1.5"/>
-  <text x="10" y="21" font-family="monospace" font-weight="700" font-size="11" fill="#00CFCF" text-anchor="middle">M</text>
-  <text x="24" y="21" font-family="system-ui" font-weight="600" font-size="13" fill="rgba(255,255,255,0.7)">Metis</text>
-</svg>
