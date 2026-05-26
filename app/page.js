@@ -346,7 +346,7 @@ export default function AgoraPage() {
                   </div>
                 </div>
                 <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
-                  <span className={styles.liveDot} />3 agents active · Try it →
+                  <span className={styles.liveDot} />1 agent active · Try it →
                 </a>
               </div>
             </BlurUp>
@@ -387,7 +387,7 @@ export default function AgoraPage() {
               <div className={styles.statDivider} />
               <div className={styles.s2StatItem}><span className={styles.s2StatN}>{txns}</span><span className={styles.s2StatL}>transactions</span></div>
               <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>3</span><span className={styles.s2StatL}>active agents</span></div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>3</span><span className={styles.s2StatL}>agent active</span></div>
             </InView>
           </div>
         </section>
