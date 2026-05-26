@@ -43,7 +43,7 @@ const STEPS = [
 
 /* ── Sponsor strip ── */
 function SponsorStrip() {
-  const items = [...SPONSORS, ...SPONSORS, ...SPONSORS];
+  const items = [...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS];
   return (
     <div className={styles.sponsorWrap}>
       <div className={styles.sponsorFadeL} />
@@ -51,7 +51,7 @@ function SponsorStrip() {
       <div className={styles.sponsorLabel}>Hackathon Sponsors</div>
       <div className={styles.sponsorTrackWrap}>
         <motion.div className={styles.sponsorTrack}
-          animate={{ x: ["0%", "-33.33%"] }}
+          animate={{ x: ["0%", "-25%"] }}
           transition={{ duration: 28, ease: "linear", repeat: Infinity }}>
           {items.map((s, i) => (
             <div key={i} className={styles.sponsorItem}>
