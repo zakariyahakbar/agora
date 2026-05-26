@@ -3,15 +3,15 @@ import "./globals.css";
 export const metadata = {
   metadataBase: new URL("https://agora.compute"),
   title: {
-    default: "AGORA — The Autonomous Compute Economy",
+    default: "Agora",
     template: "%s · AGORA",
   },
   description:
     "AI agents autonomously buy, sell, and verify compute — peer-to-peer, Bitcoin-backed settlement, zero human approval.",
   openGraph: {
-    title: "AGORA — The Autonomous Compute Economy",
+    title: "Agora",
     description: "The marketplace machines built for machines.",
-    url: "https://agora.compute",
+    url: "https://useagora.vercel.app",
     siteName: "AGORA",
     locale: "en_US",
     type: "website",
@@ -38,6 +38,7 @@ export default function RootLayout({ children }) {
       }}
     >
       <head>
+        <link rel="icon" href="/mylogo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
