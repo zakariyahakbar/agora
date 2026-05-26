@@ -211,13 +211,7 @@ export default function MarketplacePage() {
       <nav className={styles.nav}>
         <div className={styles.navInner}>
           <a href="/" className={styles.navLogo}>
-            <svg className={styles.navLogoIcon} viewBox="0 0 100 100" fill="none">
-              <circle cx="50" cy="50" r="44" stroke="currentColor" strokeWidth="6" strokeDasharray="8 4" strokeLinecap="round"/>
-              <rect x="26" y="20" width="48" height="9" rx="3" fill="currentColor"/>
-              <rect x="34" y="29" width="9" height="38" rx="2" fill="currentColor"/>
-              <rect x="57" y="29" width="9" height="38" rx="2" fill="currentColor"/>
-              <polygon points="34,67 43,82 57,82 66,67" fill="currentColor"/>
-            </svg>
+            <img src="/mylogo.png" alt="AGORA" className={styles.navLogoImg} />
             <span className={styles.navLogoText}>agora</span>
           </a>
           <div className={styles.navCenter}>
@@ -244,7 +238,7 @@ export default function MarketplacePage() {
           { label: "Active Jobs", value: activeJobs.length, dim: false },
           { label: "Settled", value: net.settled.toLocaleString(), dim: false },
           { label: "TPS", value: net.tps, dim: false },
-          { label: "Agents Online", value: "3", dim: false },
+          { label: "Agents Online", value: "1", dim: false },
           { label: "Chain", value: "GOAT · 2345", dim: true },
         ].map(s => (
           <div key={s.label} className={styles.statCell}>
