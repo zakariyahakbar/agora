@@ -1,0 +1,43 @@
+/* ══════════════════════════════════════════
+   AGORA — GLOBAL STYLES
+   Theme: Orange + Silver/Black
+══════════════════════════════════════════ */
+
+:root {
+  --ag-bg:           #070707;
+  --ag-ink:          #dddad4;
+  --ag-orange:       #f28322;
+  --ag-orange-bright:#ff9a3c;
+  --ag-orange-deep:  #c2660a;
+  --ag-silver:       #a8a8a8;
+  --ag-green:        #2ed573;
+  --ag-ease:         cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  width: 100%; height: 100%;
+  background: var(--ag-bg);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0; width: 100%; height: 100%;
+  background: var(--ag-bg);
+  color: var(--ag-ink);
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+img, picture, video, canvas, svg { display: block; max-width: 100%; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+::selection { background: rgba(242,131,34,0.28); color: #dddad4; }
+:focus-visible { outline: 1.5px solid rgba(242,131,34,0.5); outline-offset: 2px; }
