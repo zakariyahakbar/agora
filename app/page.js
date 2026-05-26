@@ -8,10 +8,10 @@ import styles from "./page.module.css";
 const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
 
 const SPONSORS = [
-  { name: "GOAT Network",  accent: "#f97316", logo: "/logo-goat.svg"         },
-  { name: "CryptoChicks",  accent: "#e040fb", logo: "/logo-cryptochicks.svg"  },
-  { name: "MindFuel",      accent: "#38bdf8", logo: "/logo-mindfuel.svg"      },
-  { name: "Metis",         accent: "#00d4d4", logo: "/logo-metis.svg"         },
+  { name: "GOAT Network", img: "/goat.png"   },
+  { name: "CryptoChicks", img: "/chicks.png"  },
+  { name: "MindFuel",     img: "/mind.png"    },
+  { name: "Metis",        img: "/metis.png"    },
 ];
 
 const AGENT_MODES = [
@@ -55,8 +55,10 @@ function SponsorStrip() {
           transition={{ duration: 28, ease: "linear", repeat: Infinity }}>
           {items.map((s, i) => (
             <div key={i} className={styles.sponsorItem}>
-              <div className={styles.sponsorDot} style={{ background: s.accent, boxShadow: `0 0 8px ${s.accent}88` }} />
-              <span className={styles.sponsorName} style={{ color: `${s.accent}cc` }}>{s.name}</span>
+              {s.img
+                ? <img src={s.img} alt={s.name} className={styles.sponsorLogo} />
+                : <span className={styles.sponsorTextLogo}>{s.name}</span>
+              }
             </div>
           ))}
         </motion.div>
