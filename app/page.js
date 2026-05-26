@@ -7,12 +7,19 @@ import styles from "./page.module.css";
 
 const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
 
+const SPONSORS = [
+  { name: "GOAT Network",  accent: "#f97316", logo: "/logo-goat.svg"         },
+  { name: "CryptoChicks",  accent: "#e040fb", logo: "/logo-cryptochicks.svg"  },
+  { name: "MindFuel",      accent: "#38bdf8", logo: "/logo-mindfuel.svg"      },
+  { name: "Metis",         accent: "#00d4d4", logo: "/logo-metis.svg"         },
+];
+
 const AGENT_MODES = [
   { id: "request", label: "Request", tag: "Define the job. Set the budget.",
     body: "AGORA autonomously broadcasts compute jobs to the network — specifying units, latency requirements, and maximum spend. No human writes the RFP." },
-  { id: "bid", label: "Compete", tag: "Providers bid. Best price wins.",
+  { id: "bid",     label: "Compete", tag: "Providers bid. Best price wins.",
     body: "Provider nodes respond with price, GPU specs, and reputation scores. AGORA evaluates all bids autonomously and selects the optimal provider in milliseconds." },
-  { id: "settle", label: "Settle", tag: "Verify. Release. Done.",
+  { id: "settle",  label: "Settle",  tag: "Verify. Release. Done.",
     body: "Output is cryptographically verified. Escrow releases via x402 on GOAT Network. Bitcoin-backed settlement, zero human approval, full on-chain auditability." },
 ];
 
@@ -34,33 +41,31 @@ const STEPS = [
   { n: "06", label: "Settle",   body: "x402 releases escrow. Bitcoin-backed payment. On-chain forever." },
 ];
 
-const MARQUEE_ITEMS = [
-  "Autonomous Economy", "GOAT Network", "ERC-8004 Identity",
-  "x402 Payments", "Zero Humans", "Bitcoin Settlement",
-  "Compute Marketplace", "Agent-to-Agent", "Cryptographic Proof",
-];
-
-/* ── Marquee ── */
-function Marquee() {
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+/* ── Sponsor strip ── */
+function SponsorStrip() {
+  const items = [...SPONSORS, ...SPONSORS, ...SPONSORS];
   return (
-    <div className={styles.marqueeWrap}>
-      <div className={styles.marqueeFadeL} />
-      <div className={styles.marqueeFadeR} />
-      <motion.div className={styles.marqueeTrack}
-        animate={{ x: ["0%", "-33.33%"] }}
-        transition={{ duration: 24, ease: "linear", repeat: Infinity }}>
-        {items.map((item, i) => (
-          <span key={i} className={styles.marqueeItem}>
-            {item}<span className={styles.marqueeDot}>·</span>
-          </span>
-        ))}
-      </motion.div>
+    <div className={styles.sponsorWrap}>
+      <div className={styles.sponsorFadeL} />
+      <div className={styles.sponsorFadeR} />
+      <div className={styles.sponsorLabel}>Hackathon Sponsors</div>
+      <div className={styles.sponsorTrackWrap}>
+        <motion.div className={styles.sponsorTrack}
+          animate={{ x: ["0%", "-33.33%"] }}
+          transition={{ duration: 28, ease: "linear", repeat: Infinity }}>
+          {items.map((s, i) => (
+            <div key={i} className={styles.sponsorItem}>
+              <div className={styles.sponsorDot} style={{ background: s.accent, boxShadow: `0 0 8px ${s.accent}88` }} />
+              <span className={styles.sponsorName} style={{ color: `${s.accent}cc` }}>{s.name}</span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
     </div>
   );
 }
 
-/* ── Blur-up for hero (fires on mount) ── */
+/* ── Blur-up (hero, fires on mount) ── */
 function BlurUp({ children, className, delay = 0, style }) {
   return (
     <motion.div className={className} style={style}
@@ -85,7 +90,7 @@ function InView({ children, className, delay = 0, style }) {
   );
 }
 
-/* ── Clip-up for section titles ── */
+/* ── Clip-up ── */
 function SlideUp({ children, className, delay = 0 }) {
   return (
     <div style={{ overflow: "hidden" }}>
@@ -103,8 +108,7 @@ function SlideUp({ children, className, delay = 0 }) {
 /* ── Magnetic button ── */
 function MagBtn({ children, className, href, target, onClick }) {
   const ref = useRef(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const x = useMotionValue(0); const y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 300, damping: 24 });
   const sy = useSpring(y, { stiffness: 300, damping: 24 });
   const onMove = (e) => {
@@ -119,35 +123,30 @@ function MagBtn({ children, className, href, target, onClick }) {
       onMouseMove={onMove} onMouseLeave={onLeave} ref={ref}>
       <Tag href={href} target={target}
         rel={target === "_blank" ? "noopener noreferrer" : undefined}
-        className={className} onClick={onClick}>
-        {children}
-      </Tag>
+        className={className} onClick={onClick}>{children}</Tag>
     </motion.div>
   );
 }
 
 /* ── Counter ── */
 function Counter({ value, decimals = 0 }) {
-  const [display, setDisplay] = useState(0);
+  const [d, setD] = useState(0);
   useEffect(() => {
-    let s = 0;
-    const end = parseFloat(value);
+    let s = 0; const end = parseFloat(value);
     const id = setInterval(() => {
       s += (end / 1200) * 16;
-      if (s >= end) { setDisplay(end); clearInterval(id); return; }
-      setDisplay(s);
+      if (s >= end) { setD(end); clearInterval(id); return; }
+      setD(s);
     }, 16);
     return () => clearInterval(id);
   }, [value]);
-  return <>{decimals > 0 ? display.toFixed(decimals) : Math.floor(display)}</>;
+  return <>{decimals > 0 ? d.toFixed(decimals) : Math.floor(d)}</>;
 }
 
-/* ── Video ── */
 function GlobalVideo() {
   const vRef = useRef(null);
   useEffect(() => {
-    const v = vRef.current;
-    if (!v) return;
+    const v = vRef.current; if (!v) return;
     v.play().catch(() => {});
     const onEnded = () => { v.currentTime = 0; v.play().catch(() => {}); };
     v.addEventListener("ended", onEnded);
@@ -162,7 +161,6 @@ function GlobalVideo() {
   );
 }
 
-/* ── Nav dots ── */
 function NavDots({ active, onJump, count }) {
   return (
     <div className={styles.dots}>
@@ -175,7 +173,6 @@ function NavDots({ active, onJump, count }) {
   );
 }
 
-/* ── Feed hook ── */
 function useLiveFeed() {
   const [entries, setEntries] = useState([]);
   const [vol, setVol] = useState(13.15);
@@ -201,7 +198,7 @@ function useLiveFeed() {
   return { entries, vol, txns };
 }
 
-/* ════════════════════ MAIN ════════════════════ */
+/* ════════ MAIN ════════ */
 export default function AgoraPage() {
   const viewportRef = useRef(null);
   const sectionRefs = useRef([]);
@@ -214,25 +211,18 @@ export default function AgoraPage() {
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
-    const node = viewportRef.current;
-    if (!node) return;
+    const node = viewportRef.current; if (!node) return;
     const fn = () => setNavScrolled(node.scrollTop > 60);
     node.addEventListener("scroll", fn, { passive: true });
     return () => node.removeEventListener("scroll", fn);
   }, []);
 
   useEffect(() => {
-    const node = viewportRef.current;
-    if (!node) return;
+    const node = viewportRef.current; if (!node) return;
     const secs = sectionRefs.current.filter(Boolean);
     if (!secs.length) return;
     const obs = new IntersectionObserver(
-      (es) => es.forEach(e => {
-        if (e.isIntersecting) {
-          const i = sectionRefs.current.indexOf(e.target);
-          if (i !== -1) setActive(i);
-        }
-      }),
+      (es) => es.forEach(e => { if (e.isIntersecting) { const i = sectionRefs.current.indexOf(e.target); if (i !== -1) setActive(i); } }),
       { threshold: 0.55, root: node }
     );
     secs.forEach(s => obs.observe(s));
@@ -240,8 +230,7 @@ export default function AgoraPage() {
   }, []);
 
   useEffect(() => {
-    const node = viewportRef.current;
-    if (!node) return;
+    const node = viewportRef.current; if (!node) return;
     const onWheel = (e) => {
       if (active === LAST && e.deltaY > 0) { e.preventDefault(); e.stopPropagation(); }
       if (active === 0 && e.deltaY < 0) { e.preventDefault(); e.stopPropagation(); }
@@ -255,16 +244,11 @@ export default function AgoraPage() {
     node.addEventListener("wheel", onWheel, { passive: false });
     node.addEventListener("touchstart", onTS, { passive: true });
     node.addEventListener("touchmove", onTM, { passive: false });
-    return () => {
-      node.removeEventListener("wheel", onWheel);
-      node.removeEventListener("touchstart", onTS);
-      node.removeEventListener("touchmove", onTM);
-    };
+    return () => { node.removeEventListener("wheel", onWheel); node.removeEventListener("touchstart", onTS); node.removeEventListener("touchmove", onTM); };
   }, [active, LAST]);
 
   const jumpTo = useCallback((i) => {
-    const c = viewportRef.current;
-    if (!c) return;
+    const c = viewportRef.current; if (!c) return;
     c.scrollTo({ top: i * c.clientHeight, behavior: "smooth" });
   }, []);
 
@@ -273,13 +257,15 @@ export default function AgoraPage() {
       <GlobalVideo />
       <div className={styles.grain} aria-hidden />
 
-      {/* NAV */}
+      {/* NAV — all inside one flex pill */}
       <nav className={`${styles.nav} ${navScrolled ? styles.navScrolled : ""}`}>
         <div className={styles.navBar}>
+          {/* Logo */}
           <div className={styles.navLogo}>
             <Image src="/mylogo.png" alt="AGORA" width={22} height={22} className={styles.navLogoImg} />
             <span className={styles.navLogoText}>agora</span>
           </div>
+          {/* Links */}
           <div className={styles.navLinks}>
             {["Economy", "Agents", "Protocol", "Network"].map((l, i) => (
               <button key={l}
@@ -287,15 +273,13 @@ export default function AgoraPage() {
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
           </div>
+          {/* Actions */}
           <div className={styles.navActions}>
             <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.navTg}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
-              Try Agent
+              Agent
             </a>
-            <div className={styles.livePill}>
-              <span className={styles.liveDot} />
-              GOAT Mainnet
-            </div>
+            <div className={styles.livePill}><span className={styles.liveDot} />GOAT</div>
           </div>
         </div>
       </nav>
@@ -304,19 +288,20 @@ export default function AgoraPage() {
 
       <div className={styles.viewport} ref={viewportRef}>
 
-        {/* ── S1 HERO ── */}
+        {/* S1 — HERO */}
         <section className={`${styles.section} ${styles.s1}`} ref={el => sectionRefs.current[0] = el}>
           <div className={styles.s1Veil} />
           <div className={styles.orb} style={{ "--ox": "70%", "--oy": "50%", "--os": "50vw", "--oc": "rgba(200,70,10,0.18)" }} />
           <div className={styles.orb} style={{ "--ox": "85%", "--oy": "20%", "--os": "32vw", "--oc": "rgba(20,60,140,0.13)", animationDelay: "-8s" }} />
 
-          {/* Hero content — left + right */}
+          {/* Two-column grid */}
           <div className={styles.s1Grid}>
+            {/* Left: headline + CTA */}
             <div className={styles.s1Left}>
-              <BlurUp delay={0.08}>
+              <BlurUp delay={0.1}>
                 <p className={styles.eyebrow}>Autonomous Compute Economy · GOAT Network</p>
               </BlurUp>
-              <BlurUp delay={0.2}>
+              <BlurUp delay={0.22}>
                 <h1 className={styles.hl1}>The marketplace</h1>
                 <h1 className={styles.hl2}>machines built</h1>
                 <h1 className={styles.hl1}>for machines.</h1>
@@ -333,60 +318,45 @@ export default function AgoraPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                   <span>Try AGORA Agent</span>
                 </MagBtn>
-                <MagBtn href="/marketplace" className={styles.btnGhost}>
-                  Marketplace
-                </MagBtn>
+                <MagBtn href="/marketplace" className={styles.btnGhost}>Marketplace</MagBtn>
               </BlurUp>
             </div>
 
-            {/* Floating stats card */}
+            {/* Right: glass stats card */}
             <BlurUp delay={0.6} className={styles.s1Right}>
               <div className={styles.heroCard}>
                 <div className={styles.heroCardEdge} />
                 <p className={styles.heroCardLabel}>Live Network</p>
                 <div className={styles.heroStats}>
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>
-                        <Counter value={vol} decimals={2} />
-                      </motion.span>
-                    </span>
+                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}><Counter value={vol} decimals={2} /></motion.span></span>
                     <span className={styles.heroStatL}>USDC settled</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
-                        <Counter value={txns} />
-                      </motion.span>
-                    </span>
+                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}><Counter value={txns} /></motion.span></span>
                     <span className={styles.heroStatL}>transactions</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
-                        99.9%
-                      </motion.span>
-                    </span>
+                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>99.9%</motion.span></span>
                     <span className={styles.heroStatL}>uptime</span>
                   </div>
                 </div>
                 <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
-                  <span className={styles.liveDot} />
-                  3 agents active · Try it →
+                  <span className={styles.liveDot} />3 agents active · Try it →
                 </a>
               </div>
             </BlurUp>
           </div>
 
-          {/* Marquee pinned to bottom of hero */}
-          <div className={styles.heroMarquee}>
-            <Marquee />
+          {/* Sponsor strip at bottom */}
+          <div className={styles.heroBottom}>
+            <SponsorStrip />
           </div>
         </section>
 
-        {/* ── S2 LIVE FEED ── */}
+        {/* S2 — LIVE FEED */}
         <section className={`${styles.section} ${styles.s2}`} ref={el => sectionRefs.current[1] = el}>
           <div className={styles.tint} />
           <div className={styles.orb} style={{ "--ox": "8%", "--oy": "18%", "--os": "48vw", "--oc": "rgba(180,65,10,0.14)", animationDelay: "-4s" }} />
@@ -396,15 +366,12 @@ export default function AgoraPage() {
               <InView><p className={styles.sectionLabel}>Live Economy</p></InView>
               <SlideUp className={styles.sectionTitle} delay={0.05}>The economy,</SlideUp>
               <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>in motion.</em></SlideUp>
-              <InView delay={0.22}>
-                <p className={styles.sectionSub}>Every line is a real autonomous decision — no human clicked anything.</p>
-              </InView>
+              <InView delay={0.22}><p className={styles.sectionSub}>Every line is a real autonomous decision — no human clicked anything.</p></InView>
             </div>
             <InView delay={0.1} className={styles.feedCard}>
               <div className={styles.feedEdge} />
               {entries.map(e => (
-                <motion.div key={e.id}
-                  className={`${styles.feedEntry} ${styles["fe" + e.t]}`}
+                <motion.div key={e.id} className={`${styles.feedEntry} ${styles["fe" + e.t]}`}
                   initial={{ opacity: 0, x: -10, filter: "blur(4px)" }}
                   animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                   transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}>
@@ -414,25 +381,16 @@ export default function AgoraPage() {
               ))}
             </InView>
             <InView delay={0.18} className={styles.s2Stats}>
-              <div className={styles.s2StatItem}>
-                <span className={styles.s2StatN}>{vol.toFixed(2)}</span>
-                <span className={styles.s2StatL}>USDC settled</span>
-              </div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{vol.toFixed(2)}</span><span className={styles.s2StatL}>USDC settled</span></div>
               <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}>
-                <span className={styles.s2StatN}>{txns}</span>
-                <span className={styles.s2StatL}>transactions</span>
-              </div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{txns}</span><span className={styles.s2StatL}>transactions</span></div>
               <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}>
-                <span className={styles.s2StatN}>3</span>
-                <span className={styles.s2StatL}>active agents</span>
-              </div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>3</span><span className={styles.s2StatL}>active agents</span></div>
             </InView>
           </div>
         </section>
 
-        {/* ── S3 AGENT ── */}
+        {/* S3 — AGENT */}
         <section className={`${styles.section} ${styles.s3}`} ref={el => sectionRefs.current[2] = el}>
           <div className={styles.tintDark} />
           <div className={styles.orb} style={{ "--ox": "88%", "--oy": "10%", "--os": "44vw", "--oc": "rgba(160,55,8,0.13)", animationDelay: "-12s" }} />
@@ -443,9 +401,7 @@ export default function AgoraPage() {
             <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>Full economy.</em></SlideUp>
             <div className={styles.modeTabs}>
               {AGENT_MODES.map((m, i) => (
-                <button key={m.id}
-                  className={`${styles.modeTab} ${selectedMode === i ? styles.modeTabActive : ""}`}
-                  onClick={() => setSelectedMode(i)}>{m.label}</button>
+                <button key={m.id} className={`${styles.modeTab} ${selectedMode === i ? styles.modeTabActive : ""}`} onClick={() => setSelectedMode(i)}>{m.label}</button>
               ))}
             </div>
             <AnimatePresence mode="wait">
@@ -466,7 +422,7 @@ export default function AgoraPage() {
           </div>
         </section>
 
-        {/* ── S4 PROTOCOL ── */}
+        {/* S4 — PROTOCOL */}
         <section className={`${styles.section} ${styles.s4}`} ref={el => sectionRefs.current[3] = el}>
           <div className={styles.tint} />
           <div className={styles.orb} style={{ "--ox": "16%", "--oy": "22%", "--os": "50vw", "--oc": "rgba(200,80,12,0.11)", animationDelay: "-6s" }} />
@@ -491,11 +447,10 @@ export default function AgoraPage() {
           </div>
         </section>
 
-        {/* ── S5 NETWORK ── */}
+        {/* S5 — NETWORK */}
         <section className={`${styles.section} ${styles.s5}`} ref={el => sectionRefs.current[4] = el}>
           <div className={styles.tintDeep} />
-          <div className={styles.ring} />
-          <div className={styles.ring2} />
+          <div className={styles.ring} /><div className={styles.ring2} />
           <div className={styles.orb} style={{ "--ox": "50%", "--oy": "40%", "--os": "54vw", "--oc": "rgba(180,60,10,0.11)", animationDelay: "-15s" }} />
           <div className={styles.s5Inner}>
             <InView><p className={styles.sectionLabel}>Built on GOAT Network</p></InView>
@@ -506,8 +461,7 @@ export default function AgoraPage() {
             </div>
             <InView delay={0.15} style={{ width: "100%" }}>
               <div className={styles.s5Card}>
-                <div className={styles.s5CardEdge} />
-                <div className={styles.s5CardGlow} />
+                <div className={styles.s5CardEdge} /><div className={styles.s5CardGlow} />
                 <div className={styles.s5CardStack}>
                   {[
                     { label: "Identity",   value: "ERC-8004", desc: "On-chain agent identity. Verifiable. Portable." },
