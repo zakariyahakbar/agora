@@ -31,8 +31,12 @@
 
 /* ─── NAV — flex, everything inside pill ─── */
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; padding: .85rem 1.5rem 0; pointer-events: none; }
-.navBar {
+.navCluster {
   max-width: 920px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+}
+.navBar {
+  width: 100%;
   display: flex; align-items: center;
   padding: 0 .5rem 0 .65rem; height: 46px;
   border-radius: 999px;
@@ -80,6 +84,16 @@
 
 /* ─── TYPE ─── */
 .eyebrow { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 1rem; font-family: var(--font-mono,"DM Mono",monospace); }
+.glassPill {
+  display: inline-flex; align-items: center; gap: .34rem;
+  padding: .3rem .85rem; border-radius: 999px; width: fit-content;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 4px 20px rgba(0,0,0,.45);
+  font-size: .55rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(240,236,228,.78); font-family: var(--font-mono,"DM Mono",monospace);
+}
 .sectionLabel { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 .6rem; font-family: var(--font-mono,"DM Mono",monospace); }
 .sectionTitle { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.5rem,5.5vw,4.4rem); font-weight: 600; line-height: 1.0; color: #f0ece4; letter-spacing: -.023em; margin: 0; display: block; text-shadow: 0 2px 24px rgba(0,0,0,.6); }
 .sectionTitleItalic { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.5rem,5.5vw,4.4rem); font-style: italic; font-weight: 400; line-height: 1.0; color: rgba(240,236,228,.38); letter-spacing: -.023em; margin: 0; display: block; text-shadow: 0 2px 16px rgba(0,0,0,.4); }
