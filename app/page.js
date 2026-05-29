@@ -259,9 +259,8 @@ export default function AgoraPage() {
       <GlobalVideo />
       <div className={styles.grain} aria-hidden />
 
-      {/* NAV — main pill + award pill centered at top */}
+      {/* NAV — all inside one flex pill */}
       <nav className={`${styles.nav} ${navScrolled ? styles.navScrolled : ""}`}>
-        <div className={styles.navCluster}>
         <div className={styles.navBar}>
           {/* Logo */}
           <div className={styles.navLogo}>
@@ -284,10 +283,6 @@ export default function AgoraPage() {
             </a>
             <div className={styles.livePill}><span className={styles.liveDot} />GOAT</div>
           </div>
-        </div>
-        <span className={styles.glassPill}>
-          won all tracks + 3rd overall at openclaw hackathon 🏆
-        </span>
         </div>
       </nav>
 
