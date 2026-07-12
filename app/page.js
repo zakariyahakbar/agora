@@ -333,28 +333,29 @@ export default function AgoraPage() {
             <BlurUp delay={0.6} className={styles.s1Right}>
               <div className={styles.heroCard}>
                 <div className={styles.heroCardEdge} />
-                <p className={styles.heroCardLabel}>Live Network</p>
+                <p className={styles.heroCardLabel}>Verified On-Chain</p>
                 <div className={styles.heroStats}>
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}><Counter value={vol} decimals={2} /></motion.span></span>
-                    <span className={styles.heroStatL}>USDC settled</span>
+                    <span className={styles.heroStatN}>#82</span>
+                    <span className={styles.heroStatL}>ERC-8004 Agent ID</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}><Counter value={txns} /></motion.span></span>
-                    <span className={styles.heroStatL}>transactions</span>
+                    <span className={styles.heroStatN}>1</span>
+                    <span className={styles.heroStatL}>x402 payment settled</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>99.9%</motion.span></span>
-                    <span className={styles.heroStatL}>uptime</span>
+                    <span className={styles.heroStatN}>GOAT</span>
+                    <span className={styles.heroStatL}>Mainnet · Chain 2345</span>
                   </div>
                 </div>
-                <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
-                  <span className={styles.liveDot} />1 agent active · Try it →
+                <a href="https://8004scan.io/agents?chain=2345" target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
+                  <span className={styles.liveDot} />Real, live, verifiable · View agent →
                 </a>
               </div>
             </BlurUp>
+
           </div>
 
           {/* Sponsor strip at bottom */}
