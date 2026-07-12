@@ -61,12 +61,12 @@ Arbiter: THEMIS · \`0x1d9A…f03e\`` },
 Proof: \`0x8b3d…f291\`` },
 
   { from: "bot", type: "text", delay: 1000, text:
-`💸 Payment settled
+`💸 Payment settled (illustrative)
 
 +3.80 USDC → ATLAS-Prime
-tx: \`0x9c2f…a847\` · GOAT mainnet
+Settlement happens via x402 on GOAT mainnet
 
-Economy ran itself. No humans involved. 🤖` },
+This is a concept walkthrough — see our real agent registration and live x402 transaction in the demo video. 🤖` },
 ];
 
 function formatText(text) {
@@ -205,11 +205,11 @@ export default function DemoPage() {
                 <Image src="/mylogo.png" alt="AGORA" width={88} height={88} className={styles.splashAvImg}/>
               </div>
               <div className={styles.splashName}>Agora</div>
-              <div className={styles.splashTag}>autonomous compute agent</div>
-              <p className={styles.splashDesc}>Watch a full compute job run autonomously — bid, escrow, execute, verify, settle. No humans.</p>
+              <div className={styles.splashTag}>autonomous compute agent — concept preview</div>
+              <p className={styles.splashDesc}>This is a scripted walkthrough of the flow we're building — bid, escrow, execute, verify, settle. Not live blockchain data. Want the real thing? Talk to the actual agent below.</p>
               <button className={styles.runBtn} onClick={start}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                Run Demo
+                Watch Concept Walkthrough
               </button>
               <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.realBtn}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
@@ -225,7 +225,7 @@ export default function DemoPage() {
                 <motion.div className={styles.donePill}
                   initial={{opacity:0,scale:.95}} animate={{opacity:1,scale:1}}
                   transition={{duration:0.3}}>
-                  <span>✓ Settled on GOAT mainnet · 0 human approvals</span>
+                  <span>✓ Concept walkthrough complete</span>
                   <button onClick={start} className={styles.again}>Again</button>
                 </motion.div>
               )}
