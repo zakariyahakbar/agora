@@ -222,10 +222,10 @@ export default function MarketplacePage() {
           <div className={styles.navRight}>
             <div className={styles.livePill}>
               <span className={styles.liveDot} />
-              GOAT Mainnet
+              Simulation
             </div>
             <div className={styles.blockPill}>
-              #{net.block.toLocaleString()}
+              example #{net.block.toLocaleString()}
             </div>
           </div>
         </div>
@@ -234,10 +234,10 @@ export default function MarketplacePage() {
       {/* STATS BAR */}
       <div className={styles.statsBar}>
         {[
-          { label: "Volume", value: `${net.vol.toFixed(2)} USDC`, dim: false },
-          { label: "Active Jobs", value: activeJobs.length, dim: false },
-          { label: "Settled", value: net.settled.toLocaleString(), dim: false },
-          { label: "TPS", value: net.tps, dim: false },
+          { label: "Volume (example)", value: `${net.vol.toFixed(2)} USDC`, dim: false },
+          { label: "Active Jobs (example)", value: activeJobs.length, dim: false },
+          { label: "Settled (example)", value: net.settled.toLocaleString(), dim: false },
+          { label: "TPS (example)", value: net.tps, dim: false },
           { label: "Agents Online", value: "1", dim: false },
           { label: "Chain", value: "GOAT · 2345", dim: true },
         ].map(s => (
@@ -328,8 +328,8 @@ export default function MarketplacePage() {
         {/* CENTER — Live Bid Stream */}
         <div className={styles.col}>
           <div className={styles.colHead}>
-            <span className={styles.colLabel}>Live Bid Stream</span>
-            <span className={styles.colCount}>real-time</span>
+            <span className={styles.colLabel}>Bid Stream</span>
+            <span className={styles.colCount}>simulated example</span>
           </div>
 
           {/* Agent reputation cards */}
