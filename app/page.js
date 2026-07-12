@@ -24,12 +24,12 @@ const AGENT_MODES = [
 ];
 
 const FEED_EVENTS = [
-  { t: "r", msg: (a) => `AGORA broadcast 10k inference units · budget ${a} USDC` },
-  { t: "b", msg: () => `ATLAS-Prime bid 0.38 USDC · A100 · 120ms` },
-  { t: "b", msg: () => `NOVA-X counter-bid 0.41 USDC · H100 · 62ms` },
-  { t: "e", msg: (a) => `Escrow locked · ${a} USDC · GOAT mainnet` },
-  { t: "v", msg: () => `Output verified · proof 0x4f2a…9c1e · THEMIS` },
-  { t: "s", msg: (a) => `Settled → ATLAS-Prime · +${a} USDC · tx 0x8b3d…f291` },
+  { t: "r", msg: (a) => `Example: broadcast 10k inference units · budget ${a} USDC` },
+  { t: "b", msg: () => `Example: provider bid 0.38 USDC · A100 · 120ms` },
+  { t: "b", msg: () => `Example: counter-bid 0.41 USDC · H100 · 62ms` },
+  { t: "e", msg: (a) => `Example: escrow locked · ${a} USDC · GOAT mainnet` },
+  { t: "v", msg: () => `Example: output verified via cryptographic proof` },
+  { t: "s", msg: (a) => `Example: settled · +${a} USDC via x402` },
 ];
 
 const STEPS = [
@@ -370,10 +370,10 @@ export default function AgoraPage() {
           <div className={styles.orb} style={{ "--ox": "94%", "--oy": "82%", "--os": "34vw", "--oc": "rgba(20,50,120,0.1)", animationDelay: "-11s" }} />
           <div className={styles.s2Inner}>
             <div className={styles.s2Top}>
-              <InView><p className={styles.sectionLabel}>Live Economy</p></InView>
+              <InView><p className={styles.sectionLabel}>How It Works</p></InView>
               <SlideUp className={styles.sectionTitle} delay={0.05}>The economy,</SlideUp>
               <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>in motion.</em></SlideUp>
-              <InView delay={0.22}><p className={styles.sectionSub}>Every line is a real autonomous decision — no human clicked anything.</p></InView>
+              <InView delay={0.22}><p className={styles.sectionSub}>An illustrative example of the request → bid → escrow → settle flow. See it running for real in our demo video.</p></InView>
             </div>
             <InView delay={0.1} className={styles.feedCard}>
               <div className={styles.feedEdge} />
@@ -388,11 +388,11 @@ export default function AgoraPage() {
               ))}
             </InView>
             <InView delay={0.18} className={styles.s2Stats}>
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{vol.toFixed(2)}</span><span className={styles.s2StatL}>USDC settled</span></div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{vol.toFixed(2)}</span><span className={styles.s2StatL}>USDC (example)</span></div>
               <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{txns}</span><span className={styles.s2StatL}>transactions</span></div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{txns}</span><span className={styles.s2StatL}>sample txns</span></div>
               <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>3</span><span className={styles.s2StatL}>agent active</span></div>
+              <div className={styles.s2StatItem}><span className={styles.s2StatN}>1</span><span className={styles.s2StatL}>agent live</span></div>
             </InView>
           </div>
         </section>
@@ -421,7 +421,7 @@ export default function AgoraPage() {
                 <p className={styles.modePanelTag}>{AGENT_MODES[selectedMode].tag}</p>
                 <p className={styles.modePanelBody}>{AGENT_MODES[selectedMode].body}</p>
                 <div className={styles.modePanelFooter}>
-                  <p className={styles.agentAddr}>AGORA · 0x3a4F…c91b · ERC-8004 · GOAT Mainnet</p>
+                  <p className={styles.agentAddr}>AGORA · ERC-8004 registered on GOAT Mainnet — see live agent on 8004scan</p>
                   <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.panelTgLink}>Talk to AGORA →</a>
                 </div>
               </motion.div>
