@@ -390,7 +390,7 @@ export default function MarketplacePage() {
         {/* RIGHT — Feed + Settled */}
         <div className={styles.col}>
           <div className={styles.colHead}>
-            <span className={styles.colLabel}>Transaction Feed</span>
+            <span className={styles.colLabel}>Transaction Feed (example)</span>
             <div className={styles.liveDotSmall} />
           </div>
           <div className={styles.feedCard}>
@@ -414,7 +414,7 @@ export default function MarketplacePage() {
 
           {/* Recently settled */}
           <div className={styles.colHead} style={{marginTop:"1rem"}}>
-            <span className={styles.colLabel}>Recently Settled</span>
+            <span className={styles.colLabel}>Recently Settled (example)</span>
             <span className={styles.colCount}>{settledJobs.length}</span>
           </div>
           <div className={styles.settledList}>
