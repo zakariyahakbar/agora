@@ -238,3 +238,97 @@
 @media (prefers-reduced-motion: reduce) {
   .card, .hint { transition: none; }
 }
+
+/* ── v2 additions ── */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.progress {
+  position: absolute;
+  left: 50%;
+  top: calc(0.95rem + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 131, 34, 0.28);
+  background: rgba(10, 9, 14, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 180, 106, 0.9);
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.progressOn { opacity: 1; }
+.progressDiamond {
+  font-size: 0.55rem;
+  color: var(--ag-orange, #f28322);
+  text-shadow: 0 0 8px rgba(242, 131, 34, 0.7);
+}
+
+.enterRow {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.enterBtnGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0 1.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 236, 228, 0.22);
+  background: transparent;
+  color: rgba(221, 218, 212, 0.72);
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.enterBtnGhost:hover {
+  border-color: rgba(240, 236, 228, 0.45);
+  color: #eae7e0;
+}
+.enterDismiss {
+  margin-top: 1.1rem;
+  border: none;
+  background: transparent;
+  color: rgba(221, 218, 212, 0.42);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.enterDismiss:hover { color: rgba(221, 218, 212, 0.8); }
+
+/* hint sits just under the progress pill, clear of the bottom card */
+.hint {
+  top: calc(3.15rem + env(safe-area-inset-top));
+  bottom: auto;
+}
+@media (max-width: 640px) {
+  .hint { top: calc(2.95rem + env(safe-area-inset-top)); font-size: 0.5rem; }
+  .progress { font-size: 0.54rem; padding: 0.36rem 0.8rem; }
+}
