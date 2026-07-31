@@ -1,0 +1,240 @@
+/* ══════════════════════════════════════════
+   AGORA — THE SQUARE (HUD)
+══════════════════════════════════════════ */
+
+.root {
+  position: fixed;
+  inset: 0;
+  background: #060509;
+  overflow: hidden;
+}
+
+.canvasWrap,
+.canvasWrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── top chrome ── */
+.backPill,
+.chainPill {
+  position: absolute;
+  top: calc(0.9rem + env(safe-area-inset-top));
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 236, 228, 0.14);
+  background: rgba(10, 9, 14, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(221, 218, 212, 0.72);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.backPill { left: calc(0.9rem + env(safe-area-inset-left)); }
+.backPill:hover { color: #dddad4; border-color: rgba(242, 131, 34, 0.45); }
+.chainPill { right: calc(0.9rem + env(safe-area-inset-right)); }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2ed573;
+  box-shadow: 0 0 8px rgba(46, 213, 115, 0.8);
+}
+
+/* ── placard card ── */
+.card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(1.4rem + env(safe-area-inset-bottom));
+  transform: translate(-50%, 12px);
+  z-index: 5;
+  width: min(30rem, calc(100vw - 2rem));
+  padding: 1rem 1.25rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(240, 236, 228, 0.12);
+  background: rgba(9, 8, 13, 0.66);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease, transform 260ms var(--ag-ease, ease);
+}
+.cardOn {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.cardEyebrow {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ag-orange, #f28322);
+}
+.cardLine {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  color: #eae7e0;
+}
+.cardBody {
+  margin: 0;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(221, 218, 212, 0.62);
+}
+
+/* ── hint ── */
+.hint {
+  position: absolute;
+  left: 50%;
+  top: calc(1rem + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  z-index: 4;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(221, 218, 212, 0.5);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(10, 9, 14, 0.45);
+  border: 1px solid rgba(240, 236, 228, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+  white-space: nowrap;
+}
+.hintOn { opacity: 1; }
+
+/* ── mobile joystick ── */
+.joystick {
+  position: absolute;
+  left: calc(1.4rem + env(safe-area-inset-left));
+  bottom: calc(7.2rem + env(safe-area-inset-bottom));
+  z-index: 6;
+  width: 7.4rem;
+  height: 7.4rem;
+  border-radius: 50%;
+  border: 1px solid rgba(240, 236, 228, 0.16);
+  background: rgba(10, 9, 14, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: none;
+  touch-action: none;
+}
+.joyOn { display: block; }
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.9rem;
+  height: 2.9rem;
+  margin: -1.45rem 0 0 -1.45rem;
+  border-radius: 50%;
+  background: rgba(242, 131, 34, 0.22);
+  border: 1px solid rgba(242, 131, 34, 0.55);
+  box-shadow: 0 0 18px rgba(242, 131, 34, 0.25);
+  will-change: transform;
+}
+
+/* ── enter overlay ── */
+.enter {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1.4rem calc(2rem + env(safe-area-inset-bottom));
+  background: rgba(6, 5, 9, 0.74);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.enterEyebrow {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ag-orange, #f28322);
+}
+.enterTitle {
+  margin: 0 0 1rem;
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(2.4rem, 7vw, 4.2rem);
+  line-height: 1.05;
+  color: #eae7e0;
+}
+.enterSub {
+  margin: 0 0 1.8rem;
+  max-width: 26rem;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(221, 218, 212, 0.6);
+}
+.enterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0 2.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 131, 34, 0.55);
+  background: rgba(242, 131, 34, 0.12);
+  color: #ffb46a;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.enterBtn:hover {
+  background: rgba(242, 131, 34, 0.22);
+  border-color: rgba(255, 154, 60, 0.8);
+  color: #ffc78d;
+}
+
+/* ── small screens ── */
+@media (max-width: 640px) {
+  .card {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    width: calc(100vw - 1.6rem);
+    padding: 0.85rem 1rem 0.95rem;
+  }
+  .cardLine { font-size: 1.2rem; }
+  .hint {
+    top: auto;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom));
+    font-size: 0.52rem;
+  }
+  .chainPill { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .hint { transition: none; }
+}
