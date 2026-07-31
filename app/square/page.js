@@ -620,9 +620,7 @@ export default function SquarePage() {
     const orbTexOrange = makeRadialTex("rgba(255,150,60,0.8)", "rgba(255,120,30,0.25)", 0.4);
     const orbTexGreen = makeRadialTex("rgba(90,235,150,0.8)", "rgba(46,213,115,0.25)", 0.4);
     const orbDefs = [
-      { color: 0xff8c2a, tex: orbTexOrange, period: 36, phase: 0.0, order: [0, 1, 2, 3] },
-      { color: 0xff8c2a, tex: orbTexOrange, period: 47, phase: 0.4, order: [2, 0, 3, 1] },
-      { color: 0x2ed573, tex: orbTexGreen, period: 41, phase: 0.72, order: [1, 3, 0, 2] },
+      { color: 0x2ed573, tex: orbTexGreen, period: 44, phase: 0.0, order: [0, 2, 1, 3] },
     ];
     const orbs = orbDefs.map(def => {
       const pts = def.order.map(i =>
@@ -752,6 +750,45 @@ export default function SquarePage() {
       icon.position.set(spot.x, baseY, spot.z);
       scene.add(icon);
       return { spot, pad, pillar, glow, icon, baseY, doneApplied: false };
+    });
+
+    /* ── Glowing pathways from the center hub out to each station ── */
+    const pathFlows = [];
+    stationSpots.forEach(spot => {
+      if (spot.idx === 4) return; // center is the hub itself
+      const len = Math.hypot(spot.x, spot.z);
+      const ang = Math.atan2(spot.z, spot.x);
+      const innerR = 2.6, outerR = len - 1.5;
+      const plen = outerR - innerR;
+      /* base glowing strip */
+      const strip = new THREE.Mesh(
+        new THREE.PlaneGeometry(plen, 0.5),
+        new THREE.MeshBasicMaterial({
+          color: 0xff9a3c, transparent: true, opacity: 0.12,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        })
+      );
+      strip.rotation.x = -Math.PI / 2;
+      strip.rotation.z = -ang;
+      strip.position.set(Math.cos(ang) * (innerR + plen / 2), 0.02, Math.sin(ang) * (innerR + plen / 2));
+      scene.add(strip);
+      /* flowing dashes travelling outward */
+      const dashN = 5;
+      const dashes = [];
+      for (let d = 0; d < dashN; d++) {
+        const dash = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.55, 0.5),
+          new THREE.MeshBasicMaterial({
+            color: 0xffc078, transparent: true, opacity: 0.5,
+            blending: THREE.AdditiveBlending, depthWrite: false,
+          })
+        );
+        dash.rotation.x = -Math.PI / 2;
+        dash.rotation.z = -ang;
+        scene.add(dash);
+        dashes.push(dash);
+      }
+      pathFlows.push({ idx: spot.idx, ang, innerR, plen, strip, dashes, dashN });
     });
 
     /* bloom */
@@ -1067,6 +1104,21 @@ export default function SquarePage() {
         }
       });
 
+      /* pathway flow — dashes stream from hub toward each unserved station */
+      for (const pf of pathFlows) {
+        const served = !!acts[STATIONS[pf.idx].action.key];
+        pf.strip.material.opacity = served ? 0.05 : 0.1 + Math.sin(t * 2 + pf.idx) * 0.03;
+        pf.strip.material.color.setHex(served ? 0x2ed573 : 0xff9a3c);
+        pf.dashes.forEach((dash, d) => {
+          const frac = ((t * 0.28 + d / pf.dashN) % 1);
+          const along = pf.innerR + frac * pf.plen;
+          dash.position.set(Math.cos(pf.ang) * along, 0.025, Math.sin(pf.ang) * along);
+          const fade = Math.sin(frac * Math.PI);
+          dash.material.opacity = served ? 0 : fade * 0.6;
+          dash.visible = !served;
+        });
+      }
+
       /* compass needle in the progress pill points to nearest unserved station */
       if (compassRef.current && enteredRef.current) {
         const p = yawObj.position;
@@ -1148,6 +1200,17 @@ export default function SquarePage() {
     <div className={styles.root}>
       <div ref={wrapRef} className={styles.canvasWrap} />
       <div className={styles.vignette} aria-hidden />
+
+      {/* crosshair (desktop only, hidden while a panel is open) */}
+      {entered && !isTouch && !mapOpen && !formOpen && !intro && !complete && (
+        <div className={styles.crosshair} aria-hidden>
+          <span className={styles.chDot} />
+          <span className={`${styles.chLine} ${styles.chTop}`} />
+          <span className={`${styles.chLine} ${styles.chBottom}`} />
+          <span className={`${styles.chLine} ${styles.chLeft}`} />
+          <span className={`${styles.chLine} ${styles.chRight}`} />
+        </div>
+      )}
 
       <a href="/" className={styles.backPill}>← agora</a>
       <div className={styles.chainPill}><span className={styles.dot} />GOAT · Chain 2345</div>
