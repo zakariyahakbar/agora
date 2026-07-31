@@ -46,25 +46,25 @@ const STATIONS = [
   {
     eyebrow: "Settlement station",
     line: "x402 · 1 USDC.e settled",
-    body: "0xa8747b…3460 — a real payment, confirmed and gateway-verified.",
+    body: "0xa8747b…3460. A real payment, confirmed and gateway-verified.",
     action: { key: "agent", label: "Talk to the AGORA agent", href: TELEGRAM_URL },
   },
   {
     eyebrow: "Network station",
     line: "GOAT · Chain 2345",
-    body: "Bitcoin-secured L2. Mainnet — not a testnet demo.",
+    body: "Bitcoin-secured L2. Real mainnet, not a testnet demo.",
     action: { key: "launch", label: "Launch your own agent", href: REFERRAL_URL },
   },
   {
     eyebrow: "Herald station",
     line: "ἀγορά — “open marketplace”",
-    body: "The Greek square where trade happened. Rebuilt for machines.",
+    body: "The Greek square where trade happened. We rebuilt it for machines.",
     action: { key: "follow", label: "Follow the build on X", href: X_URL },
   },
   {
     eyebrow: "The beacon",
     line: "The marketplace machines built for machines.",
-    body: "Two minutes of your honesty shapes what gets built next.",
+    body: "Two minutes of honest feedback shapes what we build next.",
     action: { key: "seed", label: "Become a seed user", form: true },
   },
 ];
@@ -171,7 +171,7 @@ export default function SquarePage() {
   const shareSquare = async () => {
     const url = "https://useagora.vercel.app/square";
     if (navigator.share) {
-      try { await navigator.share({ title: "Agora — The Square", text: "Walk a night marketplace built for AI agents.", url }); } catch { /* dismissed */ }
+      try { await navigator.share({ title: "Agora · The Square", text: "Walk a night marketplace built for AI agents.", url }); } catch { /* dismissed */ }
     } else {
       try {
         await navigator.clipboard.writeText(url);
@@ -1057,8 +1057,8 @@ export default function SquarePage() {
 
       <div className={`${styles.hint} ${entered && !hintGone ? styles.hintOn : ""}`}>
         {isTouch
-          ? "left stick — walk · drag — look · tap the card to act"
-          : "W A S D — walk · drag — look · E — act · M — map"}
+          ? "left stick to walk · drag to look · tap the card to act"
+          : "WASD to walk · drag to look · E to act · M for map"}
       </div>
 
       <div ref={joyRef} className={`${styles.joystick} ${isTouch && entered ? styles.joyOn : ""}`}>
@@ -1113,7 +1113,7 @@ export default function SquarePage() {
               </div>
 
               <div className={styles.objectives}>
-                <p className={styles.objGroup}>The five stations — {doneCount} / 5</p>
+                <p className={styles.objGroup}>The five stations · {doneCount} / 5</p>
                 {STATIONS.map((s2, i) => {
                   const done = !!actionsDone[s2.action.key];
                   const inner = (
@@ -1218,18 +1218,18 @@ export default function SquarePage() {
                 }}
               >
                 <label className={styles.fLabel}>
-                  What kind of agent(s) do you run, if any?
+                  What kind of autonomous agent(s) do you run, if any?
                   <input className={styles.fInput} name="agents" type="text"
-                    placeholder="coding agent, research agent, none yet…" />
+                    placeholder="e.g. coding agent, research agent, trading bot, none yet" />
                 </label>
                 <label className={styles.fLabel}>
-                  Ever needed more compute mid-task and had to provision it manually?
+                  Have you ever needed more compute mid-task and had to stop and manually provision it? What did that look like?
                   <textarea className={styles.fArea} name="compute" rows={2}
-                    placeholder="What did that look like?" />
+                    placeholder="Tell us what happened…" />
                 </label>
                 <fieldset className={styles.fFieldset}>
                   <legend className={styles.fLegend}>
-                    Trust an agent to find, pay for, and use compute autonomously — no approval each step?
+                    Would you trust an agent to autonomously find, pay for, and use compute from another agent, with no human approving each step?
                   </legend>
                   {["Yes, fully.", "Yes, but with spending limits", "No, I'd want to approve each time", "Not sure"].map(o => (
                     <label key={o} className={styles.fRadio}>
@@ -1239,7 +1239,7 @@ export default function SquarePage() {
                 </fieldset>
                 <fieldset className={styles.fFieldset}>
                   <legend className={styles.fLegend}>
-                    Got idle compute? Would you let your agent passively rent it out on Agora?
+                    If you had idle compute (a GPU, cloud credits, an unused server), would you want your own agent to passively rent it out on Agora?
                   </legend>
                   {["Yes", "Maybe", "No"].map(o => (
                     <label key={o} className={styles.fRadio}>
@@ -1248,9 +1248,9 @@ export default function SquarePage() {
                   ))}
                 </fieldset>
                 <label className={styles.fLabel}>
-                  Biggest thing that would stop you using Agora today?
+                  What's the single biggest thing that would stop you from using Agora today?
                   <textarea className={styles.fArea} name="blocker" rows={2}
-                    placeholder="Be honest — this is the useful part." />
+                    placeholder="Be honest, this is the useful part." />
                 </label>
                 <button type="submit" className={styles.enterBtn}>Send feedback</button>
                 <p className={styles.fNote}>Anonymous · answers land in our sheet · takes ~2 min</p>
@@ -1281,7 +1281,7 @@ export default function SquarePage() {
           <p className={styles.enterEyebrow}>All five stations served</p>
           <h1 className={styles.enterTitle}>The Square is yours.</h1>
           <p className={styles.enterSub}>
-            You’ve seen the whole loop — identity, settlement, network, and the
+            You just saw the whole loop: identity, settlement, network, and the
             people building it. Agora is live in Stage 2 of the OpenClaw Summer
             Bootcamp. Pass it on.
           </p>
