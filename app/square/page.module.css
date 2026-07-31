@@ -645,3 +645,58 @@
   font-size: 0.85rem;
   color: rgba(221, 218, 212, 0.6);
 }
+
+/* ── v5: interactive station card ── */
+.card { pointer-events: auto; }
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+}
+.cardBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 131, 34, 0.55);
+  background: rgba(242, 131, 34, 0.14);
+  color: #ffb46a;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.cardBtn:hover {
+  background: rgba(242, 131, 34, 0.24);
+  border-color: rgba(255, 154, 60, 0.85);
+  color: #ffc78d;
+}
+.cardBtnDone {
+  border-color: rgba(46, 213, 115, 0.5);
+  background: rgba(46, 213, 115, 0.1);
+  color: #7ee8a8;
+  cursor: default;
+}
+.cardBtnDone:hover {
+  background: rgba(46, 213, 115, 0.1);
+  border-color: rgba(46, 213, 115, 0.5);
+  color: #7ee8a8;
+}
+.cardKey {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(221, 218, 212, 0.42);
+}
+/* buttons used as objective rows need normalizing */
+.objRow {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+}
