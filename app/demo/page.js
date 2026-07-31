@@ -66,7 +66,7 @@ Proof: \`0x8b3d…f291\`` },
 +3.80 USDC → ATLAS-Prime
 Settlement happens via x402 on GOAT mainnet
 
-This is a concept walkthrough — see our real agent registration and live x402 transaction in the demo video. 🤖` },
+This is a concept walkthrough. See our real agent registration and live x402 transaction in the demo video. 🤖` },
 ];
 
 function formatText(text) {
@@ -205,8 +205,8 @@ export default function DemoPage() {
                 <Image src="/mylogo.png" alt="AGORA" width={88} height={88} className={styles.splashAvImg}/>
               </div>
               <div className={styles.splashName}>Agora</div>
-              <div className={styles.splashTag}>autonomous compute agent — concept preview</div>
-              <p className={styles.splashDesc}>This is a scripted walkthrough of the flow we're building — bid, escrow, execute, verify, settle. Not live blockchain data. Want the real thing? Talk to the actual agent below.</p>
+              <div className={styles.splashTag}>autonomous compute agent · concept preview</div>
+              <p className={styles.splashDesc}>This is a scripted walkthrough of the flow we're building: bid, escrow, execute, verify, settle. Not live blockchain data. Want the real thing? Talk to the actual agent below.</p>
               <button className={styles.runBtn} onClick={start}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 Watch Concept Walkthrough
