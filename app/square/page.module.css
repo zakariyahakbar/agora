@@ -127,7 +127,7 @@
 .joystick {
   position: absolute;
   left: calc(1.4rem + env(safe-area-inset-left));
-  bottom: calc(7.2rem + env(safe-area-inset-bottom));
+  bottom: calc(10.5rem + env(safe-area-inset-bottom));
   z-index: 6;
   width: 7.4rem;
   height: 7.4rem;
