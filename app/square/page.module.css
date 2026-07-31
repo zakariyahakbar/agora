@@ -127,10 +127,10 @@
 .joystick {
   position: absolute;
   left: calc(1.4rem + env(safe-area-inset-left));
-  bottom: calc(10.5rem + env(safe-area-inset-bottom));
+  bottom: calc(2rem + env(safe-area-inset-bottom));
   z-index: 6;
-  width: 7.4rem;
-  height: 7.4rem;
+  width: 6.8rem;
+  height: 6.8rem;
   border-radius: 50%;
   border: 1px solid rgba(240, 236, 228, 0.16);
   background: rgba(10, 9, 14, 0.35);
@@ -222,15 +222,15 @@
 /* ── small screens ── */
 @media (max-width: 640px) {
   .card {
-    bottom: calc(1rem + env(safe-area-inset-bottom));
+    bottom: calc(9.6rem + env(safe-area-inset-bottom));
     width: calc(100vw - 1.6rem);
     padding: 0.85rem 1rem 0.95rem;
   }
   .cardLine { font-size: 1.2rem; }
   .hint {
-    top: auto;
-    bottom: calc(4.6rem + env(safe-area-inset-bottom));
-    font-size: 0.52rem;
+    top: calc(2.95rem + env(safe-area-inset-top));
+    bottom: auto;
+    font-size: 0.5rem;
   }
   .chainPill { display: none; }
 }
