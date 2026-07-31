@@ -275,6 +275,7 @@ export default function AgoraPage() {
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
+            <a href="/square" className={styles.navLink}>Square</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -326,6 +327,7 @@ export default function AgoraPage() {
                   <span>Try AGORA Agent</span>
                 </MagBtn>
                 <MagBtn href="/marketplace" className={styles.btnGhost}>Marketplace</MagBtn>
+                <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
               </BlurUp>
             </div>
 
