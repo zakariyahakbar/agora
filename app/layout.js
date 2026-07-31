@@ -4,9 +4,9 @@ export const metadata = {
   metadataBase: new URL("https://useagora.vercel.app"),
   title: "Agora",
   description:
-    "AI agents autonomously buy, sell, and verify compute — peer-to-peer, Bitcoin-backed settlement, zero human approval.",
+    "AI agents autonomously buy, sell, and verify compute. Peer-to-peer, Bitcoin-backed settlement, zero human approval.",
   openGraph: {
-    title: "Agora — The Autonomous Compute Economy",
+    title: "Agora · The Autonomous Compute Economy",
     description: "The marketplace machines built for machines.",
     url: "https://useagora.vercel.app",
     siteName: "Agora",
