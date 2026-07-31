@@ -76,6 +76,7 @@ export default function SquarePage() {
   const joyRef = useRef(null);
   const knobRef = useRef(null);
   const playerMarkRef = useRef(null);
+  const compassRef = useRef(null);
 
   const [entered, setEntered] = useState(false);
   const enteredRef = useRef(false);
@@ -209,8 +210,8 @@ export default function SquarePage() {
     renderer.domElement.style.touchAction = "none";
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x060509);
-    scene.fog = new THREE.FogExp2(0x08070c, 0.026);
+    scene.background = new THREE.Color(0x080712);
+    scene.fog = new THREE.FogExp2(0x0a0916, 0.026);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -302,6 +303,19 @@ export default function SquarePage() {
     scene.add(mosaicGlow);
 
     /* sky */
+    /* sky — purplesky.png wrapped on a dome, slowly rotating */
+    const skyMat = new THREE.MeshBasicMaterial({
+      color: 0x0a0916, side: THREE.BackSide, fog: false, depthWrite: false,
+    });
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(210, 40, 24), skyMat);
+    scene.add(sky);
+    new THREE.TextureLoader().load("/purplesky.png", (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      skyMat.map = tex;
+      skyMat.color.set(0xffffff);
+      skyMat.needsUpdate = true;
+    });
+
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(1000 * 3);
     for (let i = 0; i < 1000; i++) {
@@ -313,11 +327,33 @@ export default function SquarePage() {
       starPos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
     }
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    const starMat = new THREE.PointsMaterial({ color: 0xc3cade, size: 0.75, transparent: true, opacity: 0.85 });
-    scene.add(new THREE.Points(starGeo, starMat));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xd6dcf2, size: 0.9, transparent: true, opacity: 0.9, fog: false,
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
 
-    const moon = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 24), new THREE.MeshBasicMaterial({ color: 0xd6dcec }));
-    moon.position.set(-62, 34, -84);
+    /* moon with soft craters + big halo, both fog-free so they actually show */
+    const mCan = document.createElement("canvas");
+    mCan.width = mCan.height = 128;
+    const mg = mCan.getContext("2d");
+    const mGrad = mg.createRadialGradient(52, 48, 8, 64, 64, 64);
+    mGrad.addColorStop(0, "#f2f5ff");
+    mGrad.addColorStop(0.75, "#cdd6ee");
+    mGrad.addColorStop(1, "#aab4d4");
+    mg.fillStyle = mGrad;
+    mg.fillRect(0, 0, 128, 128);
+    mg.fillStyle = "rgba(130,140,175,0.35)";
+    [[42, 58, 11], [78, 40, 8], [88, 84, 13], [56, 96, 7], [30, 32, 6]].forEach(([x, y, r]) => {
+      mg.beginPath(); mg.arc(x, y, r, 0, Math.PI * 2); mg.fill();
+    });
+    const moonTex = new THREE.CanvasTexture(mCan);
+    moonTex.colorSpace = THREE.SRGBColorSpace;
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(4.4, 28, 28),
+      new THREE.MeshBasicMaterial({ map: moonTex, fog: false })
+    );
+    moon.position.set(-62, 36, -84);
     scene.add(moon);
 
     const makeRadialTex = (inner, mid, midStop) => {
@@ -333,17 +369,17 @@ export default function SquarePage() {
       return new THREE.CanvasTexture(c);
     };
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeRadialTex("rgba(200,210,240,0.55)", "rgba(160,175,220,0.16)", 0.4),
-      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+      map: makeRadialTex("rgba(205,215,248,0.6)", "rgba(165,178,225,0.18)", 0.4),
+      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false,
     }));
-    halo.scale.setScalar(22);
+    halo.scale.setScalar(30);
     halo.position.copy(moon.position);
     scene.add(halo);
 
     /* shooting star */
     const shoot = new THREE.Sprite(new THREE.SpriteMaterial({
       map: makeRadialTex("rgba(230,238,255,0.9)", "rgba(200,215,255,0.25)", 0.35),
-      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, fog: false,
     }));
     shoot.scale.set(2.6, 0.12, 1);
     scene.add(shoot);
@@ -619,7 +655,65 @@ export default function SquarePage() {
       return { ...def, curve, mesh, light, trail, history };
     });
 
-    /* ── Station guidance: light pillars + ground pads ── */
+    /* ── Station guidance: floating glowing icon signs + pillars + pads ── */
+    const makeIconTex = (kind) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 256;
+      const x = c.getContext("2d");
+      x.strokeStyle = kind === "check" ? "#7ee8a8" : "#ffc78d";
+      x.fillStyle = x.strokeStyle;
+      x.lineWidth = 15;
+      x.lineCap = "round";
+      x.lineJoin = "round";
+      x.shadowColor = kind === "check" ? "rgba(46,213,115,0.9)" : "rgba(255,154,60,0.9)";
+      x.shadowBlur = 26;
+      if (kind === "shield") {
+        x.beginPath();
+        x.moveTo(128, 38); x.lineTo(202, 66); x.lineTo(202, 128);
+        x.quadraticCurveTo(202, 182, 128, 218);
+        x.quadraticCurveTo(54, 182, 54, 128);
+        x.lineTo(54, 66); x.closePath(); x.stroke();
+        x.beginPath(); x.moveTo(96, 128); x.lineTo(120, 154); x.lineTo(166, 100); x.stroke();
+      } else if (kind === "coin") {
+        x.beginPath(); x.arc(128, 128, 74, 0, Math.PI * 2); x.stroke();
+        x.beginPath(); x.arc(128, 128, 50, 0, Math.PI * 2); x.stroke();
+        x.beginPath(); x.moveTo(128, 96); x.lineTo(128, 160); x.stroke();
+      } else if (kind === "nodes") {
+        const pts = [[128, 66], [76, 176], [180, 176]];
+        x.beginPath();
+        x.moveTo(...pts[0]); x.lineTo(...pts[1]); x.lineTo(...pts[2]); x.closePath(); x.stroke();
+        pts.forEach(([px, py]) => {
+          x.beginPath(); x.arc(px, py, 22, 0, Math.PI * 2);
+          x.fillStyle = "#0a0916"; x.fill(); x.stroke();
+        });
+      } else if (kind === "horn") {
+        x.beginPath();
+        x.moveTo(58, 108); x.lineTo(148, 66); x.lineTo(148, 190); x.lineTo(58, 148);
+        x.closePath(); x.stroke();
+        x.beginPath(); x.arc(150, 128, 44, -0.85, 0.85); x.stroke();
+        x.beginPath(); x.arc(150, 128, 68, -0.7, 0.7); x.stroke();
+      } else if (kind === "bubble") {
+        x.beginPath();
+        x.moveTo(72, 64); x.lineTo(184, 64);
+        x.quadraticCurveTo(208, 64, 208, 88); x.lineTo(208, 144);
+        x.quadraticCurveTo(208, 168, 184, 168); x.lineTo(132, 168);
+        x.lineTo(100, 204); x.lineTo(104, 168); x.lineTo(72, 168);
+        x.quadraticCurveTo(48, 168, 48, 144); x.lineTo(48, 88);
+        x.quadraticCurveTo(48, 64, 72, 64); x.closePath(); x.stroke();
+        [92, 128, 164].forEach(px => {
+          x.beginPath(); x.arc(px, 116, 9, 0, Math.PI * 2); x.fill();
+        });
+      } else { /* check */
+        x.beginPath(); x.moveTo(64, 136); x.lineTo(112, 184); x.lineTo(196, 84); x.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    };
+    const ICON_KINDS = ["shield", "coin", "nodes", "horn", "bubble"];
+    const checkTex = makeIconTex("check");
+    const iconGlowTex = makeRadialTex("rgba(255,154,60,0.5)", "rgba(255,120,30,0.14)", 0.45);
+
     const stationSpots = [
       ...stallWorld.map((v, i) => ({ x: v.x, z: v.z, idx: i })),
       { x: 0, z: 0, idx: 4 },
@@ -643,13 +737,21 @@ export default function SquarePage() {
         pillar.position.set(spot.x, 2.9 + 2.3, spot.z);
         scene.add(pillar);
       }
-      const marker = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.15),
-        new THREE.MeshStandardMaterial({ color: 0xff8c2a, emissive: 0xff9a3c, emissiveIntensity: 2.2, roughness: 0.3 })
-      );
-      marker.position.set(spot.x, spot.idx === 4 ? 3.2 : 2.9, spot.z);
-      scene.add(marker);
-      return { spot, pad, pillar, marker };
+      const baseY = spot.idx === 4 ? 3.55 : 3.2;
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: iconGlowTex, transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending, opacity: 0.42,
+      }));
+      glow.scale.setScalar(2.0);
+      glow.position.set(spot.x, baseY, spot.z);
+      scene.add(glow);
+      const icon = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: makeIconTex(ICON_KINDS[spot.idx]), transparent: true, depthWrite: false,
+      }));
+      icon.scale.setScalar(1.0);
+      icon.position.set(spot.x, baseY, spot.z);
+      scene.add(icon);
+      return { spot, pad, pillar, glow, icon, baseY, doneApplied: false };
     });
 
     /* bloom */
@@ -934,22 +1036,56 @@ export default function SquarePage() {
         }
       }
 
-      /* station guides: pads/pillars/markers reflect done state */
+      sky.rotation.y = t * 0.0025;
+      stars.rotation.y = t * 0.005;
+
+      /* station guides: icons float and pulse, flip to green check when served */
       const acts = actionsRef.current;
       guides.forEach((gd, i) => {
         const done = !!acts[STATIONS[gd.spot.idx].action.key];
         if (gd.pillar) gd.pillar.visible = !done;
-        gd.marker.visible = !done;
+        const bobY = gd.baseY + Math.sin(t * 1.8 + i * 1.3) * 0.12;
+        gd.icon.position.y = bobY;
+        gd.glow.position.y = bobY;
         if (!done) {
-          gd.marker.rotation.y = t * 1.6;
-          gd.marker.position.y = (gd.spot.idx === 4 ? 3.2 : 2.9) + Math.sin(t * 2.2 + i) * 0.1;
+          gd.glow.material.opacity = 0.36 + Math.sin(t * 2.4 + i) * 0.12;
+          gd.icon.scale.setScalar(1.0 + Math.sin(t * 2.4 + i) * 0.04);
           gd.pad.material.color.setHex(0xff9a3c);
           gd.pad.material.opacity = 0.13 + Math.sin(t * 2.4 + i) * 0.05;
         } else {
+          if (!gd.doneApplied) {
+            gd.doneApplied = true;
+            gd.icon.material.map = checkTex;
+            gd.icon.material.needsUpdate = true;
+            gd.icon.material.opacity = 0.8;
+            gd.icon.scale.setScalar(0.7);
+            gd.glow.material.color.setHex(0x2ed573);
+          }
+          gd.glow.material.opacity = 0.14;
           gd.pad.material.color.setHex(0x2ed573);
           gd.pad.material.opacity = 0.09;
         }
       });
+
+      /* compass needle in the progress pill points to nearest unserved station */
+      if (compassRef.current && enteredRef.current) {
+        const p = yawObj.position;
+        let bx = 0, bz = 0, bd = Infinity, found = false;
+        for (const gd of guides) {
+          if (acts[STATIONS[gd.spot.idx].action.key]) continue;
+          const ddx = gd.spot.x - p.x, ddz = gd.spot.z - p.z;
+          const d2 = ddx * ddx + ddz * ddz;
+          if (d2 < bd) { bd = d2; bx = ddx; bz = ddz; found = true; }
+        }
+        if (found && bd > 4.6 * 4.6) {
+          const deg = (Math.atan2(bx, -bz) + yaw) * 180 / Math.PI;
+          compassRef.current.textContent = "➤";
+          compassRef.current.style.transform = `rotate(${(deg - 90).toFixed(1)}deg)`;
+        } else {
+          compassRef.current.textContent = "◆";
+          compassRef.current.style.transform = "rotate(0deg)";
+        }
+      }
 
       /* station proximity */
       if (enteredRef.current && !inEntrance) {
@@ -1020,7 +1156,7 @@ export default function SquarePage() {
         className={`${styles.progress} ${styles.progressBtn} ${entered ? styles.progressOn : ""}`}
         onClick={() => setMapOpen(true)}
       >
-        <span className={styles.progressDiamond}>◆</span>
+        <span ref={compassRef} className={styles.progressDiamond}>◆</span>
         stations {doneCount} / 5
       </button>
 
@@ -1153,7 +1289,7 @@ export default function SquarePage() {
           <div className={styles.introCard} onClick={e => e.stopPropagation()}>
             <p className={styles.introEyebrow}>Welcome to the Square</p>
             <p className={styles.introBody}>
-              Five stations glow across this marketplace. Walk into the light,
+              Five glowing signs float over this marketplace. Walk to a sign,
               read the inscription, act. Serve all five to claim the Square.
             </p>
             <div className={styles.introRows}>
@@ -1168,6 +1304,10 @@ export default function SquarePage() {
               <div className={styles.introRow}>
                 <span className={styles.introKey}>{isTouch ? "tap" : "E"}</span>
                 <span>act at a station</span>
+              </div>
+              <div className={styles.introRow}>
+                <span className={styles.introKey}>➤</span>
+                <span>the needle up top points to your next station</span>
               </div>
               <div className={styles.introRow}>
                 <span className={styles.introKey}>{isTouch ? "map" : "M"}</span>
