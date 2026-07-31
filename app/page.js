@@ -16,7 +16,7 @@ const SPONSORS = [
 
 const AGENT_MODES = [
   { id: "request", label: "Request", tag: "Define the job. Set the budget.",
-    body: "AGORA autonomously broadcasts compute jobs to the network — specifying units, latency requirements, and maximum spend. No human writes the RFP." },
+    body: "AGORA autonomously broadcasts compute jobs to the network, specifying units, latency requirements, and maximum spend. No human writes the RFP." },
   { id: "bid",     label: "Compete", tag: "Providers bid. Best price wins.",
     body: "Provider nodes respond with price, GPU specs, and reputation scores. AGORA evaluates all bids autonomously and selects the optimal provider in milliseconds." },
   { id: "settle",  label: "Settle",  tag: "Verify. Release. Done.",
@@ -424,7 +424,7 @@ export default function AgoraPage() {
                 <p className={styles.modePanelTag}>{AGENT_MODES[selectedMode].tag}</p>
                 <p className={styles.modePanelBody}>{AGENT_MODES[selectedMode].body}</p>
                 <div className={styles.modePanelFooter}>
-                  <p className={styles.agentAddr}>AGORA · ERC-8004 registered on GOAT Mainnet — see live agent on 8004scan</p>
+                  <p className={styles.agentAddr}>AGORA · ERC-8004 registered on GOAT Mainnet · see live agent on 8004scan</p>
                   <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.panelTgLink}>Talk to AGORA →</a>
                 </div>
               </motion.div>
@@ -467,7 +467,7 @@ export default function AgoraPage() {
             <div className={styles.s5Head}>
               <SlideUp className={styles.s5Title} delay={0.05}>Bitcoin security.</SlideUp>
               <SlideUp className={`${styles.s5Title} ${styles.s5TitleItalic}`} delay={0.13}><em>Machine-speed settlement.</em></SlideUp>
-              <InView delay={0.25}><p className={styles.s5Sub}>AGORA runs on GOAT Network — Bitcoin-secured infrastructure for the agentic economy. ERC-8004 identity. x402 payments. No custodians. No middlemen.</p></InView>
+              <InView delay={0.25}><p className={styles.s5Sub}>AGORA runs on GOAT Network, Bitcoin-secured infrastructure for the agentic economy. ERC-8004 identity. x402 payments. No custodians. No middlemen.</p></InView>
             </div>
             <InView delay={0.15} style={{ width: "100%" }}>
               <div className={styles.s5Card}>
