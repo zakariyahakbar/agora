@@ -1,12 +1,11 @@
 "use client";
 
 /* ══════════════════════════════════════════
-   AGORA — THE SQUARE (v3)
-   A walkable night agora with a ledger of
-   objectives. Exploration objectives are the
-   five on-chain inscriptions; economy
-   objectives feed Stage 2 growth directly.
-   M — map/ledger · WASD — walk · drag — look
+   AGORA — THE SQUARE (v5)
+   Five lit stations. Walk into the light,
+   read the inscription, act. Every action
+   feeds Stage 2 growth for real.
+   WASD — walk · drag — look · E — act · M — map
 ══════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react";
@@ -20,43 +19,54 @@ import styles from "./page.module.css";
 
 const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
 const X_URL = "https://x.com/usingagora";
-const SCAN_URL = "https://8004scan.io/agents?chain=2345";
+const SCAN_URL = "https://8004scan.io/agents/goat/82";
 const REFERRAL_URL = "https://clawup.org/?ref=f0af754b9e";
 
 /* ── Seed-user feedback → posts straight into the Google Form sheet ── */
 const FORM_ACTION =
   "https://docs.google.com/forms/d/e/1FAIpQLScN7egZXKJC86g9nZMscWtKxKyH7iEoOuZf8cm3I_zGb1clQg/formResponse";
 const FORM_FIELDS = {
-  agents: "entry.1589436820",   // Q1 "test1" — what agents do you run
-  compute: "entry.509501295",   // Q2 "test2" — needed compute mid-task
-  trust: "entry.912736896",     // Q3 "Yes, fully." — trust autonomous pay (radio)
-  rent: "entry.1728505312",     // Q4 "Yes" — rent idle compute (radio)
-  blocker: "entry.1356220945",  // Q5 "test3" — biggest blocker
+  agents: "entry.1589436820",
+  compute: "entry.509501295",
+  trust: "entry.912736896",
+  rent: "entry.1728505312",
+  blocker: "entry.1356220945",
 };
 
-const LEDGER_KEY = "agora_square_ledger_v1";
+const LEDGER_KEY = "agora_square_ledger_v2";
 
-/* ── Real facts shown as stall inscriptions ── */
-const PLACARDS = [
-  { eyebrow: "Identity", short: "Identity", line: "ERC-8004 · Agent #82",
-    body: "Registered on GOAT mainnet. Owner and creator verified on-chain." },
-  { eyebrow: "Settlement", short: "Settlement", line: "x402 · 1 USDC.e settled",
-    body: "0xa8747b…3460 — a real payment, confirmed and gateway-verified." },
-  { eyebrow: "Network", short: "Network", line: "GOAT · Chain 2345",
-    body: "Bitcoin-secured L2. Mainnet — not a testnet demo." },
-  { eyebrow: "The name", short: "The name", line: "ἀγορά — “open marketplace”",
-    body: "The Greek square where trade happened. Rebuilt for machines." },
-  { eyebrow: "Agora", short: "The beacon", line: "The marketplace machines built for machines.",
-    body: "One agent. Autonomous bids. Zero human approvals." },
-];
-
-/* ── Economy objectives — each feeds a Stage 2 variable ── */
-const ACTIONS = [
-  { key: "agent", label: "Talk to the AGORA agent", sub: "The live agent, in Telegram", href: TELEGRAM_URL },
-  { key: "follow", label: "Follow the build", sub: "@usingagora on X", href: X_URL },
-  { key: "launch", label: "Launch your own agent", sub: "ClawUp — free to start", href: REFERRAL_URL },
-  { key: "verify", label: "Verify Agora on-chain", sub: "Agent #82 on 8004scan", href: SCAN_URL },
-  { key: "seed", label: "Become a seed user", sub: "2 minutes shapes what we build", form: true },
+/* ── Five stations: a real on-chain fact + one clear action each ── */
+const STATIONS = [
+  {
+    eyebrow: "Identity station",
+    line: "ERC-8004 · Agent #82",
+    body: "Registered on GOAT mainnet. Owner and creator verified on-chain.",
+    action: { key: "verify", label: "Verify on 8004scan", href: SCAN_URL },
+  },
+  {
+    eyebrow: "Settlement station",
+    line: "x402 · 1 USDC.e settled",
+    body: "0xa8747b…3460 — a real payment, confirmed and gateway-verified.",
+    action: { key: "agent", label: "Talk to the AGORA agent", href: TELEGRAM_URL },
+  },
+  {
+    eyebrow: "Network station",
+    line: "GOAT · Chain 2345",
+    body: "Bitcoin-secured L2. Mainnet — not a testnet demo.",
+    action: { key: "launch", label: "Launch your own agent", href: REFERRAL_URL },
+  },
+  {
+    eyebrow: "Herald station",
+    line: "ἀγορά — “open marketplace”",
+    body: "The Greek square where trade happened. Rebuilt for machines.",
+    action: { key: "follow", label: "Follow the build on X", href: X_URL },
+  },
+  {
+    eyebrow: "The beacon",
+    line: "The marketplace machines built for machines.",
+    body: "Two minutes of your honesty shapes what gets built next.",
+    action: { key: "seed", label: "Become a seed user", form: true },
+  },
 ];
 
 const STALL_ANGLES = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
@@ -69,63 +79,107 @@ export default function SquarePage() {
 
   const [entered, setEntered] = useState(false);
   const enteredRef = useRef(false);
-  const [placard, setPlacard] = useState(-1);
-  const [visited, setVisited] = useState([false, false, false, false, false]);
-  const visitedRef = useRef(visited);
+  const [station, setStation] = useState(-1);
+  const stationRef = useRef(-1);
   const [actionsDone, setActionsDone] = useState({});
+  const actionsRef = useRef({});
   const [complete, setComplete] = useState(false);
   const completeShownRef = useRef(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const mapOpenRef = useRef(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formSent, setFormSent] = useState(false);
   const [intro, setIntro] = useState(false);
+  const overlayRef = useRef(false);
+  const [shared, setShared] = useState("");
   const [hintGone, setHintGone] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [webglFail, setWebglFail] = useState(false);
 
-  /* refs the render loop reads */
   useEffect(() => { enteredRef.current = entered; }, [entered]);
-  useEffect(() => { visitedRef.current = visited; }, [visited]);
-  useEffect(() => { mapOpenRef.current = mapOpen || formOpen || intro; }, [mapOpen, formOpen, intro]);
+  useEffect(() => { actionsRef.current = actionsDone; }, [actionsDone]);
+  useEffect(() => {
+    overlayRef.current = mapOpen || formOpen || intro || complete;
+  }, [mapOpen, formOpen, intro, complete]);
 
   useEffect(() => {
     if (entered && !intro) {
-      const t = setTimeout(() => setHintGone(true), 8000);
+      const t = setTimeout(() => setHintGone(true), 9000);
       return () => clearTimeout(t);
     }
   }, [entered, intro]);
 
-  const enterSquare = () => {
-    setEntered(true);
-    setIntro(true);
-  };
-
-  /* load / persist ledger */
+  /* persist ledger */
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(LEDGER_KEY) || "null");
-      if (saved?.visited?.length === 5) setVisited(saved.visited);
-      if (saved?.actions) setActionsDone(saved.actions);
-      if (saved?.visited?.every(Boolean)) completeShownRef.current = true;
-    } catch { /* fresh start */ }
+      if (saved?.actions) {
+        setActionsDone(saved.actions);
+        if (STATIONS.every(st => saved.actions[st.action.key])) completeShownRef.current = true;
+      }
+    } catch { /* fresh */ }
   }, []);
   useEffect(() => {
-    try {
-      localStorage.setItem(LEDGER_KEY, JSON.stringify({ visited, actions: actionsDone }));
-    } catch { /* private mode etc. */ }
-  }, [visited, actionsDone]);
+    try { localStorage.setItem(LEDGER_KEY, JSON.stringify({ actions: actionsDone })); }
+    catch { /* private mode */ }
+  }, [actionsDone]);
 
-  /* M key toggles map */
+  /* completion when all five actions done */
   useEffect(() => {
-    const onM = (e) => {
+    if (
+      STATIONS.every(st => actionsDone[st.action.key]) &&
+      !completeShownRef.current
+    ) {
+      completeShownRef.current = true;
+      setTimeout(() => setComplete(true), 700);
+    }
+  }, [actionsDone]);
+
+  const markAction = (key) =>
+    setActionsDone(prev => (prev[key] ? prev : { ...prev, [key]: true }));
+
+  /* perform a station's action (button click or E key) */
+  const performRef = useRef(null);
+  performRef.current = (idx) => {
+    const st = STATIONS[idx];
+    if (!st) return;
+    if (st.action.form) {
+      setFormOpen(true);
+    } else {
+      window.open(st.action.href, "_blank", "noopener,noreferrer");
+      markAction(st.action.key);
+    }
+  };
+
+  /* M / E / Esc — with typing guard */
+  useEffect(() => {
+    const onKey = (e) => {
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       const k = e.key.toLowerCase();
-      if (k === "m" && enteredRef.current) setMapOpen(v => !v);
-      if (k === "escape") setMapOpen(false);
+      if (k === "escape") { setFormOpen(false); setMapOpen(false); return; }
+      if (!enteredRef.current) return;
+      if (k === "m" && !overlayRef.current) setMapOpen(true);
+      else if (k === "m") setMapOpen(false), setFormOpen(false);
+      if (k === "e" && !overlayRef.current && stationRef.current >= 0) {
+        performRef.current(stationRef.current);
+      }
     };
-    window.addEventListener("keydown", onM);
-    return () => window.removeEventListener("keydown", onM);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  const shareSquare = async () => {
+    const url = "https://useagora.vercel.app/square";
+    if (navigator.share) {
+      try { await navigator.share({ title: "Agora — The Square", text: "Walk a night marketplace built for AI agents.", url }); } catch { /* dismissed */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShared("copied");
+        setTimeout(() => setShared(""), 1800);
+      } catch { /* ignore */ }
+    }
+  };
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -136,7 +190,6 @@ export default function SquarePage() {
     setIsTouch(coarse);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    /* ── Renderer ── */
     let renderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: !coarse, powerPreference: "high-performance" });
@@ -155,21 +208,17 @@ export default function SquarePage() {
     wrap.appendChild(renderer.domElement);
     renderer.domElement.style.touchAction = "none";
 
-    /* ── Scene / camera rig ── */
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x060509);
     scene.fog = new THREE.FogExp2(0x08070c, 0.026);
 
-    /* subtle environment reflections (marble sheen) */
     const pmrem = new THREE.PMREMGenerator(renderer);
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = envTex;
     pmrem.dispose();
     const ENV = 0.22;
 
-    const camera = new THREE.PerspectiveCamera(
-      68, wrap.clientWidth / wrap.clientHeight, 0.1, 320
-    );
+    const camera = new THREE.PerspectiveCamera(68, wrap.clientWidth / wrap.clientHeight, 0.1, 320);
     const pitchObj = new THREE.Object3D();
     pitchObj.add(camera);
     const yawObj = new THREE.Object3D();
@@ -177,7 +226,6 @@ export default function SquarePage() {
     yawObj.add(pitchObj);
     scene.add(yawObj);
 
-    /* ── Lights ── */
     scene.add(new THREE.HemisphereLight(0x2b3454, 0x0a0806, 0.55));
     const moonLight = new THREE.DirectionalLight(0x8fa0c8, 0.5);
     moonLight.position.set(-30, 42, -22);
@@ -190,7 +238,7 @@ export default function SquarePage() {
     }
     scene.add(moonLight);
 
-    /* ── Ground ── */
+    /* ground */
     const gCan = document.createElement("canvas");
     gCan.width = gCan.height = 1024;
     const g = gCan.getContext("2d");
@@ -226,25 +274,34 @@ export default function SquarePage() {
     ground.receiveShadow = true;
     scene.add(ground);
 
+    /* polished slabs — subtle reflections */
+    const slabMat = new THREE.MeshStandardMaterial({
+      color: 0x0b0b12, roughness: 0.14, metalness: 0.85, envMapIntensity: 0.9,
+    });
+    [[4.6, -3.2, 1.15], [-5.2, 4.0, 0.85]].forEach(([x, z, r]) => {
+      const slab = new THREE.Mesh(new THREE.CircleGeometry(r, 28), slabMat);
+      slab.rotation.x = -Math.PI / 2;
+      slab.position.set(x, 0.016, z);
+      slab.receiveShadow = true;
+      scene.add(slab);
+    });
+
     const mosaic = new THREE.Mesh(
       new THREE.RingGeometry(1.7, 2.5, 48),
       new THREE.MeshStandardMaterial({ color: 0x191510, roughness: 0.8, envMapIntensity: ENV })
     );
     mosaic.rotation.x = -Math.PI / 2;
     mosaic.position.y = 0.012;
-    mosaic.receiveShadow = true;
     scene.add(mosaic);
     const mosaicGlow = new THREE.Mesh(
       new THREE.RingGeometry(2.44, 2.52, 48),
-      new THREE.MeshStandardMaterial({
-        color: 0x1a1208, emissive: 0xf28322, emissiveIntensity: 0.55, roughness: 0.6,
-      })
+      new THREE.MeshStandardMaterial({ color: 0x1a1208, emissive: 0xf28322, emissiveIntensity: 0.55, roughness: 0.6 })
     );
     mosaicGlow.rotation.x = -Math.PI / 2;
     mosaicGlow.position.y = 0.014;
     scene.add(mosaicGlow);
 
-    /* ── Sky ── */
+    /* sky */
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(1000 * 3);
     for (let i = 0; i < 1000; i++) {
@@ -259,10 +316,7 @@ export default function SquarePage() {
     const starMat = new THREE.PointsMaterial({ color: 0xc3cade, size: 0.75, transparent: true, opacity: 0.85 });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(3.2, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xd6dcec })
-    );
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 24), new THREE.MeshBasicMaterial({ color: 0xd6dcec }));
     moon.position.set(-62, 34, -84);
     scene.add(moon);
 
@@ -286,6 +340,16 @@ export default function SquarePage() {
     halo.position.copy(moon.position);
     scene.add(halo);
 
+    /* shooting star */
+    const shoot = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeRadialTex("rgba(230,238,255,0.9)", "rgba(200,215,255,0.25)", 0.35),
+      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+    }));
+    shoot.scale.set(2.6, 0.12, 1);
+    scene.add(shoot);
+    let shootT = 5, shootLife = 0;
+    const shootDir = new THREE.Vector3();
+
     const cypressMat = new THREE.MeshBasicMaterial({ color: 0x04040a });
     for (let i = 0; i < 16; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -296,15 +360,34 @@ export default function SquarePage() {
       scene.add(tree);
     }
 
-    /* ── Materials ── */
+    /* fireflies */
+    const flyCount = coarse ? 16 : 28;
+    const flyGeo = new THREE.BufferGeometry();
+    const flyPos = new Float32Array(flyCount * 3);
+    const flySeed = new Float32Array(flyCount * 3);
+    for (let i = 0; i < flyCount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 23 + Math.random() * 10;
+      flyPos[i * 3] = Math.cos(a) * r;
+      flyPos[i * 3 + 1] = 0.6 + Math.random() * 2;
+      flyPos[i * 3 + 2] = Math.sin(a) * r;
+      flySeed[i * 3] = Math.random() * 100;
+      flySeed[i * 3 + 1] = 0.3 + Math.random() * 0.5;
+      flySeed[i * 3 + 2] = Math.random() * 100;
+    }
+    flyGeo.setAttribute("position", new THREE.BufferAttribute(flyPos, 3));
+    scene.add(new THREE.Points(flyGeo, new THREE.PointsMaterial({
+      color: 0xbfe8c8, size: 0.055, transparent: true, opacity: 0.55,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    })));
+
+    /* materials */
     const fCan = document.createElement("canvas");
     fCan.width = 128; fCan.height = 32;
     const f = fCan.getContext("2d");
     for (let i = 0; i < 16; i++) {
       const gr = f.createLinearGradient(i * 8, 0, i * 8 + 8, 0);
-      gr.addColorStop(0, "#666");
-      gr.addColorStop(0.5, "#fff");
-      gr.addColorStop(1, "#666");
+      gr.addColorStop(0, "#666"); gr.addColorStop(0.5, "#fff"); gr.addColorStop(1, "#666");
       f.fillStyle = gr;
       f.fillRect(i * 8, 0, 8, 32);
     }
@@ -313,8 +396,7 @@ export default function SquarePage() {
     fluteTex.repeat.set(2, 1);
     const marble = new THREE.MeshStandardMaterial({ color: 0xbcb7ab, roughness: 0.58, metalness: 0.05, envMapIntensity: ENV });
     const shaftMat = new THREE.MeshStandardMaterial({
-      color: 0xbcb7ab, roughness: 0.58, metalness: 0.05,
-      bumpMap: fluteTex, bumpScale: 0.9, envMapIntensity: ENV,
+      color: 0xbcb7ab, roughness: 0.58, metalness: 0.05, bumpMap: fluteTex, bumpScale: 0.9, envMapIntensity: ENV,
     });
     const darkStone = new THREE.MeshStandardMaterial({ color: 0x24221f, roughness: 0.9, envMapIntensity: ENV });
     const wood = new THREE.MeshStandardMaterial({ color: 0x4a3826, roughness: 0.85, envMapIntensity: ENV });
@@ -336,7 +418,7 @@ export default function SquarePage() {
     stripeTex.wrapS = stripeTex.wrapT = THREE.RepeatWrapping;
     const awningMat = new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.8, side: THREE.DoubleSide, envMapIntensity: ENV });
 
-    /* ── Colonnade ── */
+    /* colonnade */
     const shaftGeo = new THREE.CylinderGeometry(0.4, 0.48, 4.2, 24);
     const baseGeo = new THREE.BoxGeometry(1.2, 0.32, 1.2);
     const capGeo = new THREE.BoxGeometry(1.1, 0.26, 1.1);
@@ -357,9 +439,12 @@ export default function SquarePage() {
       colliders.push({ x, z, r: 1.0 });
     }
 
-    /* ── Torches + smoke ── */
+    /* torches: two-tone flame + smoke */
     const flameMat = new THREE.MeshStandardMaterial({
       color: 0xff7a1a, emissive: 0xff8c2a, emissiveIntensity: 2.8, roughness: 0.4,
+    });
+    const flameCoreMat = new THREE.MeshStandardMaterial({
+      color: 0xffd27a, emissive: 0xffcf6e, emissiveIntensity: 3.6, roughness: 0.3,
     });
     const smokeTex = makeRadialTex("rgba(140,140,150,0.32)", "rgba(120,120,130,0.1)", 0.5);
     const torchLights = [];
@@ -369,7 +454,9 @@ export default function SquarePage() {
       const inX = x - Math.cos(a) * 0.85, inZ = z - Math.sin(a) * 0.85;
       const flame = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 8), flameMat);
       flame.position.set(inX, 3.4, inZ);
-      scene.add(flame);
+      const core = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 8), flameCoreMat);
+      core.position.set(inX, 3.36, inZ);
+      scene.add(flame, core);
       const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.1, 0.16, 10), darkStone);
       bowl.position.set(inX, 3.14, inZ);
       scene.add(bowl);
@@ -385,10 +472,10 @@ export default function SquarePage() {
         smoke.scale.setScalar(0.4);
         scene.add(smoke);
       }
-      torchLights.push({ light, flame, smoke, x: inX, z: inZ, seed: Math.random() * 100 });
+      torchLights.push({ light, flame, core, smoke, x: inX, z: inZ, seed: Math.random() * 100 });
     }
 
-    /* ── Banners ── */
+    /* banners */
     const banners = [];
     const bannerCols = coarse ? [1, 7] : [1, 3, 7, 9];
     for (const ci of bannerCols) {
@@ -402,7 +489,7 @@ export default function SquarePage() {
       banners.push({ mesh, base: geo.attributes.position.array.slice(), seed: Math.random() * 10 });
     }
 
-    /* ── Stalls ── */
+    /* stalls */
     const stallWorld = [];
     STALL_ANGLES.forEach((a) => {
       const x = Math.cos(a) * 8.5, z = Math.sin(a) * 8.5;
@@ -448,7 +535,7 @@ export default function SquarePage() {
       colliders.push({ x, z, r: 1.5 });
     });
 
-    /* ── Plinth + beacon ── */
+    /* plinth + beacon */
     const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.9, 24), marble);
     plinth.position.y = 0.45;
     plinth.castShadow = !coarse; plinth.receiveShadow = true;
@@ -473,7 +560,7 @@ export default function SquarePage() {
     scene.add(coreLight);
     colliders.push({ x: 0, z: 0, r: 1.8 });
 
-    /* ── Embers ── */
+    /* embers */
     const emberCount = coarse ? 70 : 140;
     const emberGeo = new THREE.BufferGeometry();
     const emberPos = new Float32Array(emberCount * 3);
@@ -493,7 +580,7 @@ export default function SquarePage() {
       blending: THREE.AdditiveBlending, depthWrite: false,
     })));
 
-    /* ── Agent orbs + trails ── */
+    /* agent orbs + trails */
     const orbTexOrange = makeRadialTex("rgba(255,150,60,0.8)", "rgba(255,120,30,0.25)", 0.4);
     const orbTexGreen = makeRadialTex("rgba(90,235,150,0.8)", "rgba(46,213,115,0.25)", 0.4);
     const orbDefs = [
@@ -510,9 +597,7 @@ export default function SquarePage() {
       const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.9);
       const mesh = new THREE.Mesh(
         new THREE.SphereGeometry(0.16, 18, 18),
-        new THREE.MeshStandardMaterial({
-          color: def.color, emissive: def.color, emissiveIntensity: 2.8, roughness: 0.35,
-        })
+        new THREE.MeshStandardMaterial({ color: def.color, emissive: def.color, emissiveIntensity: 2.8, roughness: 0.35 })
       );
       scene.add(mesh);
       let light = null;
@@ -534,23 +619,40 @@ export default function SquarePage() {
       return { ...def, curve, mesh, light, trail, history };
     });
 
-    /* ── Objective markers ── */
-    const markerMat = new THREE.MeshStandardMaterial({
-      color: 0xff8c2a, emissive: 0xff9a3c, emissiveIntensity: 2.2, roughness: 0.3,
-    });
-    const markerGeo = new THREE.OctahedronGeometry(0.15);
-    const placardSpots = [
+    /* ── Station guidance: light pillars + ground pads ── */
+    const stationSpots = [
       ...stallWorld.map((v, i) => ({ x: v.x, z: v.z, idx: i })),
       { x: 0, z: 0, idx: 4 },
     ];
-    const markers = placardSpots.map(spot => {
-      const m = new THREE.Mesh(markerGeo, markerMat.clone());
-      m.position.set(spot.x, spot.idx === 4 ? 3.2 : 2.9, spot.z);
-      scene.add(m);
-      return m;
+    const padGeo = new THREE.CircleGeometry(1.35, 32);
+    const pillarGeo = new THREE.CylinderGeometry(0.1, 0.16, 4.6, 10, 1, true);
+    const guides = stationSpots.map(spot => {
+      const pad = new THREE.Mesh(padGeo, new THREE.MeshBasicMaterial({
+        color: 0xff9a3c, transparent: true, opacity: 0.16,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      pad.rotation.x = -Math.PI / 2;
+      pad.position.set(spot.x, 0.02, spot.z);
+      scene.add(pad);
+      let pillar = null;
+      if (spot.idx !== 4) {
+        pillar = new THREE.Mesh(pillarGeo, new THREE.MeshBasicMaterial({
+          color: 0xff9a3c, transparent: true, opacity: 0.09,
+          blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false,
+        }));
+        pillar.position.set(spot.x, 2.9 + 2.3, spot.z);
+        scene.add(pillar);
+      }
+      const marker = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.15),
+        new THREE.MeshStandardMaterial({ color: 0xff8c2a, emissive: 0xff9a3c, emissiveIntensity: 2.2, roughness: 0.3 })
+      );
+      marker.position.set(spot.x, spot.idx === 4 ? 3.2 : 2.9, spot.z);
+      scene.add(marker);
+      return { spot, pad, pillar, marker };
     });
 
-    /* ── Bloom ── */
+    /* bloom */
     let composer = null;
     if (!coarse) {
       composer = new EffectComposer(renderer);
@@ -561,29 +663,34 @@ export default function SquarePage() {
       composer.addPass(new OutputPass());
     }
 
-    /* ── Input ── */
+    /* input */
     const keys = {};
     const joy = { x: 0, y: 0, id: null };
     let lookId = null, lastX = 0, lastY = 0;
     let yaw = 0, pitch = -0.06;
     let targetYaw = 0, targetPitch = -0.06;
 
-    const onKey = (e, down) => {
+    const isTyping = (e) => {
+      const t = e.target;
+      return t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+    };
+    const kd = (e) => {
+      if (isTyping(e) || overlayRef.current) return;
       const k = e.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) {
-        keys[k] = down;
-        if (down) e.preventDefault();
+        keys[k] = true;
+        e.preventDefault();
       }
     };
-    const kd = e => onKey(e, true);
-    const ku = e => onKey(e, false);
+    const ku = (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = false; /* always clear, even if typed in a field */
+    };
     window.addEventListener("keydown", kd, { passive: false });
     window.addEventListener("keyup", ku);
 
     const joyEl = joyRef.current, knobEl = knobRef.current;
-    const setKnob = (dx, dy) => {
-      if (knobEl) knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-    };
+    const setKnob = (dx, dy) => { if (knobEl) knobEl.style.transform = `translate(${dx}px, ${dy}px)`; };
     const onJoyDown = e => { joy.id = e.pointerId; joyEl.setPointerCapture(e.pointerId); };
     const onJoyMove = e => {
       if (e.pointerId !== joy.id) return;
@@ -638,22 +745,22 @@ export default function SquarePage() {
     const onVis = () => { hidden = document.hidden; };
     document.addEventListener("visibilitychange", onVis);
 
-    /* ── Entrance dolly ── */
-    let entranceT = reduceMotion ? 999 : -1; // -1 = waiting for enter
+    /* entrance dolly */
+    let entranceT = -1;
     const START = { y: 6.2, z: 30, pitch: -0.34 };
     const END = { y: 1.7, z: 19, pitch: -0.06 };
     if (reduceMotion) {
       yawObj.position.set(0, END.y, END.z);
       pitch = targetPitch = END.pitch;
+      entranceT = 999;
     } else {
       pitch = targetPitch = START.pitch;
     }
 
-    /* ── Main loop ── */
     const clock = new THREE.Clock();
     const vel = new THREE.Vector2(0, 0);
     let bobPhase = 0;
-    let currentPlacard = -1;
+    let currentStation = -1;
     let raf = 0;
     const easeOut = x => 1 - Math.pow(1 - x, 3);
 
@@ -663,7 +770,6 @@ export default function SquarePage() {
       const dt = Math.min(clock.getDelta(), 0.05);
       const t = clock.elapsedTime;
 
-      /* entrance dolly */
       let inEntrance = false;
       if (enteredRef.current && entranceT >= -1 && entranceT < 2.2) {
         if (entranceT < 0) entranceT = 0;
@@ -675,16 +781,15 @@ export default function SquarePage() {
         inEntrance = entranceT < 2.2;
       }
 
-      /* smoothed look */
       const lookK = Math.min(1, dt * 14);
       yaw += (targetYaw - yaw) * lookK;
       pitch += (targetPitch - pitch) * lookK;
       yawObj.rotation.y = yaw;
       pitchObj.rotation.x = pitch;
 
-      /* movement */
       let running = false, moving = false;
-      if (enteredRef.current && !inEntrance && !mapOpenRef.current) {
+      const canMove = enteredRef.current && !inEntrance && !overlayRef.current;
+      if (canMove) {
         let mx = 0, mz = 0;
         if (keys["w"] || keys["arrowup"]) mz -= 1;
         if (keys["s"] || keys["arrowdown"]) mz += 1;
@@ -710,7 +815,6 @@ export default function SquarePage() {
           camera.position.y = Math.sin(bobPhase) * 0.038;
           camera.position.x = Math.cos(bobPhase * 0.5) * 0.02;
         } else if (!reduceMotion) {
-          /* idle breath */
           camera.position.y += (Math.sin(t * 1.9) * 0.01 - camera.position.y) * Math.min(1, dt * 4);
           camera.position.x += (0 - camera.position.x) * Math.min(1, dt * 6);
         }
@@ -732,10 +836,12 @@ export default function SquarePage() {
             p.z = c.z + (dz / d) * c.r;
           }
         }
+      } else {
+        vel.x *= Math.max(0, 1 - dt * 8);
+        vel.y *= Math.max(0, 1 - dt * 8);
       }
 
-      /* live map marker */
-      if (mapOpenRef.current && playerMarkRef.current) {
+      if (playerMarkRef.current) {
         const p = yawObj.position;
         playerMarkRef.current.setAttribute(
           "transform",
@@ -743,11 +849,11 @@ export default function SquarePage() {
         );
       }
 
-      /* torch flicker + smoke */
       for (const tl of torchLights) {
         const fl = 0.8 + 0.2 * Math.sin(t * 11 + tl.seed) * Math.sin(t * 5.7 + tl.seed * 2);
         tl.light.intensity = 17 * fl;
         tl.flame.scale.setScalar(0.9 + 0.18 * Math.sin(t * 13 + tl.seed));
+        tl.core.scale.setScalar(0.85 + 0.25 * Math.sin(t * 15 + tl.seed * 3));
         if (tl.smoke) {
           const cycle = ((t * 0.42 + tl.seed) % 1);
           tl.smoke.position.y = 3.6 + cycle * 1.1;
@@ -761,6 +867,24 @@ export default function SquarePage() {
       beam.material.opacity = 0.11 + Math.sin(t * 1.6) * 0.03;
       mosaicGlow.material.emissiveIntensity = 0.45 + Math.sin(t * 1.6) * 0.18;
       starMat.size = 0.75 + Math.sin(t * 0.8) * 0.06;
+
+      /* shooting star */
+      shootT -= dt;
+      if (shootT <= 0 && shootLife <= 0) {
+        shootLife = 1.15;
+        shootT = 8 + Math.random() * 9;
+        shoot.position.set(-70 + Math.random() * 140, 46 + Math.random() * 16, -95);
+        shootDir.set(0.55 + Math.random() * 0.3, -0.28, 0.1).normalize().multiplyScalar(58);
+        shoot.material.rotation = Math.atan2(-shootDir.y, shootDir.x);
+      }
+      if (shootLife > 0) {
+        shootLife -= dt;
+        shoot.position.addScaledVector(shootDir, dt);
+        const lp = shootLife / 1.15;
+        shoot.material.opacity = Math.sin(lp * Math.PI) * 0.85;
+      } else {
+        shoot.material.opacity = 0;
+      }
 
       for (const b of banners) {
         const attr = b.mesh.geometry.attributes.position;
@@ -783,6 +907,16 @@ export default function SquarePage() {
         emberGeo.attributes.position.needsUpdate = true;
       }
 
+      {
+        const arr = flyGeo.attributes.position.array;
+        for (let i = 0; i < flyCount; i++) {
+          arr[i * 3] += Math.sin(t * flySeed[i * 3 + 1] + flySeed[i * 3]) * dt * 0.35;
+          arr[i * 3 + 1] += Math.cos(t * 0.9 + flySeed[i * 3 + 2]) * dt * 0.22;
+          arr[i * 3 + 2] += Math.cos(t * flySeed[i * 3 + 1] + flySeed[i * 3 + 2]) * dt * 0.35;
+        }
+        flyGeo.attributes.position.needsUpdate = true;
+      }
+
       const orbSpeed = reduceMotion ? 0.3 : 1;
       for (const o of orbs) {
         const u = ((t * orbSpeed) / o.period + o.phase) % 1;
@@ -800,36 +934,35 @@ export default function SquarePage() {
         }
       }
 
-      markers.forEach((m, i) => {
-        const done = visitedRef.current[placardSpots[i].idx];
-        m.visible = !done;
+      /* station guides: pads/pillars/markers reflect done state */
+      const acts = actionsRef.current;
+      guides.forEach((gd, i) => {
+        const done = !!acts[STATIONS[gd.spot.idx].action.key];
+        if (gd.pillar) gd.pillar.visible = !done;
+        gd.marker.visible = !done;
         if (!done) {
-          m.rotation.y = t * 1.6;
-          m.position.y = (placardSpots[i].idx === 4 ? 3.2 : 2.9) + Math.sin(t * 2.2 + i) * 0.1;
+          gd.marker.rotation.y = t * 1.6;
+          gd.marker.position.y = (gd.spot.idx === 4 ? 3.2 : 2.9) + Math.sin(t * 2.2 + i) * 0.1;
+          gd.pad.material.color.setHex(0xff9a3c);
+          gd.pad.material.opacity = 0.13 + Math.sin(t * 2.4 + i) * 0.05;
+        } else {
+          gd.pad.material.color.setHex(0x2ed573);
+          gd.pad.material.opacity = 0.09;
         }
       });
 
-      /* proximity + visit tracking */
+      /* station proximity */
       if (enteredRef.current && !inEntrance) {
         const p = yawObj.position;
         let best = -1, bestD = 4.6;
-        for (const spot of placardSpots) {
-          const d = Math.hypot(p.x - spot.x, p.z - spot.z);
-          if (d < bestD) { bestD = d; best = spot.idx; }
+        for (const gd of guides) {
+          const d = Math.hypot(p.x - gd.spot.x, p.z - gd.spot.z);
+          if (d < bestD) { bestD = d; best = gd.spot.idx; }
         }
-        if (best !== currentPlacard) {
-          currentPlacard = best;
-          setPlacard(best);
-          if (best >= 0 && !visitedRef.current[best]) {
-            const next = [...visitedRef.current];
-            next[best] = true;
-            visitedRef.current = next;
-            setVisited(next);
-            if (next.every(Boolean) && !completeShownRef.current) {
-              completeShownRef.current = true;
-              setTimeout(() => setComplete(true), 900);
-            }
-          }
+        if (best !== currentStation) {
+          currentStation = best;
+          stationRef.current = best;
+          setStation(best);
         }
       }
 
@@ -837,7 +970,6 @@ export default function SquarePage() {
     };
     tick();
 
-    /* ── Cleanup ── */
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", kd);
@@ -872,33 +1004,26 @@ export default function SquarePage() {
     };
   }, []);
 
-  const card = placard >= 0 ? PLACARDS[placard] : null;
-  const foundCount = visited.filter(Boolean).length;
-  const liveActions = ACTIONS.filter(a => a.form || (a.href && a.href.startsWith("http")));
-  const actionCount = liveActions.filter(a => actionsDone[a.key]).length;
-
-  const markAction = (key) =>
-    setActionsDone(prev => (prev[key] ? prev : { ...prev, [key]: true }));
+  const st = station >= 0 ? STATIONS[station] : null;
+  const stDone = st ? !!actionsDone[st.action.key] : false;
+  const doneCount = STATIONS.filter(s2 => actionsDone[s2.action.key]).length;
 
   return (
     <div className={styles.root}>
       <div ref={wrapRef} className={styles.canvasWrap} />
       <div className={styles.vignette} aria-hidden />
 
-      {/* top chrome */}
       <a href="/" className={styles.backPill}>← agora</a>
       <div className={styles.chainPill}><span className={styles.dot} />GOAT · Chain 2345</div>
 
-      {/* objective progress — opens the ledger */}
       <button
         className={`${styles.progress} ${styles.progressBtn} ${entered ? styles.progressOn : ""}`}
         onClick={() => setMapOpen(true)}
       >
         <span className={styles.progressDiamond}>◆</span>
-        inscriptions {foundCount} / 5 · ledger {actionCount} / {liveActions.length}
+        stations {doneCount} / 5
       </button>
 
-      {/* map button */}
       <button
         className={`${styles.mapBtn} ${entered ? styles.mapBtnOn : ""}`}
         onClick={() => setMapOpen(v => !v)}
@@ -910,41 +1035,47 @@ export default function SquarePage() {
         <span>map</span>
       </button>
 
-      {/* placard */}
-      <div className={`${styles.card} ${card ? styles.cardOn : ""}`} aria-live="polite">
-        {card && (
+      {/* station card */}
+      <div className={`${styles.card} ${st ? styles.cardOn : ""}`} aria-live="polite">
+        {st && (
           <>
-            <p className={styles.cardEyebrow}>{card.eyebrow}</p>
-            <p className={styles.cardLine}>{card.line}</p>
-            <p className={styles.cardBody}>{card.body}</p>
+            <p className={styles.cardEyebrow}>{st.eyebrow}</p>
+            <p className={styles.cardLine}>{st.line}</p>
+            <p className={styles.cardBody}>{st.body}</p>
+            <div className={styles.cardFoot}>
+              <button
+                className={`${styles.cardBtn} ${stDone ? styles.cardBtnDone : ""}`}
+                onClick={() => !stDone && performRef.current(station)}
+              >
+                {stDone ? "✓ done" : `${st.action.label} →`}
+              </button>
+              {!stDone && !isTouch && <span className={styles.cardKey}>or press E</span>}
+            </div>
           </>
         )}
       </div>
 
-      {/* controls hint */}
       <div className={`${styles.hint} ${entered && !hintGone ? styles.hintOn : ""}`}>
         {isTouch
-          ? "left stick — walk · drag — look · map — ledger"
-          : "W A S D — walk · drag — look · shift — run · M — map"}
+          ? "left stick — walk · drag — look · tap the card to act"
+          : "W A S D — walk · drag — look · E — act · M — map"}
       </div>
 
-      {/* mobile joystick */}
       <div ref={joyRef} className={`${styles.joystick} ${isTouch && entered ? styles.joyOn : ""}`}>
         <div ref={knobRef} className={styles.knob} />
       </div>
 
-      {/* ── MAP + LEDGER ── */}
+      {/* MAP + LEDGER */}
       {mapOpen && (
         <div className={styles.ledger} role="dialog" aria-label="Map and ledger">
           <div className={styles.ledgerPanel}>
             <div className={styles.ledgerHead}>
               <p className={styles.ledgerEyebrow}>The Ledger</p>
               <button className={styles.ledgerClose} onClick={() => setMapOpen(false)}>
-                ✕ {isTouch ? "" : " · M"}
+                ✕{isTouch ? "" : " · M"}
               </button>
             </div>
             <div className={styles.ledgerGrid}>
-              {/* map */}
               <div className={styles.mapWrap}>
                 <svg viewBox="-24 -24 48 48" className={styles.mapSvg}>
                   <circle cx="0" cy="0" r="22" fill="rgba(240,236,228,0.02)" stroke="rgba(240,236,228,0.14)" strokeWidth="0.3" strokeDasharray="1 1" />
@@ -966,7 +1097,7 @@ export default function SquarePage() {
                   <circle cx="0" cy="0" r="2.5" fill="none" stroke="rgba(242,131,34,0.4)" strokeWidth="0.2" />
                   <circle cx="0" cy="0" r="0.5" fill="rgba(255,154,60,0.9)" />
                   {[...STALL_ANGLES.map((a, i) => ({ x: Math.cos(a) * 8.5, z: Math.sin(a) * 8.5, idx: i })), { x: 0, z: 0, idx: 4 }]
-                    .map(spot => visited[spot.idx] ? (
+                    .map(spot => actionsDone[STATIONS[spot.idx].action.key] ? (
                       <circle key={spot.idx} cx={spot.x} cy={spot.z} r="0.7"
                         fill="rgba(46,213,115,0.25)" stroke="rgba(46,213,115,0.8)" strokeWidth="0.2" />
                     ) : (
@@ -978,49 +1109,38 @@ export default function SquarePage() {
                     <path d="M0,-1.15 L0.75,0.85 L0,0.4 L-0.75,0.85 Z" fill="#eae7e0" />
                   </g>
                 </svg>
-                <p className={styles.mapCaption}>◆ unfound inscription · ● found</p>
+                <p className={styles.mapCaption}>◆ station to serve · ● served · you are the arrow</p>
               </div>
 
-              {/* objectives */}
               <div className={styles.objectives}>
-                <p className={styles.objGroup}>Walk the square — {foundCount} / 5</p>
-                {PLACARDS.map((p, i) => (
-                  <div key={i} className={`${styles.objRow} ${visited[i] ? styles.objDone : ""}`}>
-                    <span className={styles.objMark}>{visited[i] ? "✓" : "◆"}</span>
-                    <span className={styles.objLabel}>{p.short}</span>
-                  </div>
-                ))}
-                <p className={styles.objGroup}>Join the economy — {actionCount} / {liveActions.length}</p>
-                {liveActions.map(a => a.form ? (
-                  <button
-                    key={a.key}
-                    className={`${styles.objRow} ${styles.objLink} ${actionsDone[a.key] ? styles.objDone : ""}`}
-                    onClick={() => { setMapOpen(false); setFormOpen(true); }}
-                  >
-                    <span className={styles.objMark}>{actionsDone[a.key] ? "✓" : "◆"}</span>
-                    <span className={styles.objLabel}>
-                      {a.label}
-                      <span className={styles.objSub}>{a.sub}</span>
-                    </span>
-                    <span className={styles.objArrow}>→</span>
-                  </button>
-                ) : (
-                  <a
-                    key={a.key}
-                    href={a.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${styles.objRow} ${styles.objLink} ${actionsDone[a.key] ? styles.objDone : ""}`}
-                    onClick={() => markAction(a.key)}
-                  >
-                    <span className={styles.objMark}>{actionsDone[a.key] ? "✓" : "◆"}</span>
-                    <span className={styles.objLabel}>
-                      {a.label}
-                      <span className={styles.objSub}>{a.sub}</span>
-                    </span>
-                    <span className={styles.objArrow}>→</span>
-                  </a>
-                ))}
+                <p className={styles.objGroup}>The five stations — {doneCount} / 5</p>
+                {STATIONS.map((s2, i) => {
+                  const done = !!actionsDone[s2.action.key];
+                  const inner = (
+                    <>
+                      <span className={styles.objMark}>{done ? "✓" : "◆"}</span>
+                      <span className={styles.objLabel}>
+                        {s2.action.label}
+                        <span className={styles.objSub}>{s2.eyebrow}</span>
+                      </span>
+                      <span className={styles.objArrow}>→</span>
+                    </>
+                  );
+                  return s2.action.form ? (
+                    <button key={i}
+                      className={`${styles.objRow} ${styles.objLink} ${done ? styles.objDone : ""}`}
+                      onClick={() => { setMapOpen(false); setFormOpen(true); }}
+                    >{inner}</button>
+                  ) : (
+                    <a key={i}
+                      href={s2.action.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${styles.objRow} ${styles.objLink} ${done ? styles.objDone : ""}`}
+                      onClick={() => markAction(s2.action.key)}
+                    >{inner}</a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1033,29 +1153,29 @@ export default function SquarePage() {
           <div className={styles.introCard} onClick={e => e.stopPropagation()}>
             <p className={styles.introEyebrow}>Welcome to the Square</p>
             <p className={styles.introBody}>
-              You’re standing in a night agora — a marketplace for AI agents.
-              Explore it however you like.
+              Five stations glow across this marketplace. Walk into the light,
+              read the inscription, act. Serve all five to claim the Square.
             </p>
             <div className={styles.introRows}>
               <div className={styles.introRow}>
                 <span className={styles.introKey}>{isTouch ? "stick" : "WASD"}</span>
-                <span>move around</span>
+                <span>walk</span>
               </div>
               <div className={styles.introRow}>
                 <span className={styles.introKey}>drag</span>
                 <span>look around</span>
               </div>
               <div className={styles.introRow}>
-                <span className={styles.introKey}>◆ × 5</span>
-                <span>walk up to each glowing marker to read a real on-chain fact</span>
+                <span className={styles.introKey}>{isTouch ? "tap" : "E"}</span>
+                <span>act at a station</span>
               </div>
               <div className={styles.introRow}>
                 <span className={styles.introKey}>{isTouch ? "map" : "M"}</span>
-                <span>open the ledger — map + ways to join Agora</span>
+                <span>map + ledger</span>
               </div>
             </div>
             <button className={styles.enterBtn} onClick={() => setIntro(false)}>
-              Enter the square
+              Begin
             </button>
           </div>
         </div>
@@ -1092,7 +1212,6 @@ export default function SquarePage() {
                   body.append(FORM_FIELDS.trust, fd.get("trust") || "");
                   body.append(FORM_FIELDS.rent, fd.get("rent") || "");
                   body.append(FORM_FIELDS.blocker, fd.get("blocker") || "");
-                  // fire-and-forget; no-cors means we can't read the response, that's fine
                   fetch(FORM_ACTION, { method: "POST", mode: "no-cors", body });
                   markAction("seed");
                   setFormSent(true);
@@ -1147,32 +1266,30 @@ export default function SquarePage() {
           <p className={styles.enterEyebrow}>Agora · The Square</p>
           <h1 className={styles.enterTitle}>Walk the marketplace.</h1>
           <p className={styles.enterSub}>
-            A night agora you can move through. Five inscriptions are scattered
-            across the square — every one of them is a real on-chain fact.
+            A night agora with five lit stations. Every inscription in this
+            square is a real on-chain fact.
           </p>
-          <button className={styles.enterBtn} onClick={enterSquare}>
+          <button className={styles.enterBtn} onClick={() => { setEntered(true); setIntro(true); }}>
             Enter
           </button>
         </div>
       )}
 
-      {/* completion — Stage 2 */}
+      {/* completion */}
       {complete && (
         <div className={styles.enter}>
-          <p className={styles.enterEyebrow}>All five inscriptions found</p>
-          <h1 className={styles.enterTitle}>You’ve walked the Square.</h1>
+          <p className={styles.enterEyebrow}>All five stations served</p>
+          <h1 className={styles.enterTitle}>The Square is yours.</h1>
           <p className={styles.enterSub}>
-            Agora is live in Stage 2 of the OpenClaw Summer Bootcamp — the Growth
-            Challenge. The ledger has a few entries left, if you want to go further.
+            You’ve seen the whole loop — identity, settlement, network, and the
+            people building it. Agora is live in Stage 2 of the OpenClaw Summer
+            Bootcamp. Pass it on.
           </p>
           <div className={styles.enterRow}>
-            <a href={X_URL} target="_blank" rel="noopener noreferrer" className={styles.enterBtn}>
-              Follow the build
-            </a>
-            <button
-              className={styles.enterBtnGhost}
-              onClick={() => { setComplete(false); setMapOpen(true); }}
-            >
+            <button className={styles.enterBtn} onClick={shareSquare}>
+              {shared === "copied" ? "Link copied ✓" : "Share the Square"}
+            </button>
+            <button className={styles.enterBtnGhost} onClick={() => { setComplete(false); setMapOpen(true); }}>
               Open the ledger
             </button>
           </div>
