@@ -39,30 +39,35 @@ const LEDGER_KEY = "agora_square_ledger_v2";
 const STATIONS = [
   {
     eyebrow: "Identity station",
+    signText: "Identity",
     line: "ERC-8004 · Agent #82",
     body: "Registered on GOAT mainnet. Owner and creator verified on-chain.",
     action: { key: "verify", label: "Verify on 8004scan", href: SCAN_URL },
   },
   {
     eyebrow: "Settlement station",
+    signText: "Settlement",
     line: "x402 · 1 USDC.e settled",
     body: "0xa8747b…3460. A real payment, confirmed and gateway-verified.",
     action: { key: "agent", label: "Talk to the AGORA agent", href: TELEGRAM_URL },
   },
   {
     eyebrow: "Network station",
+    signText: "Network",
     line: "GOAT · Chain 2345",
     body: "Bitcoin-secured L2. Real mainnet, not a testnet demo.",
     action: { key: "launch", label: "Launch your own agent", href: REFERRAL_URL },
   },
   {
     eyebrow: "Herald station",
+    signText: "Follow",
     line: "ἀγορά — “open marketplace”",
     body: "The Greek square where trade happened. We rebuilt it for machines.",
     action: { key: "follow", label: "Follow the build on X", href: X_URL },
   },
   {
     eyebrow: "The beacon",
+    signText: "Feedback",
     line: "The marketplace machines built for machines.",
     body: "Two minutes of honest feedback shapes what we build next.",
     action: { key: "seed", label: "Become a seed user", form: true },
@@ -239,41 +244,74 @@ export default function SquarePage() {
     }
     scene.add(moonLight);
 
-    /* ground */
+    /* ground — warm lit stone, brighter near the beacon, visible tiling */
     const gCan = document.createElement("canvas");
     gCan.width = gCan.height = 1024;
     const g = gCan.getContext("2d");
-    g.fillStyle = "#0c0b10";
+    // warm base with a soft radial light from center
+    const gGrad = g.createRadialGradient(512, 512, 40, 512, 512, 620);
+    gGrad.addColorStop(0, "#3a2f26");
+    gGrad.addColorStop(0.5, "#241d18");
+    gGrad.addColorStop(1, "#14100d");
+    g.fillStyle = gGrad;
     g.fillRect(0, 0, 1024, 1024);
+    // stone tiles with per-tile warm variation
     for (let ty = 0; ty < 8; ty++) {
       for (let tx = 0; tx < 8; tx++) {
-        const v = 10 + Math.floor(Math.random() * 7);
-        g.fillStyle = `rgb(${v},${v - 1},${v + 3})`;
-        g.fillRect(tx * 128 + 2, ty * 128 + 2, 124, 124);
+        const warm = 30 + Math.floor(Math.random() * 22);
+        g.fillStyle = `rgb(${warm + 14},${warm + 4},${warm - 6})`;
+        g.globalAlpha = 0.5;
+        g.fillRect(tx * 128 + 3, ty * 128 + 3, 122, 122);
+        g.globalAlpha = 1;
       }
     }
-    g.strokeStyle = "rgba(216,210,198,0.06)";
-    g.lineWidth = 3;
+    // grout lines
+    g.strokeStyle = "rgba(10,8,6,0.55)";
+    g.lineWidth = 4;
     for (let i = 0; i <= 8; i++) {
       g.beginPath(); g.moveTo(i * 128, 0); g.lineTo(i * 128, 1024); g.stroke();
       g.beginPath(); g.moveTo(0, i * 128); g.lineTo(1024, i * 128); g.stroke();
     }
-    for (let i = 0; i < 1400; i++) {
-      g.fillStyle = `rgba(220,214,200,${0.012 + Math.random() * 0.04})`;
-      g.fillRect(Math.random() * 1024, Math.random() * 1024, 1.8, 1.8);
+    // subtle highlight on tile top edges (beveled look)
+    g.strokeStyle = "rgba(210,190,160,0.06)";
+    g.lineWidth = 2;
+    for (let i = 0; i <= 8; i++) {
+      g.beginPath(); g.moveTo(0, i * 128 + 3); g.lineTo(1024, i * 128 + 3); g.stroke();
+    }
+    // speckle + fine cracks
+    for (let i = 0; i < 2600; i++) {
+      const b = Math.random();
+      g.fillStyle = b > 0.5
+        ? `rgba(220,205,180,${0.02 + Math.random() * 0.05})`
+        : `rgba(0,0,0,${0.05 + Math.random() * 0.1})`;
+      g.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+    }
+    for (let i = 0; i < 26; i++) {
+      g.strokeStyle = `rgba(0,0,0,${0.12 + Math.random() * 0.14})`;
+      g.lineWidth = 0.6 + Math.random();
+      g.beginPath();
+      let cx = Math.random() * 1024, cy = Math.random() * 1024;
+      g.moveTo(cx, cy);
+      for (let k = 0; k < 4; k++) { cx += (Math.random() - 0.5) * 90; cy += (Math.random() - 0.5) * 90; g.lineTo(cx, cy); }
+      g.stroke();
     }
     const groundTex = new THREE.CanvasTexture(gCan);
     groundTex.colorSpace = THREE.SRGBColorSpace;
     groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
-    groundTex.repeat.set(9, 9);
+    groundTex.repeat.set(5, 5);
     groundTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(70, 64),
-      new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.9, metalness: 0.03, envMapIntensity: ENV })
+      new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.82, metalness: 0.04, envMapIntensity: ENV })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
+
+    /* warm ground bounce light at the center so the plaza reads lit, not black */
+    const groundGlow = new THREE.PointLight(0xffb060, 9, 26, 2);
+    groundGlow.position.set(0, 1.2, 0);
+    scene.add(groundGlow);
 
     /* polished slabs — subtle reflections */
     const slabMat = new THREE.MeshStandardMaterial({
@@ -571,6 +609,72 @@ export default function SquarePage() {
       colliders.push({ x, z, r: 1.5 });
     });
 
+    /* ── Environmental detail ── */
+    // scattered rubble stones around the plaza
+    const rockGeoPool = [
+      new THREE.DodecahedronGeometry(0.28, 0),
+      new THREE.DodecahedronGeometry(0.4, 0),
+      new THREE.IcosahedronGeometry(0.22, 0),
+    ];
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x3a332b, roughness: 0.95, envMapIntensity: ENV });
+    for (let i = 0; i < 26; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 4 + Math.random() * 14;
+      const rk = new THREE.Mesh(rockGeoPool[i % 3], rockMat);
+      rk.position.set(Math.cos(a) * r, 0.05 + Math.random() * 0.1, Math.sin(a) * r);
+      rk.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      rk.scale.setScalar(0.6 + Math.random() * 0.9);
+      rk.castShadow = !coarse; rk.receiveShadow = true;
+      scene.add(rk);
+    }
+
+    // low garden hedges ringing the outer plaza (broken arcs)
+    const hedgeMat = new THREE.MeshStandardMaterial({ color: 0x16301c, roughness: 1, envMapIntensity: 0.1 });
+    for (let seg = 0; seg < 8; seg++) {
+      if (seg % 2 === 0) continue; // gaps for walkways
+      const a0 = (seg / 8) * Math.PI * 2;
+      const cnt = 7;
+      for (let j = 0; j < cnt; j++) {
+        const a = a0 + (j / cnt) * (Math.PI * 2 / 8) * 0.85;
+        const r = 18.5;
+        const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 0), hedgeMat);
+        bush.position.set(Math.cos(a) * r, 0.42, Math.sin(a) * r);
+        bush.scale.set(1.1, 0.8, 1.1);
+        bush.castShadow = !coarse; bush.receiveShadow = true;
+        scene.add(bush);
+      }
+    }
+
+    // stone benches near two stalls
+    const benchMat = new THREE.MeshStandardMaterial({ color: 0x6a6258, roughness: 0.7, envMapIntensity: ENV });
+    [[6.5, 6.5, 0.7], [-6.5, -6.5, -2.4]].forEach(([bx, bz, ry]) => {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.18, 0.55), benchMat);
+      seat.position.set(bx, 0.55, bz); seat.rotation.y = ry;
+      seat.castShadow = !coarse; seat.receiveShadow = true;
+      scene.add(seat);
+      [-0.8, 0.8].forEach(off => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.55, 0.5), benchMat);
+        leg.position.set(bx + Math.cos(ry) * off, 0.27, bz + Math.sin(ry) * off);
+        leg.rotation.y = ry;
+        scene.add(leg);
+      });
+    });
+
+    // low-lying ground mist rings
+    if (!coarse) {
+      const mistTex = makeRadialTex("rgba(150,140,170,0.14)", "rgba(120,115,150,0.05)", 0.5);
+      for (let i = 0; i < 7; i++) {
+        const m = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: mistTex, transparent: true, depthWrite: false, opacity: 0.5,
+        }));
+        const a = Math.random() * Math.PI * 2;
+        const r = 6 + Math.random() * 12;
+        m.position.set(Math.cos(a) * r, 0.5, Math.sin(a) * r);
+        m.scale.set(9 + Math.random() * 5, 3, 1);
+        scene.add(m);
+      }
+    }
+
     /* plinth + beacon */
     const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.9, 24), marble);
     plinth.position.y = 0.45;
@@ -749,46 +853,94 @@ export default function SquarePage() {
       icon.scale.setScalar(1.0);
       icon.position.set(spot.x, baseY, spot.z);
       scene.add(icon);
-      return { spot, pad, pillar, glow, icon, baseY, doneApplied: false };
+      // readable text sign under the icon
+      const label = STATIONS[spot.idx].signText;
+      const lc = document.createElement("canvas");
+      lc.width = 512; lc.height = 128;
+      const lx = lc.getContext("2d");
+      lx.font = "600 62px 'DM Sans', system-ui, sans-serif";
+      lx.textAlign = "center";
+      lx.textBaseline = "middle";
+      lx.shadowColor = "rgba(0,0,0,0.85)";
+      lx.shadowBlur = 12;
+      lx.fillStyle = "#f4ede0";
+      lx.fillText(label, 256, 52);
+      lx.shadowBlur = 0;
+      lx.font = "500 30px 'DM Mono', monospace";
+      lx.fillStyle = "rgba(255,180,106,0.92)";
+      lx.fillText("▼ walk here", 256, 100);
+      const labelTex = new THREE.CanvasTexture(lc);
+      labelTex.colorSpace = THREE.SRGBColorSpace;
+      const sign = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: labelTex, transparent: true, depthWrite: false,
+      }));
+      sign.scale.set(3.0, 0.75, 1);
+      sign.position.set(spot.x, baseY - 1.15, spot.z);
+      scene.add(sign);
+      return { spot, pad, pillar, glow, icon, sign, baseY, doneApplied: false };
     });
 
-    /* ── Glowing pathways from the center hub out to each station ── */
+    /* ── Inlaid stone runners from the hub out to each station ── */
+    const runnerTex = (() => {
+      const c = document.createElement("canvas");
+      c.width = 256; c.height = 64;
+      const x = c.getContext("2d");
+      x.fillStyle = "#1c1712";
+      x.fillRect(0, 0, 256, 64);
+      // inlaid bright center channel
+      const gr = x.createLinearGradient(0, 0, 0, 64);
+      gr.addColorStop(0, "rgba(28,22,17,1)");
+      gr.addColorStop(0.5, "rgba(255,150,60,0.5)");
+      gr.addColorStop(1, "rgba(28,22,17,1)");
+      x.fillStyle = gr;
+      x.fillRect(0, 24, 256, 16);
+      // rune ticks along the channel
+      x.fillStyle = "rgba(255,200,120,0.7)";
+      for (let i = 0; i < 8; i++) x.fillRect(i * 32 + 12, 28, 8, 8);
+      // edge lines
+      x.strokeStyle = "rgba(210,190,160,0.15)";
+      x.lineWidth = 2;
+      x.strokeRect(1, 18, 254, 28);
+      return new THREE.CanvasTexture(c);
+    })();
+    runnerTex.colorSpace = THREE.SRGBColorSpace;
+    runnerTex.wrapS = THREE.RepeatWrapping;
+
     const pathFlows = [];
     stationSpots.forEach(spot => {
-      if (spot.idx === 4) return; // center is the hub itself
+      if (spot.idx === 4) return;
       const len = Math.hypot(spot.x, spot.z);
       const ang = Math.atan2(spot.z, spot.x);
-      const innerR = 2.6, outerR = len - 1.5;
+      const innerR = 2.6, outerR = len - 1.4;
       const plen = outerR - innerR;
-      /* base glowing strip */
-      const strip = new THREE.Mesh(
-        new THREE.PlaneGeometry(plen, 0.5),
+      // carved runner slab
+      const rt = runnerTex.clone();
+      rt.needsUpdate = true;
+      rt.repeat.set(Math.max(2, Math.round(plen / 1.6)), 1);
+      const runner = new THREE.Mesh(
+        new THREE.PlaneGeometry(plen, 0.9),
+        new THREE.MeshStandardMaterial({
+          map: rt, roughness: 0.7, metalness: 0.1, envMapIntensity: ENV,
+          emissive: 0xff7a1a, emissiveMap: rt, emissiveIntensity: 0.5,
+        })
+      );
+      runner.rotation.x = -Math.PI / 2;
+      runner.rotation.z = -ang;
+      runner.position.set(Math.cos(ang) * (innerR + plen / 2), 0.02, Math.sin(ang) * (innerR + plen / 2));
+      runner.receiveShadow = true;
+      scene.add(runner);
+      // bright travelling pulse
+      const pulse = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.7, 0.9),
         new THREE.MeshBasicMaterial({
-          color: 0xff9a3c, transparent: true, opacity: 0.12,
+          color: 0xffd9a0, transparent: true, opacity: 0.7,
           blending: THREE.AdditiveBlending, depthWrite: false,
         })
       );
-      strip.rotation.x = -Math.PI / 2;
-      strip.rotation.z = -ang;
-      strip.position.set(Math.cos(ang) * (innerR + plen / 2), 0.02, Math.sin(ang) * (innerR + plen / 2));
-      scene.add(strip);
-      /* flowing dashes travelling outward */
-      const dashN = 5;
-      const dashes = [];
-      for (let d = 0; d < dashN; d++) {
-        const dash = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.55, 0.5),
-          new THREE.MeshBasicMaterial({
-            color: 0xffc078, transparent: true, opacity: 0.5,
-            blending: THREE.AdditiveBlending, depthWrite: false,
-          })
-        );
-        dash.rotation.x = -Math.PI / 2;
-        dash.rotation.z = -ang;
-        scene.add(dash);
-        dashes.push(dash);
-      }
-      pathFlows.push({ idx: spot.idx, ang, innerR, plen, strip, dashes, dashN });
+      pulse.rotation.x = -Math.PI / 2;
+      pulse.rotation.z = -ang;
+      scene.add(pulse);
+      pathFlows.push({ idx: spot.idx, ang, innerR, plen, runner, rt, pulse });
     });
 
     /* bloom */
@@ -1084,9 +1236,11 @@ export default function SquarePage() {
         const bobY = gd.baseY + Math.sin(t * 1.8 + i * 1.3) * 0.12;
         gd.icon.position.y = bobY;
         gd.glow.position.y = bobY;
+        if (gd.sign) gd.sign.position.y = bobY - 1.15;
         if (!done) {
           gd.glow.material.opacity = 0.36 + Math.sin(t * 2.4 + i) * 0.12;
           gd.icon.scale.setScalar(1.0 + Math.sin(t * 2.4 + i) * 0.04);
+          if (gd.sign) gd.sign.material.opacity = 1;
           gd.pad.material.color.setHex(0xff9a3c);
           gd.pad.material.opacity = 0.13 + Math.sin(t * 2.4 + i) * 0.05;
         } else {
@@ -1097,6 +1251,7 @@ export default function SquarePage() {
             gd.icon.material.opacity = 0.8;
             gd.icon.scale.setScalar(0.7);
             gd.glow.material.color.setHex(0x2ed573);
+            if (gd.sign) gd.sign.visible = false;
           }
           gd.glow.material.opacity = 0.14;
           gd.pad.material.color.setHex(0x2ed573);
@@ -1104,19 +1259,16 @@ export default function SquarePage() {
         }
       });
 
-      /* pathway flow — dashes stream from hub toward each unserved station */
+      /* pathway flow — a bright pulse streams along each unserved runner */
       for (const pf of pathFlows) {
         const served = !!acts[STATIONS[pf.idx].action.key];
-        pf.strip.material.opacity = served ? 0.05 : 0.1 + Math.sin(t * 2 + pf.idx) * 0.03;
-        pf.strip.material.color.setHex(served ? 0x2ed573 : 0xff9a3c);
-        pf.dashes.forEach((dash, d) => {
-          const frac = ((t * 0.28 + d / pf.dashN) % 1);
-          const along = pf.innerR + frac * pf.plen;
-          dash.position.set(Math.cos(pf.ang) * along, 0.025, Math.sin(pf.ang) * along);
-          const fade = Math.sin(frac * Math.PI);
-          dash.material.opacity = served ? 0 : fade * 0.6;
-          dash.visible = !served;
-        });
+        pf.runner.material.emissiveIntensity = served ? 0.12 : 0.45 + Math.sin(t * 2 + pf.idx) * 0.15;
+        pf.runner.material.emissive.setHex(served ? 0x2ed573 : 0xff7a1a);
+        const frac = ((t * 0.32 + pf.idx * 0.2) % 1);
+        const along = pf.innerR + frac * pf.plen;
+        pf.pulse.position.set(Math.cos(pf.ang) * along, 0.03, Math.sin(pf.ang) * along);
+        pf.pulse.material.opacity = served ? 0 : Math.sin(frac * Math.PI) * 0.7;
+        pf.pulse.visible = !served;
       }
 
       /* compass needle in the progress pill points to nearest unserved station */
@@ -1200,17 +1352,6 @@ export default function SquarePage() {
     <div className={styles.root}>
       <div ref={wrapRef} className={styles.canvasWrap} />
       <div className={styles.vignette} aria-hidden />
-
-      {/* crosshair (desktop only, hidden while a panel is open) */}
-      {entered && !isTouch && !mapOpen && !formOpen && !intro && !complete && (
-        <div className={styles.crosshair} aria-hidden>
-          <span className={styles.chDot} />
-          <span className={`${styles.chLine} ${styles.chTop}`} />
-          <span className={`${styles.chLine} ${styles.chBottom}`} />
-          <span className={`${styles.chLine} ${styles.chLeft}`} />
-          <span className={`${styles.chLine} ${styles.chRight}`} />
-        </div>
-      )}
 
       <a href="/" className={styles.backPill}>← agora</a>
       <div className={styles.chainPill}><span className={styles.dot} />GOAT · Chain 2345</div>
