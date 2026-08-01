@@ -1531,7 +1531,16 @@ export default function SquarePage() {
           <iframe
             name="agora_form_sink"
             title="form sink"
-            style={{ display: "none" }}
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              border: 0,
+              opacity: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}
+            tabIndex={-1}
             aria-hidden="true"
           />
           <div className={`${styles.ledgerPanel} ${styles.formPanel}`}>
