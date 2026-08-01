@@ -1528,6 +1528,12 @@ export default function SquarePage() {
       {/* in-game feedback form */}
       {formOpen && (
         <div className={styles.ledger} role="dialog" aria-label="Seed user feedback">
+          <iframe
+            name="agora_form_sink"
+            title="form sink"
+            style={{ display: "none" }}
+            aria-hidden="true"
+          />
           <div className={`${styles.ledgerPanel} ${styles.formPanel}`}>
             <div className={styles.ledgerHead}>
               <p className={styles.ledgerEyebrow}>Become a seed user</p>
@@ -1547,28 +1553,22 @@ export default function SquarePage() {
             ) : (
               <form
                 className={styles.form}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget);
-                  const body = new URLSearchParams();
-                  body.append(FORM_FIELDS.agents, fd.get("agents") || "");
-                  body.append(FORM_FIELDS.compute, fd.get("compute") || "");
-                  body.append(FORM_FIELDS.trust, fd.get("trust") || "");
-                  body.append(FORM_FIELDS.rent, fd.get("rent") || "");
-                  body.append(FORM_FIELDS.blocker, fd.get("blocker") || "");
-                  fetch(FORM_ACTION, { method: "POST", mode: "no-cors", body });
+                action={FORM_ACTION}
+                method="POST"
+                target="agora_form_sink"
+                onSubmit={() => {
                   markAction("seed");
-                  setFormSent(true);
+                  setTimeout(() => setFormSent(true), 350);
                 }}
               >
                 <label className={styles.fLabel}>
                   What kind of autonomous agent(s) do you run, if any?
-                  <input className={styles.fInput} name="agents" type="text"
+                  <input className={styles.fInput} name={FORM_FIELDS.agents} type="text"
                     placeholder="e.g. coding agent, research agent, trading bot, none yet" />
                 </label>
                 <label className={styles.fLabel}>
                   Have you ever needed more compute mid-task and had to stop and manually provision it? What did that look like?
-                  <textarea className={styles.fArea} name="compute" rows={2}
+                  <textarea className={styles.fArea} name={FORM_FIELDS.compute} rows={2}
                     placeholder="Tell us what happened…" />
                 </label>
                 <fieldset className={styles.fFieldset}>
@@ -1577,7 +1577,7 @@ export default function SquarePage() {
                   </legend>
                   {["Yes, fully.", "Yes, but with spending limits", "No, I'd want to approve each time", "Not sure"].map(o => (
                     <label key={o} className={styles.fRadio}>
-                      <input type="radio" name="trust" value={o} /> {o}
+                      <input type="radio" name={FORM_FIELDS.trust} value={o} /> {o}
                     </label>
                   ))}
                 </fieldset>
@@ -1587,13 +1587,13 @@ export default function SquarePage() {
                   </legend>
                   {["Yes", "Maybe", "No"].map(o => (
                     <label key={o} className={styles.fRadio}>
-                      <input type="radio" name="rent" value={o} /> {o}
+                      <input type="radio" name={FORM_FIELDS.rent} value={o} /> {o}
                     </label>
                   ))}
                 </fieldset>
                 <label className={styles.fLabel}>
                   What's the single biggest thing that would stop you from using Agora today?
-                  <textarea className={styles.fArea} name="blocker" rows={2}
+                  <textarea className={styles.fArea} name={FORM_FIELDS.blocker} rows={2}
                     placeholder="Be honest, this is the useful part." />
                 </label>
                 <button type="submit" className={styles.enterBtn}>Send feedback</button>
