@@ -1575,7 +1575,7 @@ export default function SquarePage() {
                   <legend className={styles.fLegend}>
                     Would you trust an agent to autonomously find, pay for, and use compute from another agent, with no human approving each step?
                   </legend>
-                  {["Yes, fully.", "Yes, but with spending limits", "No, I'd want to approve each time", "Not sure"].map(o => (
+                  {["Yes, fully.", "Yes, but with spending limits.", "No, i'd want to approve each time.", "I'm not sure..."].map(o => (
                     <label key={o} className={styles.fRadio}>
                       <input type="radio" name={FORM_FIELDS.trust} value={o} /> {o}
                     </label>
