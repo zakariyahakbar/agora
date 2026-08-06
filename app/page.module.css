@@ -3,11 +3,7 @@
 ══════════════════════════════════════════ */
 .root { position: relative; width: 100%; height: 100dvh; background: #06070a; color: #f0ece4; overflow: hidden; }
 
-.grain {
-  position: fixed; inset: 0; z-index: 400; pointer-events: none; opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px; animation: grain 0.6s steps(1) infinite;
-}
+.grain { display: none; }
 @keyframes grain { 0%{background-position:0 0} 25%{background-position:-36px -16px} 50%{background-position:16px -36px} 75%{background-position:-16px 36px} }
 
 .globalVideo { position: fixed; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; transform: translateZ(0); }
@@ -16,12 +12,16 @@
 .orb {
   position: absolute;
   width: var(--os, 45vw); height: var(--os, 45vw);
-  max-width: 580px; max-height: 580px;
+  max-width: 640px; max-height: 640px;
   left: var(--ox); top: var(--oy);
   transform: translate(-50%,-50%) translateZ(0);
   background: radial-gradient(circle, var(--oc) 0%, transparent 68%);
-  filter: blur(58px); pointer-events: none; z-index: 1;
-  animation: orbFade 18s ease-in-out infinite alternate; will-change: opacity;
+  filter: blur(80px); pointer-events: none; z-index: 1;
+  opacity: 0.55;
+  will-change: opacity;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orb { animation: orbFade 26s ease-in-out infinite alternate; }
 }
 @keyframes orbFade { from{opacity:.55} to{opacity:.95} }
 
@@ -101,7 +101,25 @@
 
 /* ─── S1 HERO ─── */
 .s1 { background: transparent; }
-.s1Veil { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, rgba(5,6,9,.82) 0%, rgba(5,6,9,.55) 18%, rgba(5,6,9,.65) 42%, rgba(5,6,9,.84) 65%, rgba(5,6,9,.97) 100%); }
+.s1Veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(5, 6, 9, 0.72) 0%,
+      rgba(5, 6, 9, 0.62) 40%,
+      rgba(5, 6, 9, 0.82) 100%
+    );
+}
+.s1Veil::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(
+    ellipse 90% 70% at 30% 45%,
+    rgba(5, 6, 9, 0.55) 0%,
+    rgba(5, 6, 9, 0) 60%
+  );
+  pointer-events: none;
+}
 
 /* Two-col hero grid */
 .s1Grid {
