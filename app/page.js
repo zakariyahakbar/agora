@@ -71,22 +71,22 @@ function SponsorStrip() {
 function BlurUp({ children, className, delay = 0, style }) {
   return (
     <motion.div className={className} style={style}
-      initial={{ opacity: 0, filter: "blur(10px)", y: 14 }}
-      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-      transition={{ delay, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>
       {children}
     </motion.div>
   );
 }
 
-/* ── Blur-up on scroll ── */
+/* ── Reveal on scroll ── */
 function InView({ children, className, delay = 0, style }) {
   return (
     <motion.div className={className} style={style}
-      initial={{ opacity: 0, filter: "blur(10px)", y: 18 }}
-      whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
-      transition={{ delay, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}>
+      transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}>
       {children}
     </motion.div>
   );
@@ -299,8 +299,8 @@ export default function AgoraPage() {
         {/* S1 — HERO */}
         <section className={`${styles.section} ${styles.s1}`} ref={el => sectionRefs.current[0] = el}>
           <div className={styles.s1Veil} />
-          <div className={styles.orb} style={{ "--ox": "70%", "--oy": "50%", "--os": "50vw", "--oc": "rgba(200,70,10,0.18)" }} />
-          <div className={styles.orb} style={{ "--ox": "85%", "--oy": "20%", "--os": "32vw", "--oc": "rgba(20,60,140,0.13)", animationDelay: "-8s" }} />
+          <div className={styles.orb} style={{ "--ox": "78%", "--oy": "58%", "--os": "42vw", "--oc": "rgba(200,70,10,0.09)" }} />
+          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "18%", "--os": "26vw", "--oc": "rgba(20,60,140,0.07)", animationDelay: "-8s" }} />
 
           {/* Two-column grid */}
           <div className={styles.s1Grid}>
