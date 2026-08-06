@@ -8,6 +8,16 @@
 
 .globalVideo { position: fixed; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; transform: translateZ(0); }
 .videoBg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; transform: translateZ(0); }
+.globalVeil {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(5, 6, 9, 0.78) 0%,
+      rgba(5, 6, 9, 0.68) 40%,
+      rgba(5, 6, 9, 0.78) 75%,
+      rgba(5, 6, 9, 0.9) 100%
+    );
+}
 
 .orb {
   position: absolute;
@@ -101,16 +111,7 @@
 
 /* ─── S1 HERO ─── */
 .s1 { background: transparent; }
-.s1Veil {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background:
-    linear-gradient(180deg,
-      rgba(5, 6, 9, 0.78) 0%,
-      rgba(5, 6, 9, 0.68) 40%,
-      rgba(5, 6, 9, 0.78) 75%,
-      rgba(5, 6, 9, 0.9) 100%
-    );
-}
+.s1Veil { display: none; }
 
 /* Two-col hero grid */
 .s1Grid {
