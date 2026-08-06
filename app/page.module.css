@@ -105,20 +105,11 @@
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
     linear-gradient(180deg,
-      rgba(5, 6, 9, 0.72) 0%,
-      rgba(5, 6, 9, 0.62) 40%,
-      rgba(5, 6, 9, 0.82) 100%
+      rgba(5, 6, 9, 0.78) 0%,
+      rgba(5, 6, 9, 0.68) 40%,
+      rgba(5, 6, 9, 0.78) 75%,
+      rgba(5, 6, 9, 0.9) 100%
     );
-}
-.s1Veil::after {
-  content: "";
-  position: absolute; inset: 0;
-  background: radial-gradient(
-    ellipse 90% 70% at 30% 45%,
-    rgba(5, 6, 9, 0.55) 0%,
-    rgba(5, 6, 9, 0) 60%
-  );
-  pointer-events: none;
 }
 
 /* Two-col hero grid */
