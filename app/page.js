@@ -299,8 +299,6 @@ export default function AgoraPage() {
         {/* S1 — HERO */}
         <section className={`${styles.section} ${styles.s1}`} ref={el => sectionRefs.current[0] = el}>
           <div className={styles.s1Veil} />
-          <div className={styles.orb} style={{ "--ox": "78%", "--oy": "58%", "--os": "42vw", "--oc": "rgba(200,70,10,0.09)" }} />
-          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "18%", "--os": "26vw", "--oc": "rgba(20,60,140,0.07)", animationDelay: "-8s" }} />
 
           {/* Two-column grid */}
           <div className={styles.s1Grid}>
