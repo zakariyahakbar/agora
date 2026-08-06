@@ -257,6 +257,7 @@ export default function AgoraPage() {
   return (
     <div className={styles.root}>
       <GlobalVideo />
+      <div className={styles.globalVeil} aria-hidden />
       <div className={styles.grain} aria-hidden />
 
       {/* NAV — main pill + award pill centered at top */}
