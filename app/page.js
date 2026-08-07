@@ -145,6 +145,49 @@ function Counter({ value, decimals = 0 }) {
   return <>{decimals > 0 ? d.toFixed(decimals) : Math.floor(d)}</>;
 }
 
+/* ── Media slot: shows an <img>/<video> if the file exists, else a labeled empty state ── */
+function MediaSlot({ type, src, alt, fallback }) {
+  const [failed, setFailed] = useState(false);
+  const vRef = useRef(null);
+  useEffect(() => {
+    if (type !== "video") return;
+    const v = vRef.current; if (!v) return;
+    v.play().catch(() => {});
+  }, [type, src, failed]);
+  if (failed) {
+    return (
+      <div className={styles.mediaEmpty} role="img" aria-label={alt}>
+        <span className={styles.mediaEmptyDot} />
+        <span className={styles.mediaEmptyLabel}>{fallback}</span>
+        <span className={styles.mediaEmptySub}>coming soon</span>
+      </div>
+    );
+  }
+  if (type === "video") {
+    return (
+      <video
+        ref={vRef}
+        className={styles.mediaVideo}
+        src={src}
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        onError={() => setFailed(true)}
+        aria-label={alt}
+      />
+    );
+  }
+  return (
+    <img
+      className={styles.mediaImage}
+      src={src}
+      alt={alt}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function GlobalVideo() {
   const vRef = useRef(null);
   useEffect(() => {
@@ -210,7 +253,7 @@ export default function AgoraPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [selectedMode, setSelectedMode] = useState(0);
   const { entries, vol, txns } = useLiveFeed();
-  const SECTION_COUNT = 5;
+  const SECTION_COUNT = 6;
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
@@ -271,12 +314,11 @@ export default function AgoraPage() {
           </div>
           {/* Links */}
           <div className={styles.navLinks}>
-            {["Economy", "Agents", "Protocol", "Network"].map((l, i) => (
+            {["Home", "Real", "Square", "Stations", "Agent", "Settlement"].map((l, i) => (
               <button key={l}
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
-            <a href="/square" className={styles.navLink}>Square</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -328,7 +370,6 @@ export default function AgoraPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                   <span>Try AGORA Agent</span>
                 </MagBtn>
-                <MagBtn href="/marketplace" className={styles.btnGhost}>Marketplace</MagBtn>
                 <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
               </BlurUp>
             </div>
@@ -368,142 +409,139 @@ export default function AgoraPage() {
           </div>
         </section>
 
-        {/* S2 — LIVE FEED */}
-        <section className={`${styles.section} ${styles.s2}`} ref={el => sectionRefs.current[1] = el}>
-          <div className={styles.tint} />
-          <div className={styles.orb} style={{ "--ox": "8%", "--oy": "18%", "--os": "48vw", "--oc": "rgba(180,65,10,0.14)", animationDelay: "-4s" }} />
-          <div className={styles.orb} style={{ "--ox": "94%", "--oy": "82%", "--os": "34vw", "--oc": "rgba(20,50,120,0.1)", animationDelay: "-11s" }} />
-          <div className={styles.s2Inner}>
-            <div className={styles.s2Top}>
-              <InView><p className={styles.sectionLabel}>How It Works</p></InView>
-              <SlideUp className={styles.sectionTitle} delay={0.05}>The economy,</SlideUp>
-              <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>in motion.</em></SlideUp>
-              <InView delay={0.22}><p className={styles.sectionSub}>An illustrative example of the request → bid → escrow → settle flow. See it running for real in our demo video.</p></InView>
-            </div>
-            <InView delay={0.1} className={styles.feedCard}>
-              <div className={styles.feedEdge} />
-              {entries.map(e => (
-                <motion.div key={e.id} className={`${styles.feedEntry} ${styles["fe" + e.t]}`}
-                  initial={{ opacity: 0, x: -10, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                  transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}>
-                  <span className={styles.feedTs}>{e.ts}</span>
-                  <span className={styles.feedMsg}>{e.msg}</span>
-                </motion.div>
-              ))}
-            </InView>
-            <InView delay={0.18} className={styles.s2Stats}>
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{vol.toFixed(2)}</span><span className={styles.s2StatL}>USDC (example)</span></div>
-              <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>{txns}</span><span className={styles.s2StatL}>sample txns</span></div>
-              <div className={styles.statDivider} />
-              <div className={styles.s2StatItem}><span className={styles.s2StatN}>1</span><span className={styles.s2StatL}>agent live</span></div>
-            </InView>
-          </div>
-        </section>
-
-        {/* S3 — AGENT */}
-        <section className={`${styles.section} ${styles.s3}`} ref={el => sectionRefs.current[2] = el}>
-          <div className={styles.tintDark} />
-          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "10%", "--os": "44vw", "--oc": "rgba(160,55,8,0.13)", animationDelay: "-12s" }} />
-          <div className={styles.orb} style={{ "--ox": "6%", "--oy": "88%", "--os": "36vw", "--oc": "rgba(20,50,130,0.08)", animationDelay: "-3s" }} />
-          <div className={styles.s3Inner}>
-            <InView><p className={styles.sectionLabel}>The Agent</p></InView>
-            <SlideUp className={styles.sectionTitle} delay={0.05}>One agent.</SlideUp>
-            <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>Full economy.</em></SlideUp>
-            <div className={styles.modeTabs}>
-              {AGENT_MODES.map((m, i) => (
-                <button key={m.id} className={`${styles.modeTab} ${selectedMode === i ? styles.modeTabActive : ""}`} onClick={() => setSelectedMode(i)}>{m.label}</button>
-              ))}
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.div key={selectedMode} className={styles.modePanel}
-                initial={{ opacity: 0, y: 12, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -8, filter: "blur(6px)" }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-                <div className={styles.modePanelEdge} />
-                <p className={styles.modePanelTag}>{AGENT_MODES[selectedMode].tag}</p>
-                <p className={styles.modePanelBody}>{AGENT_MODES[selectedMode].body}</p>
-                <div className={styles.modePanelFooter}>
-                  <p className={styles.agentAddr}>AGORA · ERC-8004 registered on GOAT Mainnet · see live agent on 8004scan</p>
-                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.panelTgLink}>Talk to AGORA →</a>
+        {/* ════════ S2 — REAL ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[1] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>Verified · On-chain</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>See what's real,</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>on-chain.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's identity, merchant, and first payment are all registered on GOAT mainnet, not a testnet demo. Every claim on this page is something you can pull up and verify yourself.</p></InView>
+                <InView delay={0.32}>
+                  <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>View Agent #82 on 8004scan →</a>
+                </InView>
+              </div>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <div className={styles.pyFrame}>
+                  <div className={styles.pyFrameLabel}>8004scan.io · Agent #82</div>
+                  <div className={styles.pyFrameBody}>
+                    <MediaSlot type="image" src="/assets/8004scan.png" alt="Agent #82 on 8004scan" fallback="8004scan · agent card" />
+                  </div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </section>
-
-        {/* S4 — PROTOCOL */}
-        <section className={`${styles.section} ${styles.s4}`} ref={el => sectionRefs.current[3] = el}>
-          <div className={styles.tint} />
-          <div className={styles.orb} style={{ "--ox": "16%", "--oy": "22%", "--os": "50vw", "--oc": "rgba(200,80,12,0.11)", animationDelay: "-6s" }} />
-          <div className={styles.orb} style={{ "--ox": "88%", "--oy": "80%", "--os": "36vw", "--oc": "rgba(20,55,140,0.07)", animationDelay: "-14s" }} />
-          <div className={styles.s4Inner}>
-            <InView><p className={styles.sectionLabel}>The Protocol</p></InView>
-            <SlideUp className={styles.sectionTitle} delay={0.05}>Six steps.</SlideUp>
-            <SlideUp className={styles.sectionTitleItalic} delay={0.13}><em>Zero humans.</em></SlideUp>
-            <div className={styles.stepGrid}>
-              {STEPS.map((s, i) => (
-                <motion.div key={s.n} className={styles.stepItem}
-                  initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-                  whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ delay: i * 0.08, duration: 0.72, ease: [0.16, 1, 0.3, 1] }}>
-                  <span className={styles.stepNum}>{s.n}</span>
-                  <span className={styles.stepLabel}>{s.label}</span>
-                  <p className={styles.stepBody}>{s.body}</p>
-                </motion.div>
-              ))}
+              </InView>
             </div>
           </div>
         </section>
 
-        {/* S5 — NETWORK */}
-        <section className={`${styles.section} ${styles.s5}`} ref={el => sectionRefs.current[4] = el}>
-          <div className={styles.tintDeep} />
-          <div className={styles.ring} /><div className={styles.ring2} />
-          <div className={styles.orb} style={{ "--ox": "50%", "--oy": "40%", "--os": "54vw", "--oc": "rgba(180,60,10,0.11)", animationDelay: "-15s" }} />
-          <div className={styles.s5Inner}>
-            <InView><p className={styles.sectionLabel}>Built on GOAT Network</p></InView>
-            <div className={styles.s5Head}>
-              <SlideUp className={styles.s5Title} delay={0.05}>Bitcoin security.</SlideUp>
-              <SlideUp className={`${styles.s5Title} ${styles.s5TitleItalic}`} delay={0.13}><em>Machine-speed settlement.</em></SlideUp>
-              <InView delay={0.25}><p className={styles.s5Sub}>AGORA runs on GOAT Network, Bitcoin-secured infrastructure for the agentic economy. ERC-8004 identity. x402 payments. No custodians. No middlemen.</p></InView>
-            </div>
-            <InView delay={0.15} style={{ width: "100%" }}>
-              <div className={styles.s5Card}>
-                <div className={styles.s5CardEdge} /><div className={styles.s5CardGlow} />
-                <div className={styles.s5CardStack}>
-                  {[
-                    { label: "Identity",   value: "ERC-8004", desc: "On-chain agent identity. Verifiable. Portable." },
-                    { label: "Payments",   value: "x402",     desc: "HTTP-native micropayments. Per-request billing." },
-                    { label: "Settlement", value: "BTC",      desc: "Bitcoin-backed finality. 99.9% uptime." },
-                  ].map((c, i) => (
-                    <motion.div key={c.label} className={styles.s5CardRow}
-                      initial={{ opacity: 0, x: -12, filter: "blur(6px)" }}
-                      whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                      viewport={{ once: true, amount: 0.1 }}
-                      transition={{ delay: 0.2 + i * 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}>
-                      <div className={styles.s5CardRowLeft}>
-                        <span className={styles.s5CardLabel}>{c.label}</span>
-                        <span className={styles.s5CardDesc}>{c.desc}</span>
-                      </div>
-                      <span className={styles.s5CardValue}>{c.value}</span>
-                    </motion.div>
-                  ))}
+        {/* ════════ S3 — SQUARE ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[2] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <div className={`${styles.pyFrame} ${styles.pyFrameTilt}`}>
+                  <div className={styles.pyFrameLabel}>useagora.vercel.app/square</div>
+                  <div className={styles.pyFrameBody}>
+                    <MediaSlot type="video" src="/assets/square-walk.mp4" alt="Walking the Square" fallback="the square · walkthrough" />
+                  </div>
                 </div>
-                <div className={styles.s5CardBtns}>
+              </InView>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>The Square · Interactive</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>Walk the</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>marketplace.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>Agora means marketplace in ancient Greek, the public square where trade happened. We rebuilt that, walkable, in 3D. Five stations. Every inscription is a real on-chain fact.</p></InView>
+                <InView delay={0.32}>
+                  <a href="/square" className={styles.pyLink}>Enter the Square →</a>
+                </InView>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════ S4 — STATIONS ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[3] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>Five stations · One loop</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>Every station,</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>a real action.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>Identity, settlement, network, follow, feedback. Walk to a station, read the inscription, act. No demos, no fake data. Serve all five to claim the Square.</p></InView>
+                <InView delay={0.32}>
+                  <a href="/square" className={styles.pyLink}>Try it now →</a>
+                </InView>
+              </div>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <div className={styles.pyFrame}>
+                  <div className={styles.pyFrameLabel}>The Square · stations</div>
+                  <div className={styles.pyFrameBody}>
+                    <MediaSlot type="video" src="/assets/square-station.mp4" alt="A station in the Square" fallback="station · inscription card" />
+                  </div>
+                </div>
+              </InView>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════ S5 — AGENT ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <div className={`${styles.pyFrame} ${styles.pyFramePortrait}`}>
+                  <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot</div>
+                  <div className={styles.pyFrameBody}>
+                    <MediaSlot type="video" src="/assets/agent-chat.mp4" alt="Agora agent chat" fallback="agent · live chat" />
+                  </div>
+                </div>
+              </InView>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>The Agent · Live</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, sets up x402 payments, and answers in Telegram. This isn't a mockup, it's the real Agora, live and reachable.</p></InView>
+                <InView delay={0.32}>
+                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Talk to the agent →</a>
+                </InView>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════ S6 — SETTLEMENT + CTA ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>Settled · Verifiable</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>One payment.</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Confirmed forever.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>A real USDC.e payment, settled on GOAT mainnet through x402. On-chain, gateway-verified, and the first of many. This is Agora working today, not on a roadmap.</p></InView>
+                <InView delay={0.32} className={styles.pyCtaRow}>
                   <MagBtn href={TELEGRAM_URL} target="_blank" className={styles.btnRed}>
                     <span className={styles.btnRedGlow} />
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                     <span>Try AGORA Agent</span>
                   </MagBtn>
-                  <MagBtn href="/marketplace" className={styles.btnGhost}>Live Marketplace</MagBtn>
-                </div>
+                  <MagBtn href="/square" className={styles.btnGhost}>Walk the Square</MagBtn>
+                </InView>
               </div>
-            </InView>
-            <p className={styles.s5Footer}>Built at OpenClaw Hackathon · Toronto Tech Week · May 2026</p>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <div className={styles.pyFrame}>
+                  <div className={styles.pyFrameLabel}>explorer.goat.network</div>
+                  <div className={styles.pyFrameBody}>
+                    <MediaSlot type="image" src="/assets/onchain-tx.png" alt="Settled tx on GOAT Explorer" fallback="goat explorer · settled tx" />
+                  </div>
+                </div>
+              </InView>
+            </div>
+            <p className={styles.pyFooter}>Built at OpenClaw Bootcamp · Toronto Tech Week · 2026</p>
           </div>
         </section>
       </div>
