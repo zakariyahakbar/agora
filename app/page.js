@@ -159,6 +159,7 @@ function GlobalVideo() {
       <video ref={vRef} className={styles.videoBg} muted playsInline preload="auto">
         <source src="/bg-agora-web.mp4" type="video/mp4" />
       </video>
+      <div className={styles.globalVeil} />
     </div>
   );
 }
@@ -257,7 +258,6 @@ export default function AgoraPage() {
   return (
     <div className={styles.root}>
       <GlobalVideo />
-      <div className={styles.globalVeil} aria-hidden />
       <div className={styles.grain} aria-hidden />
 
       {/* NAV — main pill + award pill centered at top */}
@@ -285,6 +285,9 @@ export default function AgoraPage() {
               Agent
             </a>
             <div className={styles.livePill}><span className={styles.liveDot} />GOAT</div>
+            <div className={styles.navAuthDivider} />
+            <button type="button" className={styles.navLogin} onClick={(e) => e.preventDefault()}>Log In</button>
+            <button type="button" className={styles.navSignup} onClick={(e) => e.preventDefault()}>Sign Up</button>
           </div>
         </div>
         <span className={styles.glassPill}>
