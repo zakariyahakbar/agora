@@ -263,3 +263,276 @@
   .s2Inner, .s3Inner, .s4Inner, .s5Inner { padding: 0 1rem; }
   .sponsorLabel { display: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PYKO-STYLE SECTIONS (v2 homepage)
+   ══════════════════════════════════════════════════════════════════ */
+
+.py {
+  position: relative;
+  z-index: 3;
+  background: transparent;
+}
+
+/* Subtle backdrop wash so each section reads distinct from the fixed video hero */
+.pyBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(20, 22, 34, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 90%, rgba(30, 20, 12, 0.35) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(6, 6, 10, 0.88) 0%, rgba(6, 6, 10, 0.94) 100%);
+}
+
+.pyWrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1.4rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Split layouts — text one side, visual the other */
+.pySplit {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+}
+
+.pySplitTextRight {
+  direction: rtl;
+}
+.pySplitTextRight > * {
+  direction: ltr;
+}
+
+/* Text column */
+.pyText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 520px;
+  justify-self: end;
+}
+.pySplitTextLeft .pyText { justify-self: start; }
+
+.pyEyebrow {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ag-orange, #f28322);
+}
+
+.pyTitle {
+  margin: 0;
+  font-family: var(--font-display, "Cormorant Garamond", "Playfair Display", serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 5.4vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: #f0ece4;
+}
+.pyTitleItalic {
+  font-style: italic;
+  color: rgba(210, 205, 195, 0.92);
+}
+
+.pySub {
+  margin: 1.5rem 0 0;
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.6;
+  color: rgba(220, 215, 205, 0.72);
+  max-width: 44ch;
+}
+
+.pyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1.6rem;
+  padding: 0.6rem 1.1rem 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 236, 228, 0.16);
+  background: rgba(240, 236, 228, 0.04);
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #f0ece4;
+  text-decoration: none;
+  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+  width: fit-content;
+}
+.pyLink:hover {
+  border-color: rgba(242, 131, 34, 0.5);
+  background: rgba(242, 131, 34, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Visual column */
+.pyVisual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.pySplitTextLeft .pyVisual { justify-self: start; }
+.pySplitTextRight .pyVisual { justify-self: end; }
+
+/* Framed screenshot / video card — the Pyko signature move */
+.pyFrame {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(10, 10, 14, 0.6);
+  border: 1px solid rgba(240, 236, 228, 0.1);
+  box-shadow:
+    0 30px 60px -20px rgba(0, 0, 0, 0.6),
+    0 20px 40px -20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transform-origin: center;
+}
+
+.pyFrameTilt {
+  transform: perspective(1400px) rotateY(-3deg) rotateX(1.5deg);
+}
+
+.pyFramePortrait {
+  aspect-ratio: 9 / 16;
+  max-width: 320px;
+}
+
+.pyFrameLabel {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 2;
+  padding: 0.55rem 0.9rem;
+  background: rgba(6, 6, 10, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(240, 236, 228, 0.06);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: rgba(220, 215, 205, 0.6);
+}
+
+.pyFrameBody {
+  position: absolute;
+  inset: 0;
+  padding-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* The media itself */
+.mediaImage,
+.mediaVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Empty state when the media file isn't uploaded yet */
+.mediaEmpty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  background:
+    linear-gradient(135deg, rgba(20, 15, 12, 0.4) 0%, rgba(6, 8, 14, 0.6) 100%);
+  color: rgba(220, 215, 205, 0.36);
+}
+.mediaEmpty::before,
+.mediaEmpty::after {
+  content: "";
+  position: absolute;
+  inset: 30% 20%;
+  border: 1px dashed rgba(240, 236, 228, 0.06);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.mediaEmpty::after {
+  inset: 40% 30%;
+}
+.mediaEmptyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(242, 131, 34, 0.4);
+  box-shadow: 0 0 8px rgba(242, 131, 34, 0.4);
+}
+.mediaEmptyLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  z-index: 1;
+}
+.mediaEmptySub {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.28);
+  z-index: 1;
+}
+
+.pyCtaRow {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 1.7rem;
+}
+
+.pyFooter {
+  margin: 3rem 0 0;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.28);
+  text-align: center;
+  width: 100%;
+}
+
+/* ── responsive: stack on smaller screens ── */
+@media (max-width: 900px) {
+  .pySplit {
+    grid-template-columns: 1fr;
+    gap: 2.4rem;
+  }
+  .pySplitTextRight { direction: ltr; }
+  .pyText { max-width: 100%; justify-self: center; text-align: center; }
+  .pyText .pySub { margin-left: auto; margin-right: auto; }
+  .pyText .pyLink { align-self: center; }
+  .pyVisual { justify-self: center !important; }
+  .pyFrameTilt { transform: none; }
+  /* On mobile, put the visual FIRST (above the text) for a stronger hook */
+  .pySplitTextLeft .pyText { order: 2; }
+  .pySplitTextLeft .pyVisual { order: 1; }
+  .pySplitTextRight .pyText { order: 2; }
+  .pySplitTextRight .pyVisual { order: 1; }
+}
