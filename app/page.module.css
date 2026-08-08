@@ -421,7 +421,7 @@
    source image's own aspect ratio so object-fit: cover has nothing to
    crop off the sides */
 .pyFrameUltrawide {
-  aspect-ratio: 1568 / 570;
+  aspect-ratio: 2450 / 915;
   max-width: 640px;
 }
 
