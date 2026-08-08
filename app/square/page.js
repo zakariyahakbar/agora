@@ -1054,8 +1054,8 @@ export default function SquarePage() {
     const END = { y: 1.7, z: 19, pitch: -0.06 };
     if (embedRef.current) {
       // Cinematic orbit — position set each frame in tick
-      yawObj.position.set(0, 4.6, 20);
-      pitch = targetPitch = -0.18;
+      yawObj.position.set(0, 6.5, 18);
+      pitch = targetPitch = -0.42;
       entranceT = 999;
     } else if (reduceMotion) {
       yawObj.position.set(0, END.y, END.z);
@@ -1093,18 +1093,19 @@ export default function SquarePage() {
       if (embedRef.current) {
         const orbitSpeed = 0.06;
         const ang = t * orbitSpeed;
-        // Zoom loop: 32s slow breathing between radius 22 and radius 16
+        // Zoom loop: 32s slow breathing between radius 18 and radius 13
         const zoomCycle = 32;
         const zProg = (t % zoomCycle) / zoomCycle;
         const zoomEase = 0.5 - 0.5 * Math.cos(zProg * Math.PI * 2);
-        const orbitR = 22 - zoomEase * 6;
-        const orbitY = 4.6 + Math.sin(t * 0.35) * 0.4;
+        const orbitR = 18 - zoomEase * 5;
+        const orbitY = 6.5 + Math.sin(t * 0.35) * 0.5;
         yawObj.position.x = Math.sin(ang) * orbitR;
         yawObj.position.z = Math.cos(ang) * orbitR;
         yawObj.position.y = orbitY;
         targetYaw = ang + Math.PI;
         yaw = targetYaw;
-        targetPitch = -0.18 + Math.sin(t * 0.22) * 0.04 - zoomEase * 0.05;
+        // Point noticeably DOWN so plaza fills the frame at all aspect ratios
+        targetPitch = -0.42 + Math.sin(t * 0.22) * 0.03 - zoomEase * 0.05;
         pitch = targetPitch;
       }
 
