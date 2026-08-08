@@ -718,3 +718,18 @@
   .canvasWrap { animation: none; }
   .progressDiamond { transition: none; }
 }
+
+/* ── Embed mode: cinematic showcase, all HUD hidden ── */
+.embed .backPill,
+.embed .chainPill,
+.embed .progress,
+.embed .progressBtn,
+.embed .mapBtn,
+.embed .card,
+.embed .hint,
+.embed .joystick,
+.embed .enter,
+.embed .intro,
+.embed .ledger { display: none !important; }
+.embed .vignette { opacity: 0.35; }
+.embed canvas { pointer-events: none !important; }
