@@ -417,6 +417,14 @@
   max-width: 320px;
 }
 
+/* Wide browser/explorer screenshots (e.g. onchain-tx.png) — matches the
+   source image's own aspect ratio so object-fit: cover has nothing to
+   crop off the sides */
+.pyFrameUltrawide {
+  aspect-ratio: 1568 / 570;
+  max-width: 640px;
+}
+
 .pyFrameLabel {
   position: absolute;
   top: 0; left: 0; right: 0;
