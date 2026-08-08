@@ -85,6 +85,18 @@ export default function SquarePage() {
 
   const [entered, setEntered] = useState(false);
   const enteredRef = useRef(false);
+
+  // Embed mode: /square?embed=1 skips Enter, hides HUD, auto-orbits cinematically
+  const [embed, setEmbed] = useState(false);
+  const embedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("embed") === "1") {
+      setEmbed(true); embedRef.current = true;
+      setEntered(true); enteredRef.current = true;
+    }
+  }, []);
   const [station, setStation] = useState(-1);
   const stationRef = useRef(-1);
   const [actionsDone, setActionsDone] = useState({});
@@ -1040,7 +1052,12 @@ export default function SquarePage() {
     let entranceT = -1;
     const START = { y: 6.2, z: 30, pitch: -0.34 };
     const END = { y: 1.7, z: 19, pitch: -0.06 };
-    if (reduceMotion) {
+    if (embedRef.current) {
+      // Cinematic orbit — position set each frame in tick
+      yawObj.position.set(0, 4.6, 20);
+      pitch = targetPitch = -0.18;
+      entranceT = 999;
+    } else if (reduceMotion) {
       yawObj.position.set(0, END.y, END.z);
       pitch = targetPitch = END.pitch;
       entranceT = 999;
@@ -1070,6 +1087,25 @@ export default function SquarePage() {
         yawObj.position.z = START.z + (END.z - START.z) * u;
         pitch = targetPitch = START.pitch + (END.pitch - START.pitch) * u;
         inEntrance = entranceT < 2.2;
+      }
+
+      // Embed mode: cinematic orbit around plaza with zoom + subtle drift
+      if (embedRef.current) {
+        const orbitSpeed = 0.06;
+        const ang = t * orbitSpeed;
+        // Zoom loop: 32s slow breathing between radius 22 and radius 16
+        const zoomCycle = 32;
+        const zProg = (t % zoomCycle) / zoomCycle;
+        const zoomEase = 0.5 - 0.5 * Math.cos(zProg * Math.PI * 2);
+        const orbitR = 22 - zoomEase * 6;
+        const orbitY = 4.6 + Math.sin(t * 0.35) * 0.4;
+        yawObj.position.x = Math.sin(ang) * orbitR;
+        yawObj.position.z = Math.cos(ang) * orbitR;
+        yawObj.position.y = orbitY;
+        targetYaw = ang + Math.PI;
+        yaw = targetYaw;
+        targetPitch = -0.18 + Math.sin(t * 0.22) * 0.04 - zoomEase * 0.05;
+        pitch = targetPitch;
       }
 
       const lookK = Math.min(1, dt * 14);
@@ -1349,7 +1385,7 @@ export default function SquarePage() {
   const doneCount = STATIONS.filter(s2 => actionsDone[s2.action.key]).length;
 
   return (
-    <div className={styles.root}>
+    <div className={`${styles.root} ${embed ? styles.embed : ""}`}>
       <div ref={wrapRef} className={styles.canvasWrap} />
       <div className={styles.vignette} aria-hidden />
 
