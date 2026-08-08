@@ -436,7 +436,7 @@ export default function AgoraPage() {
                 <div className={styles.pyFrame}>
                   <div className={styles.pyFrameLabel}>8004scan.io · Agent #82</div>
                   <div className={styles.pyFrameBody}>
-                    <MediaSlot type="image" src="/assets/8004scan.png" alt="Agent #82 on 8004scan" fallback="8004scan · agent card" />
+                    <MediaSlot type="image" src="/8004scan.png" alt="Agent #82 on 8004scan" fallback="8004scan · agent card" />
                   </div>
                 </div>
               </InView>
@@ -539,7 +539,7 @@ export default function AgoraPage() {
                 <div className={styles.pyFrame}>
                   <div className={styles.pyFrameLabel}>explorer.goat.network</div>
                   <div className={styles.pyFrameBody}>
-                    <MediaSlot type="image" src="/assets/onchain-tx.png" alt="Settled tx on GOAT Explorer" fallback="goat explorer · settled tx" />
+                    <MediaSlot type="image" src="/onchain-tx.png" alt="Settled tx on GOAT Explorer" fallback="goat explorer · settled tx" />
                   </div>
                 </div>
               </InView>
