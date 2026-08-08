@@ -263,6 +263,31 @@ export default function AgoraPage() {
     return () => node.removeEventListener("scroll", fn);
   }, []);
 
+  // Guard: force scroll to top on load and reject any auto-scroll from iframes
+  // during the first second (browsers can pull the parent to a mounting iframe).
+  useEffect(() => {
+    const node = viewportRef.current; if (!node) return;
+    // Kill browser scroll restoration entirely on this route
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    node.scrollTop = 0;
+    window.scrollTo(0, 0);
+    let lockActive = true;
+    const enforce = () => { if (lockActive && node.scrollTop !== 0) node.scrollTop = 0; };
+    // Enforce a few times during the settling window (iframes mount async)
+    enforce();
+    const raf1 = requestAnimationFrame(enforce);
+    const t1 = setTimeout(enforce, 60);
+    const t2 = setTimeout(enforce, 200);
+    const t3 = setTimeout(enforce, 500);
+    const t4 = setTimeout(() => { lockActive = false; }, 1200);
+    return () => {
+      cancelAnimationFrame(raf1);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
+    };
+  }, []);
+
   useEffect(() => {
     const node = viewportRef.current; if (!node) return;
     const secs = sectionRefs.current.filter(Boolean);
@@ -319,7 +344,6 @@ export default function AgoraPage() {
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
-            <a href="/demo" className={styles.navLink}>Demo</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -453,6 +477,7 @@ export default function AgoraPage() {
                       aria-hidden="true"
                       tabIndex={-1}
                       scrolling="no"
+                      sandbox="allow-scripts allow-same-origin"
                     />
                     <div className={styles.showcaseGuard} aria-hidden />
                   </div>
@@ -488,6 +513,7 @@ export default function AgoraPage() {
                       aria-hidden="true"
                       tabIndex={-1}
                       scrolling="no"
+                      sandbox="allow-scripts allow-same-origin"
                     />
                     <div className={styles.showcaseGuard} aria-hidden />
                   </div>
