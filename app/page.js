@@ -188,6 +188,197 @@ function MediaSlot({ type, src, alt, fallback }) {
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   TELEGRAM DEMO SHOWCASE — inline, scroll-triggered, Ken Burns zooms
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Real recorded exchange from Agora testing. Each message can carry a `zoom`
+   that triggers a subtle transform-origin scale (YouTube-style) on the whole
+   phone body while that bubble is fresh. */
+const TG_SCRIPT = [
+  { role: "bot",  text: "gm 👋 I'm the Agora agent. I run my own wallet, register on-chain, and settle x402 payments.",  delay: 1200 },
+  { role: "user", text: "prove it. show me your identity",                                                                  delay: 1400 },
+  { role: "bot",  text: "on it.",                                                                                            delay: 900 },
+  { role: "bot",  text: "🔗 Registered on GOAT mainnet\nAgent ID: #82\nContract: ERC-8004\nOwner: 0xbc8c…1C3c",              delay: 1600, zoom: "up" },
+  { role: "user", text: "verified. now the payment side",                                                                    delay: 1500 },
+  { role: "bot",  text: "here's the last settled x402 tx 👇",                                                                delay: 1100 },
+  { role: "bot",  text: "💸 1.00 USDC.e settled\ntx: 0xa8747b…3460\nblock: 13,770,302\nstatus: ✅ CHECKOUT_VERIFIED",         delay: 1800, zoom: "up" },
+  { role: "user", text: "clean. is that mainnet?",                                                                           delay: 1200 },
+  { role: "bot",  text: "yes — GOAT mainnet, chain 2345. Bitcoin-backed L2.",                                                delay: 1500, zoom: "up" },
+  { role: "user", text: "🫡",                                                                                                 delay: 1400 },
+];
+
+function TelegramDemoShowcase() {
+  const rootRef = useRef(null);
+  const chatRef = useRef(null);
+  const [msgs, setMsgs] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [zoom, setZoom] = useState({ scale: 1, origin: "50% 50%" });
+  const runIdRef = useRef(0);
+
+  // Trigger start when the demo scrolls into view
+  useEffect(() => {
+    if (!rootRef.current) return;
+    const el = rootRef.current;
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !started) {
+        setStarted(true);
+        io.disconnect();
+      }
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [started]);
+
+  // Auto-scroll chat container to bottom on new content (scoped, no cascade)
+  useEffect(() => {
+    const el = chatRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs, typing]);
+
+  // Main animation loop
+  useEffect(() => {
+    if (!started) return;
+    const runId = ++runIdRef.current;
+    let cancelled = false;
+    const timers = [];
+    const wait = ms => new Promise(res => {
+      const id = setTimeout(() => { if (!cancelled) res(); }, ms);
+      timers.push(id);
+    });
+
+    async function play(all = []) {
+      for (let i = 0; i < TG_SCRIPT.length; i++) {
+        if (cancelled || runIdRef.current !== runId) return;
+        const m = TG_SCRIPT[i];
+        // typing dots for bot messages
+        if (m.role === "bot") {
+          setTyping(true);
+          await wait(700 + Math.random() * 400);
+          if (cancelled) return;
+          setTyping(false);
+        }
+        const nextMsgs = [...all, { ...m, id: `${runId}-${i}` }];
+        all = nextMsgs;
+        setMsgs(nextMsgs);
+        // Ken Burns: subtle zoom in when message is "important"
+        if (m.zoom === "up") {
+          setZoom({ scale: 1.08, origin: "50% 78%" });
+        } else {
+          setZoom({ scale: 1, origin: "50% 50%" });
+        }
+        await wait(m.delay || 1200);
+      }
+      // Reset zoom and loop
+      setZoom({ scale: 1, origin: "50% 50%" });
+      await wait(3500);
+      if (cancelled) return;
+      setMsgs([]);
+      setTyping(false);
+      await wait(600);
+      if (cancelled) return;
+      play([]);
+    }
+    play([]);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, [started]);
+
+  return (
+    <div className={styles.tg} ref={rootRef}>
+      <div
+        className={styles.tgBody}
+        style={{
+          transform: `scale(${zoom.scale})`,
+          transformOrigin: zoom.origin,
+        }}
+      >
+        {/* Wallpaper (real Telegram doodle background) */}
+        <img
+          className={styles.tgWallpaper}
+          src="/telegram.png"
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
+        <div className={styles.tgWallTint} />
+
+        {/* Header */}
+        <div className={styles.tgHeader}>
+          <div className={styles.tgHeaderBack}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </div>
+          <div className={styles.tgHeaderAv}>
+            <img src="/mylogo.png" alt="AGORA" draggable={false} />
+          </div>
+          <div className={styles.tgHeaderText}>
+            <div className={styles.tgHeaderName}>agora_bot</div>
+            <div className={styles.tgHeaderSub}>bot · online</div>
+          </div>
+          <div className={styles.tgHeaderIcons}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7.5" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="5"  r="1.6" />
+              <circle cx="12" cy="12" r="1.6" />
+              <circle cx="12" cy="19" r="1.6" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Chat */}
+        <div className={styles.tgChat} ref={chatRef}>
+          {msgs.map(m => (
+            <div key={m.id} className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot}`}>
+              {m.text.split("\n").map((line, k) => (
+                <span key={k} className={styles.tgLine}>{line}</span>
+              ))}
+              <span className={styles.tgTime}>
+                {m.role === "user" ? "12:04 " : "12:04"}
+                {m.role === "user" && (
+                  <svg viewBox="0 0 16 12" width="12" height="9" className={styles.tgReadCheck} aria-hidden>
+                    <path d="M1 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+            </div>
+          ))}
+          {typing && (
+            <div className={`${styles.tgMsg} ${styles.tgMsgBot} ${styles.tgTyping}`}>
+              <span className={styles.tgDot} />
+              <span className={styles.tgDot} />
+              <span className={styles.tgDot} />
+            </div>
+          )}
+        </div>
+
+        {/* Input bar */}
+        <div className={styles.tgInputBar}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9.5" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none" />
+          </svg>
+          <span className={styles.tgInputPlaceholder}>Message</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18v-6a3 3 0 1 1 6 0v5a5 5 0 1 1-10 0V8" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GlobalVideo() {
   const vRef = useRef(null);
   useEffect(() => {
@@ -328,6 +519,7 @@ export default function AgoraPage() {
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
+            <a href="/pulse" className={styles.navLink}>Pulse</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -487,19 +679,9 @@ export default function AgoraPage() {
             <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
               <InView delay={0.2} className={styles.pyVisual}>
                 <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
-                  <div className={styles.pyFrameLabel}>Agora demo · live</div>
+                  <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot · live</div>
                   <div className={styles.pyFrameBody}>
-                    <iframe
-                      src="/demo?embed=1"
-                      className={styles.showcaseIframe}
-                      title="The Agora demo conversation"
-                      loading="lazy"
-                      aria-hidden="true"
-                      tabIndex={-1}
-                      scrolling="no"
-                      sandbox="allow-scripts allow-same-origin"
-                    />
-                    <div className={styles.showcaseGuard} aria-hidden />
+                    <TelegramDemoShowcase />
                   </div>
                 </div>
               </InView>
