@@ -240,10 +240,10 @@
   .navBack { display: none; }
 }
 
-/* ── Embed mode: fit inside a homepage frame, no back button, no wallpaper padding ── */
-.embed { background: transparent !important; }
-.embed .wallpaper { display: none; }
-.embed .tint { display: none; }
+/* ── Embed mode: fit inside a homepage frame gracefully ── */
+.embed { background: #17212b !important; }
+.embed .wallpaper { display: block; opacity: 0.42; background-size: 240px auto; }
+.embed .tint { display: block; background: rgba(15, 20, 30, 0.4); }
 .embed .back { display: none !important; }
 .embed .phone {
   width: 100% !important;
@@ -254,3 +254,21 @@
   box-shadow: none !important;
   border: none !important;
 }
+/* Slightly smaller text so bubbles feel proportional in a narrow frame */
+.embed .bubbleText { font-size: 0.72rem; line-height: 1.5; }
+.embed .headerName { font-size: 0.82rem; }
+.embed .headerSub  { font-size: 0.58rem; }
+.embed .headerAv img,
+.embed .headerAv { width: 30px !important; height: 30px !important; }
+.embed .header { padding: 0.5rem 0.7rem; gap: 0.4rem; }
+.embed .headerRight { gap: 0.4rem; }
+.embed .headerRight svg { width: 14px; height: 14px; }
+.embed .chat { padding: 0.6rem 0.5rem 0.8rem; gap: 0.35rem; }
+.embed .bubbleBot,
+.embed .bubbleUser { padding: 0.45rem 0.6rem; max-width: 82%; }
+.embed .ts, .embed .tsUser { font-size: 0.5rem; }
+.embed .chatImage { width: 44px; height: 44px; }
+.embed .inputBar { padding: 0.4rem 0.6rem; font-size: 0.72rem; }
+.embed .inputBar svg { width: 14px; height: 14px; }
+/* Hide splash content entirely — we auto-start in embed */
+.embed .splash { display: none !important; }
