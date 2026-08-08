@@ -1093,18 +1093,19 @@ export default function SquarePage() {
       if (embedRef.current) {
         const orbitSpeed = 0.06;
         const ang = t * orbitSpeed;
-        // Zoom loop: 32s slow breathing, stays reasonably far
+        // Zoom loop: 32s slow breathing, stays comfortably framed
         const zoomCycle = 32;
         const zProg = (t % zoomCycle) / zoomCycle;
         const zoomEase = 0.5 - 0.5 * Math.cos(zProg * Math.PI * 2);
-        const orbitR = 26 - zoomEase * 4; // 22-26 range, comfortably framed
+        const orbitR = 26 - zoomEase * 4;
         const orbitY = 8.5 + Math.sin(t * 0.35) * 0.6;
         yawObj.position.x = Math.sin(ang) * orbitR;
         yawObj.position.z = Math.cos(ang) * orbitR;
         yawObj.position.y = orbitY;
-        targetYaw = ang + Math.PI;
+        // Face TOWARD the center. Three.js camera looks down -Z at yaw=0;
+        // for orbit position (sin*R, y, cos*R), yaw=ang faces origin.
+        targetYaw = ang;
         yaw = targetYaw;
-        // Pitch enough to see the plaza but with sky/moon on top
         targetPitch = -0.32 + Math.sin(t * 0.22) * 0.03 - zoomEase * 0.03;
         pitch = targetPitch;
       }
