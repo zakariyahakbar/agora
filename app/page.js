@@ -145,6 +145,221 @@ function Counter({ value, decimals = 0 }) {
   return <>{decimals > 0 ? d.toFixed(decimals) : Math.floor(d)}</>;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   INLINE ANIMATED SHOWCASES (self-contained, no external assets)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── SquareShowcase: stylized top-down view of the Square with orbiting agents,
+      pulsing torches, breathing beacon, and a slow scene-wide zoom loop ── */
+function SquareShowcase() {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    let raf, start = performance.now();
+    const tick = (now) => {
+      setT((now - start) / 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Slow scene-wide zoom loop (in-out over 24 seconds)
+  const zoomLoop = 24;
+  const zProg = (t % zoomLoop) / zoomLoop;
+  const zoom = 1 + Math.sin(zProg * Math.PI * 2) * 0.08;
+  const rotate = Math.sin(t * 0.05) * 2; // subtle drift
+
+  // Four stall positions around a center hub
+  const stalls = [
+    { x: 0,   y: -60, name: "Identity" },
+    { x: 60,  y: 0,   name: "Settle"   },
+    { x: 0,   y: 60,  name: "Network"  },
+    { x: -60, y: 0,   name: "Follow"   },
+  ];
+
+  const torchPulse = i => 0.7 + Math.sin(t * 2.4 + i * 1.3) * 0.3;
+  const beaconPulse = 0.6 + Math.sin(t * 1.8) * 0.4;
+
+  const orbPeriod = 14;
+  const orbProg = (t % orbPeriod) / orbPeriod;
+  const orbAng = orbProg * Math.PI * 2 - Math.PI / 2;
+  const orbR = 60 + Math.sin(t * 0.4) * 6;
+  const orbX = Math.cos(orbAng) * orbR;
+  const orbY = Math.sin(orbAng) * orbR;
+
+  return (
+    <svg
+      viewBox="-110 -80 220 160"
+      className={styles.squareSvg}
+      style={{ transform: `scale(${zoom}) rotate(${rotate}deg)` }}
+      preserveAspectRatio="xMidYMid slice"
+      aria-label="A stylized top-down view of the Square"
+    >
+      <defs>
+        <radialGradient id="beaconGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#ff9a3c" stopOpacity="0.9" />
+          <stop offset="40%" stopColor="#ff7a1a" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#ff7a1a" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="torchGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#ffb27a" stopOpacity="0.85" />
+          <stop offset="60%" stopColor="#ff8c2a" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#ff8c2a" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#7ee8a8" stopOpacity="0.95" />
+          <stop offset="60%" stopColor="#2ed573" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#2ed573" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#e9edf7" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#c4cee0" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#c4cee0" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <circle cx="0" cy="0" r="95" fill="#0d0c14" />
+      <circle cx="0" cy="0" r="95" fill="url(#beaconGlow)" opacity="0.35" />
+
+      <circle cx="0" cy="0" r="75" fill="none" stroke="rgba(240,236,228,0.05)" strokeWidth="0.3" />
+      <circle cx="0" cy="0" r="55" fill="none" stroke="rgba(240,236,228,0.06)" strokeWidth="0.3" />
+      <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(240,236,228,0.08)" strokeWidth="0.3" strokeDasharray="1 1.5" />
+
+      {stalls.map((s, i) => {
+        const flowProg = ((t * 0.4 + i * 0.25) % 1);
+        const fx = s.x * flowProg;
+        const fy = s.y * flowProg;
+        return (
+          <g key={`path-${i}`}>
+            <line x1="0" y1="0" x2={s.x} y2={s.y} stroke="rgba(242,131,34,0.12)" strokeWidth="0.6" />
+            <circle cx={fx} cy={fy} r="1.2" fill="#ffc078" opacity={Math.sin(flowProg * Math.PI) * 0.8} />
+          </g>
+        );
+      })}
+
+      <g transform="translate(-85, -60)">
+        <circle cx="0" cy="0" r="18" fill="url(#moonGlow)" />
+        <circle cx="0" cy="0" r="6" fill="#d6dcec" />
+        <circle cx="-2" cy="-2" r="1.2" fill="rgba(150,158,180,0.6)" />
+        <circle cx="2" cy="1" r="0.9" fill="rgba(150,158,180,0.5)" />
+      </g>
+
+      <g>
+        <circle cx="0" cy="0" r={18 + beaconPulse * 4} fill="url(#beaconGlow)" opacity="0.7" />
+        <circle cx="0" cy="0" r="4" fill="#ff9a3c" />
+        <circle cx="0" cy="0" r="2" fill="#ffd6a0" opacity={0.7 + beaconPulse * 0.3} />
+      </g>
+
+      {stalls.map((s, i) => {
+        const pulse = torchPulse(i);
+        return (
+          <g key={`stall-${i}`}>
+            <circle cx={s.x} cy={s.y} r={11 + pulse * 3} fill="url(#torchGlow)" opacity={0.5 + pulse * 0.3} />
+            <rect x={s.x - 7} y={s.y - 5} width="14" height="10" rx="1"
+              fill="#1a1610" stroke="rgba(242,131,34,0.35)" strokeWidth="0.4" />
+            <circle cx={s.x} cy={s.y} r="1.4" fill="#ffc078" opacity={pulse} />
+            <text x={s.x} y={s.y + 15} textAnchor="middle"
+              fill="rgba(220,215,205,0.55)" fontSize="4.5"
+              fontFamily="var(--font-mono, DM Mono, monospace)" letterSpacing="0.5">
+              {s.name.toUpperCase()}
+            </text>
+          </g>
+        );
+      })}
+
+      <g>
+        <circle cx={orbX} cy={orbY} r="5" fill="url(#orbGlow)" opacity="0.9" />
+        <circle cx={orbX} cy={orbY} r="1.5" fill="#7ee8a8" />
+      </g>
+
+      {[...Array(14)].map((_, i) => {
+        const a = (i / 14) * Math.PI * 2;
+        const r = 88 + (i % 3) * 3;
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        const twinkle = 0.3 + Math.sin(t * 2 + i * 0.7) * 0.4;
+        return <circle key={`star-${i}`} cx={x} cy={y} r="0.5" fill="#f0ece4" opacity={twinkle} />;
+      })}
+    </svg>
+  );
+}
+
+/* ── DemoShowcase: 6-step agent flow lights up sequentially, connectors fill in ── */
+const FLOW_STEPS = [
+  { n: "01", label: "Request",  desc: "10k units · 0.42 USDC" },
+  { n: "02", label: "Bid",      desc: "0.38 · A100 · 120ms" },
+  { n: "03", label: "Escrow",   desc: "locked · mainnet" },
+  { n: "04", label: "Execute",  desc: "provider runs job" },
+  { n: "05", label: "Verify",   desc: "output hash · matched" },
+  { n: "06", label: "Settle",   desc: "+0.38 · x402" },
+];
+
+function DemoShowcase() {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    let raf, start = performance.now();
+    const tick = (now) => {
+      setT((now - start) / 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const cycle = 12;
+  const p = (t % cycle) / cycle;
+  const stepDur = 1 / (FLOW_STEPS.length + 1);
+  const active = Math.min(FLOW_STEPS.length - 1, Math.floor(p / stepDur));
+  const stepProg = (p % stepDur) / stepDur;
+  const isResetting = p > (FLOW_STEPS.length * stepDur);
+  const scale = 1 + Math.sin(t * 0.5) * 0.012;
+
+  return (
+    <div className={styles.demo} style={{ transform: `scale(${scale})` }}>
+      <div className={styles.demoInner}>
+        {FLOW_STEPS.map((s, i) => {
+          const done = !isResetting && i < active;
+          const current = !isResetting && i === active;
+          return (
+            <div key={s.n}
+              className={`${styles.demoStep} ${done ? styles.demoStepDone : ""} ${current ? styles.demoStepCurrent : ""}`}>
+              <div className={styles.demoStepDot}>
+                {done ? (
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M4 12l6 6L20 6" />
+                  </svg>
+                ) : (
+                  <span className={styles.demoStepNum}>{s.n}</span>
+                )}
+              </div>
+              <div className={styles.demoStepBody}>
+                <div className={styles.demoStepLabel}>{s.label}</div>
+                <div className={styles.demoStepDesc}>{s.desc}</div>
+              </div>
+              {current && (
+                <div className={styles.demoStepBar}>
+                  <div className={styles.demoStepBarFill}
+                    style={{ transform: `scaleX(${stepProg})` }} />
+                </div>
+              )}
+              {i < FLOW_STEPS.length - 1 && (
+                <div className={styles.demoConnector}>
+                  <div className={styles.demoConnectorFill}
+                    style={{ transform: `scaleY(${done ? 1 : current ? stepProg : 0})` }} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className={styles.demoTicker}>
+        <span className={styles.demoTickerDot} />
+        <span>{isResetting ? "loop · reset" : `step ${active + 1} of ${FLOW_STEPS.length} · ${FLOW_STEPS[active].label.toLowerCase()}`}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Media slot: shows an <img>/<video> if the file exists, else a labeled empty state ── */
 function MediaSlot({ type, src, alt, fallback }) {
   const [failed, setFailed] = useState(false);
@@ -443,9 +658,9 @@ export default function AgoraPage() {
             <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
               <InView delay={0.2} className={styles.pyVisual}>
                 <div className={`${styles.pyFrame} ${styles.pyFrameTilt}`}>
-                  <div className={styles.pyFrameLabel}>useagora.vercel.app/square</div>
+                  <div className={styles.pyFrameLabel}>The Square · live view</div>
                   <div className={styles.pyFrameBody}>
-                    <MediaSlot type="video" src="/square-showcase.mp4" alt="The Square" fallback="the square · walkthrough" />
+                    <SquareShowcase />
                   </div>
                 </div>
               </InView>
@@ -468,25 +683,20 @@ export default function AgoraPage() {
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
               <InView delay={0.2} className={styles.pyVisual}>
-                <a href="/demo" className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.pyFrameClickable}`}>
-                  <div className={styles.pyFrameLabel}>Interactive demo · Watch flow →</div>
+                <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
+                  <div className={styles.pyFrameLabel}>Agora flow · animated</div>
                   <div className={styles.pyFrameBody}>
-                    <div className={styles.demoTeaser}>
-                      <span className={styles.demoTeaserDot} />
-                      <p className={styles.demoTeaserLine}>request → bid → escrow</p>
-                      <p className={styles.demoTeaserLine}>execute → verify → settle</p>
-                      <span className={styles.demoTeaserCTA}>Watch the walkthrough →</span>
-                    </div>
+                    <DemoShowcase />
                   </div>
-                </a>
+                </div>
               </InView>
               <div className={styles.pyText}>
                 <InView><p className={styles.pyEyebrow}>The Agent · Live</p></InView>
                 <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, sets up x402 payments, and answers in Telegram. Walk through the flow below, or talk to the real agent yourself.</p></InView>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, and settles x402 payments on GOAT mainnet. Six steps, zero human approvals — the whole loop, running.</p></InView>
                 <InView delay={0.32}>
-                  <a href="/demo" className={styles.pyLink}>See the flow →</a>
+                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Talk to the agent →</a>
                 </InView>
               </div>
             </div>
