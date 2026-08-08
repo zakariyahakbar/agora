@@ -1054,8 +1054,8 @@ export default function SquarePage() {
     const END = { y: 1.7, z: 19, pitch: -0.06 };
     if (embedRef.current) {
       // Cinematic orbit — position set each frame in tick
-      yawObj.position.set(0, 6.5, 18);
-      pitch = targetPitch = -0.42;
+      yawObj.position.set(0, 8.5, 26);
+      pitch = targetPitch = -0.32;
       entranceT = 999;
     } else if (reduceMotion) {
       yawObj.position.set(0, END.y, END.z);
@@ -1093,19 +1093,19 @@ export default function SquarePage() {
       if (embedRef.current) {
         const orbitSpeed = 0.06;
         const ang = t * orbitSpeed;
-        // Zoom loop: 32s slow breathing between radius 18 and radius 13
+        // Zoom loop: 32s slow breathing, stays reasonably far
         const zoomCycle = 32;
         const zProg = (t % zoomCycle) / zoomCycle;
         const zoomEase = 0.5 - 0.5 * Math.cos(zProg * Math.PI * 2);
-        const orbitR = 18 - zoomEase * 5;
-        const orbitY = 6.5 + Math.sin(t * 0.35) * 0.5;
+        const orbitR = 26 - zoomEase * 4; // 22-26 range, comfortably framed
+        const orbitY = 8.5 + Math.sin(t * 0.35) * 0.6;
         yawObj.position.x = Math.sin(ang) * orbitR;
         yawObj.position.z = Math.cos(ang) * orbitR;
         yawObj.position.y = orbitY;
         targetYaw = ang + Math.PI;
         yaw = targetYaw;
-        // Point noticeably DOWN so plaza fills the frame at all aspect ratios
-        targetPitch = -0.42 + Math.sin(t * 0.22) * 0.03 - zoomEase * 0.05;
+        // Pitch enough to see the plaza but with sky/moon on top
+        targetPitch = -0.32 + Math.sin(t * 0.22) * 0.03 - zoomEase * 0.03;
         pitch = targetPitch;
       }
 
