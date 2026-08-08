@@ -536,7 +536,7 @@ export default function AgoraPage() {
                 </InView>
               </div>
               <InView delay={0.2} className={styles.pyVisual}>
-                <div className={`${styles.pyFrame} ${styles.pyFrameUltrawide}`}>
+                <div className={styles.pyFrame}>
                   <div className={styles.pyFrameLabel}>explorer.goat.network</div>
                   <div className={styles.pyFrameBody}>
                     <MediaSlot type="image" src="/onchain-tx.png" alt="Settled tx on GOAT Explorer" fallback="goat explorer · settled tx" />
