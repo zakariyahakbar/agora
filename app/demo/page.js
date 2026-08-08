@@ -140,6 +140,7 @@ export default function DemoPage() {
   const [running, setRunning] = useState(false);
   const [embed, setEmbed] = useState(false);
   const bottomRef = useRef(null);
+  const chatRef = useRef(null);
   const timer = useRef(null);
   const loopTimer = useRef(null);
 
@@ -149,7 +150,12 @@ export default function DemoPage() {
     if (p.get("embed") === "1") setEmbed(true);
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({behavior:"smooth"}); }, [msgs, typing]);
+  useEffect(() => {
+    // Scroll the chat container itself, NOT scrollIntoView — that cascades
+    // up to parent containers (and when iframed, all the way up to the parent page).
+    const el = chatRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs, typing]);
   useEffect(() => () => { clearTimeout(timer.current); clearTimeout(loopTimer.current); }, []);
 
   const run = (idx = 0, all = []) => {
@@ -223,7 +229,7 @@ export default function DemoPage() {
         </div>
 
         {/* Chat */}
-        <div className={styles.chat}>
+        <div className={styles.chat} ref={chatRef}>
           {!running ? (
             <div className={styles.splash}>
               <div className={styles.splashAv}>
