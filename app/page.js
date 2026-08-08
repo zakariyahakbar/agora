@@ -263,29 +263,13 @@ export default function AgoraPage() {
     return () => node.removeEventListener("scroll", fn);
   }, []);
 
-  // Guard: force scroll to top on load and reject any auto-scroll from iframes
-  // during the first second (browsers can pull the parent to a mounting iframe).
+  // Reset scroll on mount once. No enforcement — we do NOT fight the user.
   useEffect(() => {
-    const node = viewportRef.current; if (!node) return;
-    // Kill browser scroll restoration entirely on this route
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
-    node.scrollTop = 0;
-    window.scrollTo(0, 0);
-    let lockActive = true;
-    const enforce = () => { if (lockActive && node.scrollTop !== 0) node.scrollTop = 0; };
-    // Enforce a few times during the settling window (iframes mount async)
-    enforce();
-    const raf1 = requestAnimationFrame(enforce);
-    const t1 = setTimeout(enforce, 60);
-    const t2 = setTimeout(enforce, 200);
-    const t3 = setTimeout(enforce, 500);
-    const t4 = setTimeout(() => { lockActive = false; }, 1200);
-    return () => {
-      cancelAnimationFrame(raf1);
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
-    };
+    const node = viewportRef.current;
+    if (node) node.scrollTop = 0;
   }, []);
 
   useEffect(() => {
