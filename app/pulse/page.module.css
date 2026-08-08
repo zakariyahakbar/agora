@@ -1,0 +1,496 @@
+/* ══════════════════════════════════════════════════════════════════
+   AGORA / PULSE — live metrics + flow + proof
+   ══════════════════════════════════════════════════════════════════ */
+
+.root {
+  position: relative;
+  min-height: 100dvh;
+  color: #f0ece4;
+  background: #06070a;
+  overflow-x: hidden;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 5%, rgba(30, 22, 38, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(40, 25, 14, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(20, 22, 34, 0.5) 0%, transparent 60%),
+    linear-gradient(180deg, #08080e 0%, #06070a 100%);
+}
+
+.grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(rgba(240, 236, 228, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 236, 228, 0.02) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 40%, black 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 0%, transparent 80%);
+}
+
+/* Nav */
+.navWrap {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding: 0.55rem 1rem 0.55rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(10, 10, 14, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(240, 236, 228, 0.06);
+}
+.navBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: inherit;
+}
+.navBrandName {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: rgba(240, 236, 228, 0.9);
+}
+.navLinks { display: flex; gap: 0.9rem; }
+.navLink {
+  background: none;
+  border: 0;
+  padding: 0.25rem 0.55rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 180ms ease, background 180ms ease;
+}
+.navLink:hover { color: rgba(240, 236, 228, 0.9); }
+.navLinkActive {
+  color: #ffb46a;
+  background: rgba(242, 131, 34, 0.1);
+}
+
+/* Container */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 clamp(1.4rem, 5vw, 3.5rem) 6rem;
+}
+
+/* Hero */
+.hero {
+  padding: 4rem 0 3.5rem;
+  max-width: 780px;
+}
+.eyebrow {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #f28322;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.eyebrow::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2ed573;
+  box-shadow: 0 0 8px #2ed573, 0 0 16px rgba(46, 213, 115, 0.5);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+.h1 {
+  margin: 0;
+  font-family: var(--font-display, "Cormorant Garamond", "Playfair Display", serif);
+  font-weight: 500;
+  font-size: clamp(3rem, 7vw, 5.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: #f4f0e8;
+}
+.h1Italic {
+  font-style: italic;
+  color: rgba(210, 205, 195, 0.86);
+}
+.sub {
+  margin: 1.5rem 0 0;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.65;
+  color: rgba(220, 215, 205, 0.72);
+  max-width: 56ch;
+}
+
+/* Sections */
+.section {
+  padding: 2.5rem 0 3rem;
+  border-top: 1px solid rgba(240, 236, 228, 0.06);
+}
+.sectionEyebrow {
+  margin: 0 0 1.4rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.5);
+}
+.sectionTitle {
+  margin: 0 0 1rem;
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: clamp(1.85rem, 3.6vw, 2.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #f0ece4;
+  max-width: 720px;
+}
+.italic { font-style: italic; color: rgba(210, 205, 195, 0.88); }
+.sectionSub {
+  margin: 0 0 2.4rem;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: rgba(220, 215, 205, 0.68);
+  max-width: 60ch;
+}
+
+/* ── Counters grid ── */
+.countersGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.counter {
+  padding: 1.6rem 1.4rem 1.4rem;
+  border-radius: 14px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: border-color 220ms ease, background 220ms ease;
+}
+.counter:hover {
+  border-color: rgba(242, 131, 34, 0.24);
+  background: rgba(240, 236, 228, 0.03);
+}
+.counterLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.5);
+  margin-bottom: 0.9rem;
+}
+.counterValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+.counterN {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: 2.9rem;
+  line-height: 1;
+  color: #f4f0e8;
+  letter-spacing: -0.015em;
+}
+.counterSuffix {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.9rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.05em;
+}
+.counterSub {
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.72rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.02em;
+}
+
+/* ── Agent flow diagram ── */
+.flow {
+  margin-top: 0.5rem;
+  padding: 1.6rem 1.6rem 1.4rem;
+  border-radius: 14px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+}
+.flowInner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.2rem 0 0.6rem;
+}
+.flowStep {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.04);
+  transition: all 320ms ease;
+  min-height: 52px;
+}
+.flowStepCurrent {
+  background: rgba(242, 131, 34, 0.08);
+  border-color: rgba(242, 131, 34, 0.4);
+  box-shadow: 0 0 0 1px rgba(242, 131, 34, 0.1),
+              0 12px 30px -10px rgba(242, 131, 34, 0.3);
+}
+.flowStepDone {
+  background: rgba(46, 213, 115, 0.05);
+  border-color: rgba(46, 213, 115, 0.22);
+}
+.flowDot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 236, 228, 0.05);
+  border: 1px solid rgba(240, 236, 228, 0.12);
+  color: rgba(220, 215, 205, 0.6);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  transition: all 320ms ease;
+  flex-shrink: 0;
+}
+.flowStepCurrent .flowDot {
+  background: rgba(242, 131, 34, 0.22);
+  border-color: rgba(242, 131, 34, 0.8);
+  color: #ffc78d;
+}
+.flowStepDone .flowDot {
+  background: rgba(46, 213, 115, 0.2);
+  border-color: rgba(46, 213, 115, 0.6);
+  color: #7ee8a8;
+}
+.flowNum {
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+.flowBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.flowLabel {
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: #f0ece4;
+  letter-spacing: 0.005em;
+}
+.flowDesc {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.68rem;
+  color: rgba(220, 215, 205, 0.55);
+  letter-spacing: 0.03em;
+}
+.flowBar {
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 5px;
+  height: 2px;
+  background: rgba(240, 236, 228, 0.06);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.flowBarFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(242, 131, 34, 0.7), #ff9a3c);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+.flowConn {
+  position: absolute;
+  left: 15.5px;
+  top: 100%;
+  width: 2px;
+  height: 10px;
+  background: rgba(240, 236, 228, 0.08);
+  overflow: hidden;
+}
+.flowConnFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #ff9a3c, rgba(242, 131, 34, 0.4));
+  transform-origin: top center;
+  transform: scaleY(0);
+  transition: transform 120ms linear;
+}
+.flowStepDone .flowConn .flowConnFill {
+  background: rgba(46, 213, 115, 0.5);
+}
+.flowTicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  margin: 0.3rem 0 0;
+  border-radius: 8px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+}
+.flowTickerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f28322;
+  box-shadow: 0 0 10px rgba(242, 131, 34, 0.65);
+  animation: flowTick 1.5s ease-in-out infinite;
+}
+@keyframes flowTick {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Proof grid ── */
+.proofGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.proofCard {
+  padding: 1.5rem 1.4rem;
+  border-radius: 14px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 220ms ease, transform 220ms ease, background 220ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+a.proofCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(242, 131, 34, 0.4);
+  background: rgba(242, 131, 34, 0.05);
+}
+.proofLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.5);
+}
+.proofValue {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #f4f0e8;
+  letter-spacing: -0.01em;
+}
+.proofSub {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.66rem;
+  color: rgba(220, 215, 205, 0.55);
+  letter-spacing: 0.04em;
+}
+.proofLink {
+  margin-top: 0.5rem;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.72rem;
+  color: #ffb46a;
+  letter-spacing: 0.03em;
+}
+.proofLinkGhost {
+  margin-top: 0.5rem;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.72rem;
+  color: rgba(220, 215, 205, 0.4);
+  letter-spacing: 0.03em;
+}
+
+/* Footer */
+.footer {
+  margin-top: 4rem;
+  padding-top: 2.4rem;
+  border-top: 1px solid rgba(240, 236, 228, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.footerLine {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.4);
+  margin: 0;
+}
+.footerLinks {
+  display: flex;
+  gap: 1.4rem;
+}
+.footerLink {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+.footerLink:hover { color: rgba(240, 236, 228, 0.9); }
+
+/* Responsive */
+@media (max-width: 800px) {
+  .countersGrid, .proofGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero { padding: 3rem 0 2rem; }
+  .counterN { font-size: 2.4rem; }
+  .proofValue { font-size: 1.6rem; }
+}
+@media (max-width: 500px) {
+  .countersGrid, .proofGrid { grid-template-columns: 1fr; }
+  .h1 { font-size: 2.4rem; }
+  .flowLabel { font-size: 0.88rem; }
+  .flowDesc { font-size: 0.62rem; }
+}
