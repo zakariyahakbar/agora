@@ -253,7 +253,7 @@ export default function AgoraPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [selectedMode, setSelectedMode] = useState(0);
   const { entries, vol, txns } = useLiveFeed();
-  const SECTION_COUNT = 6;
+  const SECTION_COUNT = 5;
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
@@ -314,11 +314,12 @@ export default function AgoraPage() {
           </div>
           {/* Links */}
           <div className={styles.navLinks}>
-            {["Home", "Real", "Square", "Stations", "Agent", "Settlement"].map((l, i) => (
+            {["Home", "Real", "Square", "Agent", "Settlement"].map((l, i) => (
               <button key={l}
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
+            <a href="/demo" className={styles.navLink}>Demo</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -444,7 +445,7 @@ export default function AgoraPage() {
                 <div className={`${styles.pyFrame} ${styles.pyFrameTilt}`}>
                   <div className={styles.pyFrameLabel}>useagora.vercel.app/square</div>
                   <div className={styles.pyFrameBody}>
-                    <MediaSlot type="video" src="/assets/square-walk.mp4" alt="Walking the Square" fallback="the square · walkthrough" />
+                    <MediaSlot type="video" src="/square-showcase.mp4" alt="The Square" fallback="the square · walkthrough" />
                   </div>
                 </div>
               </InView>
@@ -452,7 +453,7 @@ export default function AgoraPage() {
                 <InView><p className={styles.pyEyebrow}>The Square · Interactive</p></InView>
                 <SlideUp className={styles.pyTitle} delay={0.05}>Walk the</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>marketplace.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora means marketplace in ancient Greek, the public square where trade happened. We rebuilt that, walkable, in 3D. Five stations. Every inscription is a real on-chain fact.</p></InView>
+                <InView delay={0.22}><p className={styles.pySub}>Agora means marketplace in ancient Greek, the public square where trade happened. We rebuilt that, walkable, in 3D. Five stations, one loop, every inscription a real on-chain fact.</p></InView>
                 <InView delay={0.32}>
                   <a href="/square" className={styles.pyLink}>Enter the Square →</a>
                 </InView>
@@ -461,52 +462,31 @@ export default function AgoraPage() {
           </div>
         </section>
 
-        {/* ════════ S4 — STATIONS ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[3] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>Five stations · One loop</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>Every station,</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>a real action.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Identity, settlement, network, follow, feedback. Walk to a station, read the inscription, act. No demos, no fake data. Serve all five to claim the Square.</p></InView>
-                <InView delay={0.32}>
-                  <a href="/square" className={styles.pyLink}>Try it now →</a>
-                </InView>
-              </div>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <div className={styles.pyFrame}>
-                  <div className={styles.pyFrameLabel}>The Square · stations</div>
-                  <div className={styles.pyFrameBody}>
-                    <MediaSlot type="video" src="/assets/square-station.mp4" alt="A station in the Square" fallback="station · inscription card" />
-                  </div>
-                </div>
-              </InView>
-            </div>
-          </div>
-        </section>
-
         {/* ════════ S5 — AGENT ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[3] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
               <InView delay={0.2} className={styles.pyVisual}>
-                <div className={`${styles.pyFrame} ${styles.pyFramePortrait}`}>
-                  <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot</div>
+                <a href="/demo" className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.pyFrameClickable}`}>
+                  <div className={styles.pyFrameLabel}>Interactive demo · Watch flow →</div>
                   <div className={styles.pyFrameBody}>
-                    <MediaSlot type="video" src="/assets/agent-chat.mp4" alt="Agora agent chat" fallback="agent · live chat" />
+                    <div className={styles.demoTeaser}>
+                      <span className={styles.demoTeaserDot} />
+                      <p className={styles.demoTeaserLine}>request → bid → escrow</p>
+                      <p className={styles.demoTeaserLine}>execute → verify → settle</p>
+                      <span className={styles.demoTeaserCTA}>Watch the walkthrough →</span>
+                    </div>
                   </div>
-                </div>
+                </a>
               </InView>
               <div className={styles.pyText}>
                 <InView><p className={styles.pyEyebrow}>The Agent · Live</p></InView>
                 <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, sets up x402 payments, and answers in Telegram. This isn't a mockup, it's the real Agora, live and reachable.</p></InView>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, sets up x402 payments, and answers in Telegram. Walk through the flow below, or talk to the real agent yourself.</p></InView>
                 <InView delay={0.32}>
-                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Talk to the agent →</a>
+                  <a href="/demo" className={styles.pyLink}>See the flow →</a>
                 </InView>
               </div>
             </div>
@@ -514,7 +494,7 @@ export default function AgoraPage() {
         </section>
 
         {/* ════════ S6 — SETTLEMENT + CTA ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
