@@ -358,50 +358,27 @@ export default function SquarePage() {
       scene.add(slab);
     });
 
+    // Subtle dark stone ring around the beacon base - just enough definition, no glow
     const mosaic = new THREE.Mesh(
       new THREE.RingGeometry(1.7, 2.5, 48),
-      new THREE.MeshStandardMaterial({ color: 0x0c0a10, roughness: 0.95, envMapIntensity: ENV * 0.4 })
+      new THREE.MeshStandardMaterial({ color: 0x1a1611, roughness: 0.9, envMapIntensity: ENV * 0.5 })
     );
     mosaic.rotation.x = -Math.PI / 2;
     mosaic.position.y = 0.012;
     scene.add(mosaic);
-    // Thin cyan holo ring inlaid in the stone - Star Wars accent
+    // Very subtle warm inner accent - like torch light catching a lip in the stone
     const mosaicGlow = new THREE.Mesh(
-      new THREE.RingGeometry(2.46, 2.52, 64),
+      new THREE.RingGeometry(2.46, 2.5, 48),
       new THREE.MeshBasicMaterial({
-        color: 0x4dd4ff, transparent: true, opacity: 0.4,
+        color: 0xffb46a, transparent: true, opacity: 0.15,
         blending: THREE.AdditiveBlending, depthWrite: false,
       })
     );
     mosaicGlow.rotation.x = -Math.PI / 2;
     mosaicGlow.position.y = 0.014;
     scene.add(mosaicGlow);
-    // Second thinner inner accent ring for depth
-    const mosaicInner = new THREE.Mesh(
-      new THREE.RingGeometry(1.71, 1.74, 64),
-      new THREE.MeshBasicMaterial({
-        color: 0x4dd4ff, transparent: true, opacity: 0.25,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      })
-    );
-    mosaicInner.rotation.x = -Math.PI / 2;
-    mosaicInner.position.y = 0.014;
-    scene.add(mosaicInner);
-    // Tech tick marks around the outer ring — 24 small cyan slashes for Star Wars panel feel
-    const tickMat = new THREE.MeshBasicMaterial({
-      color: 0x7ae0ff, transparent: true, opacity: 0.55,
-      blending: THREE.AdditiveBlending, depthWrite: false,
-    });
-    const tickGeo = new THREE.PlaneGeometry(0.14, 0.028);
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * Math.PI * 2;
-      const tick = new THREE.Mesh(tickGeo, tickMat);
-      tick.rotation.x = -Math.PI / 2;
-      tick.rotation.z = -a + Math.PI / 2;
-      const rr = i % 4 === 0 ? 2.66 : 2.6;
-      tick.position.set(Math.cos(a) * rr, 0.015, Math.sin(a) * rr);
-      scene.add(tick);
-    }
+    // Dummy inner ref so we don't break the tick loop
+    const mosaicInner = mosaicGlow;
 
     /* sky */
     /* sky — purplesky.png wrapped on a dome, slowly rotating */
@@ -486,108 +463,6 @@ export default function SquarePage() {
     scene.add(shoot);
     let shootT = 8, shootLife = 0;
     const shootDir = new THREE.Vector3();
-
-    /* ═══ STAR WARS EASTER EGGS ═══ */
-    // 1) Holo projection column on top of the beacon - subtle cyan hologram
-    const holoTable = new THREE.Group();
-    // A dim data-cylinder rising from the beacon top
-    const holoCyl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.42, 1.4, 20, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: 0x7ae0ff, transparent: true, opacity: 0.18,
-        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
-      })
-    );
-    holoCyl.position.y = 2.6;
-    holoTable.add(holoCyl);
-    // Cross-lines around it for that scanline feel
-    for (let i = 0; i < 5; i++) {
-      const line = new THREE.Mesh(
-        new THREE.RingGeometry(0.38 + i * 0.005, 0.4 + i * 0.005, 24),
-        new THREE.MeshBasicMaterial({
-          color: 0x7ae0ff, transparent: true, opacity: 0.35,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        })
-      );
-      line.rotation.x = -Math.PI / 2;
-      line.position.y = 1.95 + i * 0.28;
-      holoTable.add(line);
-    }
-    scene.add(holoTable);
-
-    // 2) Two Imperial-style banners hanging from a hidden crossbar on the outer perimeter
-    const bannerMat = new THREE.MeshStandardMaterial({
-      color: 0x2a1010, roughness: 0.85, side: THREE.DoubleSide,
-    });
-    const impBannerMat = new THREE.MeshStandardMaterial({
-      color: 0x8a1a1a, roughness: 0.85, side: THREE.DoubleSide, emissive: 0x2a0505, emissiveIntensity: 0.2,
-    });
-    [-24, 24].forEach((xPos) => {
-      // hanging crossbar (dark, mostly hidden)
-      const bar = new THREE.Mesh(
-        new THREE.BoxGeometry(4.5, 0.15, 0.15),
-        new THREE.MeshStandardMaterial({ color: 0x1a1610, roughness: 0.9 })
-      );
-      bar.position.set(xPos, 8, -18);
-      scene.add(bar);
-      // banner cloth
-      const banner = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 5, 4, 10), impBannerMat);
-      banner.position.set(xPos, 5.3, -18);
-      scene.add(banner);
-      // Imperial cog symbol - simple ring with spokes
-      const cog = new THREE.Mesh(
-        new THREE.RingGeometry(0.35, 0.42, 16),
-        new THREE.MeshBasicMaterial({ color: 0x2a0808, transparent: true, opacity: 0.85 })
-      );
-      cog.position.set(xPos, 6.2, -17.99);
-      scene.add(cog);
-    });
-
-    // 3) Docking-bay style light strips on 4 columns (thin cyan vertical lines)
-    const dockLightGeo = new THREE.PlaneGeometry(0.06, 3.5);
-    const dockLightMat = new THREE.MeshBasicMaterial({
-      color: 0x7ae0ff, transparent: true, opacity: 0.55,
-      blending: THREE.AdditiveBlending, depthWrite: false,
-    });
-    const dockLights = [];
-    // Put them on the outer 4 diagonal columns
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      const rr = 15;
-      const strip = new THREE.Mesh(dockLightGeo, dockLightMat.clone());
-      strip.position.set(Math.cos(a) * rr, 3, Math.sin(a) * rr);
-      strip.rotation.y = a + Math.PI;
-      scene.add(strip);
-      dockLights.push(strip);
-    }
-
-    // 4) Distant ship silhouette in the sky - small cruiser easter egg
-    const shipGroup = new THREE.Group();
-    const shipMat = new THREE.MeshBasicMaterial({ color: 0x111420, transparent: true, opacity: 0.9, fog: false });
-    // Wedge body
-    const shipBody = new THREE.Mesh(new THREE.ConeGeometry(2.5, 8, 4), shipMat);
-    shipBody.rotation.z = Math.PI / 2;
-    shipBody.rotation.y = Math.PI / 2;
-    shipGroup.add(shipBody);
-    // Engine glows - two small orange dots at the back
-    const engineMat = new THREE.MeshBasicMaterial({
-      color: 0xff6a2a, transparent: true, opacity: 0.85,
-      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
-    });
-    [-0.9, 0.9].forEach((dz) => {
-      const engine = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), engineMat);
-      engine.position.set(-3.8, 0, dz);
-      shipGroup.add(engine);
-    });
-    shipGroup.position.set(-70, 32, -80);
-    shipGroup.rotation.y = -0.4;
-    scene.add(shipGroup);
-    // Hide star wars easter eggs in embed mode - keep homepage showcase clean
-    if (embedRef.current) {
-      holoTable.visible = false;
-      shipGroup.visible = false;
-      dockLights.forEach(l => l.visible = false);
-    }
 
     const cypressMat = new THREE.MeshBasicMaterial({ color: 0x04040a });
     for (let i = 0; i < 16; i++) {
@@ -1094,11 +969,11 @@ export default function SquarePage() {
       runner.position.set(Math.cos(ang) * (innerR + plen / 2), 0.02, Math.sin(ang) * (innerR + plen / 2));
       runner.receiveShadow = true;
       scene.add(runner);
-      // Thin holographic light line running down the center — cyan for the Star Wars accent
+      // Thin warm light line running down the center of each path
       const holoLine = new THREE.Mesh(
         new THREE.PlaneGeometry(plen, 0.08),
         new THREE.MeshBasicMaterial({
-          color: 0x4dd4ff, transparent: true, opacity: 0.55,
+          color: 0xffb46a, transparent: true, opacity: 0.4,
           blending: THREE.AdditiveBlending, depthWrite: false,
         })
       );
@@ -1393,18 +1268,6 @@ export default function SquarePage() {
       beam.material.opacity = 0.11 + Math.sin(t * 1.6) * 0.03;
       mosaicGlow.material.opacity = 0.45 + Math.sin(t * 1.6) * 0.15;
       mosaicInner.material.opacity = 0.3 + Math.sin(t * 1.6 + 0.5) * 0.1;
-
-      // Star Wars easter egg ticks
-      // Hologram scanlines flicker + slow rotation
-      holoTable.rotation.y = t * 0.35;
-      holoCyl.material.opacity = 0.14 + Math.sin(t * 6) * 0.06;
-      // Dock lights flicker at slightly different phases
-      dockLights.forEach((l, i) => {
-        l.material.opacity = 0.4 + Math.sin(t * 1.2 + i * 1.3) * 0.2;
-      });
-      // Distant ship slowly drifts across the sky
-      shipGroup.position.x = -70 + Math.sin(t * 0.06) * 12;
-      shipGroup.position.y = 32 + Math.sin(t * 0.05) * 1.5;
       starMat.size = 0.75 + Math.sin(t * 0.8) * 0.06;
       /* shooting star */
       shootT -= dt;
@@ -1513,10 +1376,10 @@ export default function SquarePage() {
         // Runner stone base stays subtle - holo line is the accent
         pf.runner.material.emissiveIntensity = 0.15;
         // Holo line: cyan when unserved, green when done, with a subtle pulse
-        pf.holoLine.material.color.setHex(served ? 0x7ee8a8 : 0x4dd4ff);
+        pf.holoLine.material.color.setHex(served ? 0x7ee8a8 : 0xffb46a);
         pf.holoLine.material.opacity = served
-          ? 0.35 + Math.sin(t * 1.4 + pf.idx) * 0.08
-          : 0.55 + Math.sin(t * 2 + pf.idx) * 0.15;
+          ? 0.3 + Math.sin(t * 1.4 + pf.idx) * 0.06
+          : 0.4 + Math.sin(t * 2 + pf.idx) * 0.1;
         const frac = ((t * 0.32 + pf.idx * 0.2) % 1);
         const along = pf.innerR + frac * pf.plen;
         pf.pulse.position.set(Math.cos(pf.ang) * along, 0.04, Math.sin(pf.ang) * along);
