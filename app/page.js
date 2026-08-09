@@ -980,8 +980,8 @@ export default function AgoraPage() {
                 </div>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>The agent loop</p>
-                    <p className={styles.pulseCardHint}>runs on every request</p>
+                    <p className={styles.pulseCardLabel}>Agent flow</p>
+                    <p className={styles.pulseCardHint}>runs end-to-end, zero humans</p>
                   </div>
                   <PulseFlow />
                 </div>
