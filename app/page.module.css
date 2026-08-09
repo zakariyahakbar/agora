@@ -49,7 +49,7 @@
 /* ─── NAV — flex, everything inside pill ─── */
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; padding: .85rem 1.5rem 0; pointer-events: none; }
 .navCluster {
-  max-width: 920px; margin: 0 auto;
+  max-width: 780px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center; gap: .5rem;
 }
 .navBar {
@@ -1304,22 +1304,33 @@
   }
   .pyFrameTilt { transform: none !important; }
   .pyFramePortrait {
-    max-width: min(280px, 78vw);
+    max-width: min(340px, 88vw);
     aspect-ratio: 9 / 16;
   }
   .pyFrameLabel { font-size: 0.52rem; padding: 0.45rem 0.7rem; }
 
-  /* Agent-panel toggle: keep it on screen, don't let it overlap the label */
+  /* Agent-panel toggle: shrink so it doesn't crowd the label bar */
   .agentToggle {
-    top: 0.4rem;
-    right: 0.4rem;
+    top: 0.35rem;
+    right: 0.35rem;
     padding: 2px;
-    gap: 0.15rem;
+    gap: 0.12rem;
   }
   .agentToggleBtn {
-    padding: 3px 8px;
-    font-size: 0.5rem;
+    padding: 2px 7px;
+    font-size: 0.46rem;
+    letter-spacing: 0.06em;
   }
+  /* Chat bubbles: don't scrunch on narrow width */
+  .tgMsg { max-width: 86%; }
+  .tgHeader { padding: 0.5rem 0.6rem 0.5rem 0.35rem; gap: 0.45rem; }
+  .tgHeaderName { font-size: 0.78rem; }
+  .tgHeaderSub { font-size: 0.55rem; }
+  .tgHeaderAv { width: 30px; height: 30px; }
+  .tgHeaderAv img { width: 24px; height: 24px; }
+  .tgChat { padding: 0.6rem 0.5rem 0.5rem; gap: 0.35rem; }
+  .tgInputBar { padding: 0.45rem 0.6rem; gap: 0.45rem; }
+  .tgInputField { font-size: 0.72rem; }
 
   /* ── Pulse section — stack cleanly, keep readable ── */
   .py:has(.pulseWrap) {
