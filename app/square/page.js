@@ -113,6 +113,22 @@ export default function SquarePage() {
   const [isTouch, setIsTouch] = useState(false);
   const [webglFail, setWebglFail] = useState(false);
 
+  /* Discus toss minigame */
+  const [discusScore, setDiscusScore] = useState(0);
+  const [discusBest, setDiscusBest] = useState(0);
+  const [discusThrows, setDiscusThrows] = useState(0);
+  const [discusHint, setDiscusHint] = useState("");
+  const discusKeyRef = useRef(null);
+  const discusHintTargetRef = useRef("");
+  const discusStateRef = useRef({
+    held: false,           // player is holding discus
+    flying: false,         // discus in the air
+    pos: new THREE.Vector3(-14, 0.3, -8),  // start position on the ground
+    vel: new THREE.Vector3(),
+    spinT: 0,
+    homePos: new THREE.Vector3(-14, 0.3, -8),
+  });
+
   useEffect(() => { enteredRef.current = entered; }, [entered]);
   useEffect(() => { actionsRef.current = actionsDone; }, [actionsDone]);
   useEffect(() => {
@@ -428,12 +444,12 @@ export default function SquarePage() {
 
     /* shooting star */
     const shoot = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeRadialTex("rgba(230,238,255,0.9)", "rgba(200,215,255,0.25)", 0.35),
+      map: makeRadialTex("rgba(230,238,255,0.7)", "rgba(200,215,255,0.15)", 0.5),
       blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, fog: false,
     }));
-    shoot.scale.set(2.6, 0.12, 1);
+    shoot.scale.set(4.5, 0.09, 1);
     scene.add(shoot);
-    let shootT = 5, shootLife = 0;
+    let shootT = 8, shootLife = 0;
     const shootDir = new THREE.Vector3();
 
     const cypressMat = new THREE.MeshBasicMaterial({ color: 0x04040a });
@@ -984,6 +1000,10 @@ export default function SquarePage() {
         keys[k] = true;
         e.preventDefault();
       }
+      if (k === "e" && discusKeyRef.current) {
+        discusKeyRef.current();
+        e.preventDefault();
+      }
     };
     const ku = (e) => {
       const k = e.key.toLowerCase();
@@ -1064,6 +1084,89 @@ export default function SquarePage() {
     } else {
       pitch = targetPitch = START.pitch;
     }
+
+    /* ═══ DISCUS MINIGAME OBJECTS ═══ */
+    // Stone target ring — a low ring of stones on the ground about 22 units away from discus start
+    const targetPos = new THREE.Vector3(14, 0, -8);
+    const TARGET_RADIUS = 2.4;
+    const targetRing = new THREE.Group();
+    const ringStoneMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.95, metalness: 0.05 });
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const r = TARGET_RADIUS + (Math.random() - 0.5) * 0.15;
+      const stone = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35 + Math.random() * 0.15, 0.25 + Math.random() * 0.1, 0.35 + Math.random() * 0.15),
+        ringStoneMat
+      );
+      stone.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r);
+      stone.rotation.y = Math.random() * Math.PI;
+      targetRing.add(stone);
+    }
+    // Faint glow inside the target
+    const targetGlow = new THREE.Mesh(
+      new THREE.CircleGeometry(TARGET_RADIUS - 0.2, 32).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({
+        color: 0xf28322, transparent: true, opacity: 0.06, depthWrite: false,
+      })
+    );
+    targetGlow.position.y = 0.02;
+    targetRing.add(targetGlow);
+    targetRing.position.copy(targetPos);
+    scene.add(targetRing);
+
+    // Discus mesh — small bronze disc
+    const discusGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.09, 20);
+    const discusMat = new THREE.MeshStandardMaterial({
+      color: 0xa87840, roughness: 0.45, metalness: 0.75, emissive: 0x2a1a08, emissiveIntensity: 0.4,
+    });
+    const discus = new THREE.Mesh(discusGeo, discusMat);
+    discus.position.copy(discusStateRef.current.homePos);
+    scene.add(discus);
+    // Small glow under it so you can spot it in the dark
+    const discusGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeRadialTex("rgba(255,180,90,0.9)", "rgba(255,140,50,0)", 0.4),
+      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55, fog: false,
+    }));
+    discusGlow.scale.set(2.6, 2.6, 1);
+    discusGlow.position.copy(discusStateRef.current.homePos);
+    discusGlow.position.y = 0.3;
+    scene.add(discusGlow);
+    // Hide in embed mode
+    if (embedRef.current) {
+      discus.visible = false;
+      discusGlow.visible = false;
+      targetRing.visible = false;
+    }
+
+    // Handle E key for discus pickup / throw
+    const discusHandler = () => {
+      const st = discusStateRef.current;
+      const pPos = yawObj.position;
+      if (st.flying) return; // ignore E while flying
+      if (!st.held) {
+        // try to pick up if close
+        const dx = pPos.x - st.pos.x;
+        const dz = pPos.z - st.pos.z;
+        if (Math.hypot(dx, dz) < 2.2) {
+          st.held = true;
+          setDiscusHint("picked up · press E to throw");
+        }
+      } else {
+        // throw in the direction the player is facing
+        const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        st.pos.copy(pPos);
+        st.pos.y = 1.4;
+        st.pos.add(forward.clone().multiplyScalar(1.2));
+        st.vel.copy(forward).multiplyScalar(22);
+        st.vel.y = 5.5;
+        st.flying = true;
+        st.held = false;
+        st.spinT = 0;
+        setDiscusThrows(n => n + 1);
+        setDiscusHint("");
+      }
+    };
+    discusKeyRef.current = discusHandler;
 
     const clock = new THREE.Clock();
     const vel = new THREE.Vector2(0, 0);
@@ -1197,20 +1300,94 @@ export default function SquarePage() {
       mosaicGlow.material.emissiveIntensity = 0.45 + Math.sin(t * 1.6) * 0.18;
       starMat.size = 0.75 + Math.sin(t * 0.8) * 0.06;
 
+      /* ═══ DISCUS PHYSICS ═══ */
+      if (!embedRef.current) {
+        const st = discusStateRef.current;
+        if (st.held) {
+          // stick to player, floating above their hand
+          const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+          const holdPos = yawObj.position.clone().add(forward.multiplyScalar(0.9));
+          holdPos.y = 1.55 + Math.sin(t * 4) * 0.04;
+          discus.position.copy(holdPos);
+          discus.rotation.y = t * 3;
+          discus.rotation.x = 0;
+          discusGlow.position.copy(holdPos);
+          discusGlow.material.opacity = 0.4;
+        } else if (st.flying) {
+          // ballistic arc + spin + gravity
+          st.vel.y -= 12 * dt; // gravity
+          st.pos.addScaledVector(st.vel, dt);
+          st.spinT += dt * 18;
+          discus.position.copy(st.pos);
+          discus.rotation.y = st.spinT;
+          discus.rotation.x = Math.sin(st.spinT * 0.5) * 0.2;
+          discusGlow.position.copy(st.pos);
+          discusGlow.material.opacity = 0.7;
+          // land
+          if (st.pos.y <= 0.3) {
+            st.pos.y = 0.3;
+            st.flying = false;
+            st.vel.set(0, 0, 0);
+            // scoring: distance from target center
+            const dx = st.pos.x - targetPos.x;
+            const dz = st.pos.z - targetPos.z;
+            const dist = Math.hypot(dx, dz);
+            let points = 0;
+            let msg = "missed · try again";
+            if (dist < 0.6)      { points = 100; msg = "🎯 bullseye · +100"; }
+            else if (dist < 1.2) { points = 60;  msg = "close · +60"; }
+            else if (dist < TARGET_RADIUS) { points = 25; msg = "in the ring · +25"; }
+            if (points > 0) {
+              setDiscusScore(s => s + points);
+              setDiscusBest(b => Math.max(b, points));
+            }
+            setDiscusHint(msg);
+            // reset back to home after a beat
+            setTimeout(() => {
+              st.pos.copy(st.homePos);
+              discus.position.copy(st.homePos);
+              discusGlow.position.copy(st.homePos);
+              discusGlow.position.y = 0.3;
+              setDiscusHint("");
+            }, 2400);
+          }
+        } else {
+          // resting — subtle idle rotation
+          discus.rotation.y = t * 0.4;
+          discus.rotation.x = 0;
+          discusGlow.material.opacity = 0.4 + Math.sin(t * 2.2) * 0.15;
+        }
+        // Prompt when player is near the discus and not holding/flying
+        if (!st.held && !st.flying) {
+          const pd = Math.hypot(yawObj.position.x - st.pos.x, yawObj.position.z - st.pos.z);
+          if (pd < 2.2 && discusHintTargetRef.current !== "near") {
+            discusHintTargetRef.current = "near";
+            setDiscusHint("press E · pick up the discus");
+          } else if (pd >= 2.2 && discusHintTargetRef.current === "near") {
+            discusHintTargetRef.current = "";
+            setDiscusHint("");
+          }
+        }
+      }
+
+      /* target ring gentle pulse */
+      targetGlow.material.opacity = 0.05 + Math.sin(t * 1.4) * 0.03;
+
       /* shooting star */
       shootT -= dt;
       if (shootT <= 0 && shootLife <= 0) {
-        shootLife = 1.15;
-        shootT = 8 + Math.random() * 9;
-        shoot.position.set(-70 + Math.random() * 140, 46 + Math.random() * 16, -95);
-        shootDir.set(0.55 + Math.random() * 0.3, -0.28, 0.1).normalize().multiplyScalar(58);
+        shootLife = 1.6;
+        shootT = 14 + Math.random() * 12;
+        shoot.position.set(-80 + Math.random() * 160, 48 + Math.random() * 14, -95);
+        shootDir.set(0.55 + Math.random() * 0.3, -0.22, 0.1).normalize().multiplyScalar(42);
         shoot.material.rotation = Math.atan2(-shootDir.y, shootDir.x);
       }
       if (shootLife > 0) {
         shootLife -= dt;
         shoot.position.addScaledVector(shootDir, dt);
-        const lp = shootLife / 1.15;
-        shoot.material.opacity = Math.sin(lp * Math.PI) * 0.85;
+        const lp = shootLife / 1.6;
+        // Smooth ease-in-ease-out fade, dimmer peak
+        shoot.material.opacity = Math.sin(lp * Math.PI) * 0.55;
       } else {
         shoot.material.opacity = 0;
       }
@@ -1412,6 +1589,23 @@ export default function SquarePage() {
         </svg>
         <span>map</span>
       </button>
+
+      {/* Discus game HUD */}
+      {entered && !embed && (
+        <div className={styles.discus}>
+          <div className={styles.discusHead}>
+            <span className={styles.discusEyebrow}>Discus Toss</span>
+            <span className={styles.discusScore}>{discusScore}</span>
+          </div>
+          <div className={styles.discusStats}>
+            <span>throws · {discusThrows}</span>
+            <span>best · {discusBest}</span>
+          </div>
+          {discusHint && (
+            <div className={styles.discusHint}>{discusHint}</div>
+          )}
+        </div>
+      )}
 
       {/* station card */}
       <div className={`${styles.card} ${st ? styles.cardOn : ""}`} aria-live="polite">
