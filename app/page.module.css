@@ -843,3 +843,205 @@
   max-width: 84% !important;
 }
 .tgMsgData .tgLine { color: rgba(220, 235, 250, 0.95); }
+
+/* ══════════════════════════════════════════════════════════════════
+   PULSE SECTION — inline (S6 on homepage)
+   ══════════════════════════════════════════════════════════════════ */
+
+.pulseWrap {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.pulseHead {
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+.pulseHeadTitle {
+  font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+  text-align: center;
+}
+
+/* Row 1: 6 stat counters */
+.pulseCounters {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.65rem;
+}
+.pulseCounter {
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+  transition: border-color 220ms ease, background 220ms ease;
+}
+.pulseCounter:hover {
+  border-color: rgba(242, 131, 34, 0.28);
+  background: rgba(242, 131, 34, 0.03);
+}
+.pulseCounterLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.5);
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulseCounterValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+.pulseCounterN {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1;
+  color: #f4f0e8;
+  letter-spacing: -0.01em;
+}
+.pulseCounterAffix {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.62rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.03em;
+}
+
+/* Row 2: graph + flow side-by-side */
+.pulseRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+.pulseCard {
+  padding: 1.1rem 1.2rem 1.2rem;
+  border-radius: 12px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.pulseCardHead { display: flex; flex-direction: column; gap: 0.15rem; }
+.pulseCardLabel {
+  margin: 0;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #f0ece4;
+  letter-spacing: 0.005em;
+}
+.pulseCardHint {
+  margin: 0;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.4);
+}
+
+/* Graph SVG */
+.pulseGraph { width: 100%; }
+.pulseGraphSvg { width: 100%; height: auto; display: block; }
+
+/* Flow */
+.pulseFlow { display: flex; flex-direction: column; gap: 0.3rem; }
+.pulseFlowStep {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.04);
+  transition: all 320ms ease;
+  min-height: 42px;
+}
+.pulseFlowStepCurrent {
+  background: rgba(242, 131, 34, 0.09);
+  border-color: rgba(242, 131, 34, 0.4);
+  box-shadow: 0 0 0 1px rgba(242, 131, 34, 0.08),
+              0 8px 22px -8px rgba(242, 131, 34, 0.3);
+}
+.pulseFlowStepDone {
+  background: rgba(46, 213, 115, 0.05);
+  border-color: rgba(46, 213, 115, 0.22);
+}
+.pulseFlowDot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 236, 228, 0.05);
+  border: 1px solid rgba(240, 236, 228, 0.12);
+  color: rgba(220, 215, 205, 0.6);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  transition: all 320ms ease;
+  flex-shrink: 0;
+}
+.pulseFlowStepCurrent .pulseFlowDot {
+  background: rgba(242, 131, 34, 0.22);
+  border-color: rgba(242, 131, 34, 0.8);
+  color: #ffc78d;
+}
+.pulseFlowStepDone .pulseFlowDot {
+  background: rgba(46, 213, 115, 0.2);
+  border-color: rgba(46, 213, 115, 0.6);
+  color: #7ee8a8;
+}
+.pulseFlowNum { font-size: 0.6rem; letter-spacing: 0.02em; }
+.pulseFlowBody {
+  display: flex; flex-direction: column; gap: 0.1rem; min-width: 0;
+}
+.pulseFlowLabel {
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #f0ece4;
+}
+.pulseFlowDesc {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulseFlowBar {
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: 3px;
+  height: 1.5px;
+  background: rgba(240, 236, 228, 0.06);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.pulseFlowBarFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(242, 131, 34, 0.7), #ff9a3c);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+/* Responsive: stack on narrow */
+@media (max-width: 1000px) {
+  .pulseCounters { grid-template-columns: repeat(3, 1fr); }
+  .pulseRow { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .pulseCounters { grid-template-columns: repeat(2, 1fr); }
+  .pulseCounterN { font-size: 1.4rem; }
+}
