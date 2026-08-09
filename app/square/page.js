@@ -112,6 +112,7 @@ export default function SquarePage() {
   const [hintGone, setHintGone] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [webglFail, setWebglFail] = useState(false);
+  const [pointerLocked, setPointerLocked] = useState(false);
 
   useEffect(() => { enteredRef.current = entered; }, [entered]);
   useEffect(() => { actionsRef.current = actionsDone; }, [actionsDone]);
@@ -320,9 +321,9 @@ export default function SquarePage() {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    /* warm ground bounce light at the center so the plaza reads lit, not black */
-    const groundGlow = new THREE.PointLight(0xffb060, 9, 26, 2);
-    groundGlow.position.set(0, 1.2, 0);
+    /* subtle cool ambient bounce at the center - just enough that the plaza isn't pitch-black */
+    const groundGlow = new THREE.PointLight(0x8ba8d0, 2.5, 18, 2);
+    groundGlow.position.set(0, 1.8, 0);
     scene.add(groundGlow);
 
     /* polished slabs — subtle reflections */
@@ -339,7 +340,7 @@ export default function SquarePage() {
 
     const mosaic = new THREE.Mesh(
       new THREE.RingGeometry(1.7, 2.5, 48),
-      new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.85, envMapIntensity: ENV * 0.7 })
+      new THREE.MeshStandardMaterial({ color: 0x0c0a10, roughness: 0.95, envMapIntensity: ENV * 0.4 })
     );
     mosaic.rotation.x = -Math.PI / 2;
     mosaic.position.y = 0.012;
@@ -348,7 +349,7 @@ export default function SquarePage() {
     const mosaicGlow = new THREE.Mesh(
       new THREE.RingGeometry(2.46, 2.52, 64),
       new THREE.MeshBasicMaterial({
-        color: 0x4dd4ff, transparent: true, opacity: 0.5,
+        color: 0x4dd4ff, transparent: true, opacity: 0.4,
         blending: THREE.AdditiveBlending, depthWrite: false,
       })
     );
@@ -359,13 +360,28 @@ export default function SquarePage() {
     const mosaicInner = new THREE.Mesh(
       new THREE.RingGeometry(1.71, 1.74, 64),
       new THREE.MeshBasicMaterial({
-        color: 0x4dd4ff, transparent: true, opacity: 0.35,
+        color: 0x4dd4ff, transparent: true, opacity: 0.25,
         blending: THREE.AdditiveBlending, depthWrite: false,
       })
     );
     mosaicInner.rotation.x = -Math.PI / 2;
     mosaicInner.position.y = 0.014;
     scene.add(mosaicInner);
+    // Tech tick marks around the outer ring — 24 small cyan slashes for Star Wars panel feel
+    const tickMat = new THREE.MeshBasicMaterial({
+      color: 0x7ae0ff, transparent: true, opacity: 0.55,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const tickGeo = new THREE.PlaneGeometry(0.14, 0.028);
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      const tick = new THREE.Mesh(tickGeo, tickMat);
+      tick.rotation.x = -Math.PI / 2;
+      tick.rotation.z = -a + Math.PI / 2;
+      const rr = i % 4 === 0 ? 2.66 : 2.6;
+      tick.position.set(Math.cos(a) * rr, 0.015, Math.sin(a) * rr);
+      scene.add(tick);
+    }
 
     /* sky */
     /* sky — purplesky.png wrapped on a dome, slowly rotating */
@@ -1045,12 +1061,51 @@ export default function SquarePage() {
     }
 
     const el = renderer.domElement;
+    const isTouchDevice = () => {
+      return (typeof window !== "undefined") && (
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0
+      );
+    };
+
+    // Pointer-lock look (desktop) — click to capture, ESC or click away to release
+    const onCanvasClick = () => {
+      if (embedRef.current || isTouchDevice() || overlayRef.current) return;
+      if (!enteredRef.current) return;
+      if (document.pointerLockElement !== el) {
+        el.requestPointerLock?.();
+      }
+    };
+    const onPointerLockMove = e => {
+      if (document.pointerLockElement !== el) return;
+      // movementX/Y is native pointer-lock delta — smooth and precise
+      targetYaw -= e.movementX * 0.0022;
+      targetPitch -= e.movementY * 0.0022;
+      targetPitch = Math.max(-0.58, Math.min(0.5, targetPitch));
+    };
+    const onPointerLockChange = () => {
+      const locked = document.pointerLockElement === el;
+      setPointerLocked(locked);
+      el.style.cursor = locked ? "none" : "";
+    };
+    el.addEventListener("click", onCanvasClick);
+    document.addEventListener("pointerlockchange", onPointerLockChange);
+
+    // Drag-to-look (touch only)
     const onLookDown = e => {
+      if (embedRef.current || !isTouchDevice()) return;
       if (lookId !== null) return;
+      if (e.pointerType !== "touch") return;
       lookId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
       el.setPointerCapture(e.pointerId);
     };
     const onLookMove = e => {
+      // pointer lock case
+      if (document.pointerLockElement === el) {
+        onPointerLockMove(e);
+        return;
+      }
+      // touch drag case
       if (e.pointerId !== lookId) return;
       targetYaw -= (e.clientX - lastX) * 0.0032;
       targetPitch -= (e.clientY - lastY) * 0.0027;
@@ -1390,6 +1445,9 @@ export default function SquarePage() {
       el.removeEventListener("pointermove", onLookMove);
       el.removeEventListener("pointerup", onLookUp);
       el.removeEventListener("pointercancel", onLookUp);
+      el.removeEventListener("click", onCanvasClick);
+      document.removeEventListener("pointerlockchange", onPointerLockChange);
+      if (document.pointerLockElement === el) document.exitPointerLock?.();
       if (joyEl) {
         joyEl.removeEventListener("pointerdown", onJoyDown);
         joyEl.removeEventListener("pointermove", onJoyMove);
@@ -1421,6 +1479,19 @@ export default function SquarePage() {
   return (
     <div className={`${styles.root} ${embed ? styles.embed : ""}`}>
       <div ref={wrapRef} className={styles.canvasWrap} />
+      {/* Crosshair — shown only when pointer is locked (desktop FPS mode) */}
+      {pointerLocked && (
+        <div className={styles.crosshair} aria-hidden>
+          <span className={styles.crosshairDot} />
+          <span className={styles.crosshairRing} />
+        </div>
+      )}
+      {/* Click to look — hint when entered on desktop and not yet locked */}
+      {entered && !embed && !isTouch && !pointerLocked && !mapOpen && !formOpen && !intro && !complete && (
+        <div className={styles.lookHint}>
+          <span>click to look around · ESC to release</span>
+        </div>
+      )}
       <div className={styles.vignette} aria-hidden />
 
       <a href="/" className={styles.backPill}>← agora</a>
