@@ -75,10 +75,10 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  display: flex; align-items: center; gap: 0.2rem;
+  display: flex; align-items: center; gap: 0;
   pointer-events: auto;
 }
-.navLink { display: inline-flex; align-items: center; padding: .3rem .68rem; border: none; background: transparent; color: rgba(240,236,228,.34); font-size: .6rem; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; border-radius: 999px; transition: color 120ms ease, background 120ms ease; white-space: nowrap; font-family: var(--font-ui,"DM Sans",sans-serif); }
+.navLink { display: inline-flex; align-items: center; padding: .3rem .5rem; border: none; background: transparent; color: rgba(240,236,228,.34); font-size: .56rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; border-radius: 999px; transition: color 120ms ease, background 120ms ease; white-space: nowrap; font-family: var(--font-ui,"DM Sans",sans-serif); }
 .navLink:hover { color: rgba(240,236,228,.88); background: rgba(255,255,255,.07); }
 .navLinkActive { color: rgba(240,236,228,.88) !important; background: rgba(255,255,255,.07); }
 .navActions { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
@@ -288,10 +288,12 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(20, 22, 34, 0.4) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 90%, rgba(30, 20, 12, 0.35) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(6, 6, 10, 0.88) 0%, rgba(6, 6, 10, 0.94) 100%);
+    radial-gradient(ellipse at 20% 10%, rgba(20, 22, 34, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(30, 20, 12, 0.3) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(6, 6, 10, 0.55) 0%, rgba(6, 6, 10, 0.62) 100%);
 }
 
 .pyWrap {
@@ -1178,18 +1180,11 @@
   .navTg { display: none; }
   .navLogin, .navSignup { padding: 0.28rem 0.55rem; font-size: 0.58rem; }
 
-  /* ── Section base: reset scroll-snap on mobile, let it flow naturally ── */
+  /* ── Section base: keep scroll-snap on mobile, adjust padding for smaller frame ── */
   .section {
-    height: auto;
-    min-height: 100dvh;
-    scroll-snap-align: none;
-    scroll-snap-stop: normal;
     padding: 5rem 1rem 3rem;
     align-items: center;
     justify-content: center;
-  }
-  .viewport {
-    scroll-snap-type: none;
   }
 
   /* ── HERO S1: stack, center, breathe ── */
@@ -1205,7 +1200,7 @@
   .s1Left { max-width: 100%; align-items: center; text-align: center; }
   .s1Right { width: 100%; display: flex; justify-content: center; }
   .heroCard { max-width: 340px; width: 100%; }
-  .hl1, .hl2 { font-size: clamp(2.2rem, 9vw, 3rem); line-height: 1.05; text-align: center; }
+  .hl1, .hl2 { font-size: clamp(1.8rem, 7vw, 2.4rem); line-height: 1.05; text-align: center; }
   .heroLede { text-align: center; max-width: 100%; margin-left: auto; margin-right: auto; }
   .s1Btns { justify-content: center; flex-wrap: wrap; gap: 0.55rem; }
   .heroKicker { justify-content: center; text-align: center; }
@@ -1234,7 +1229,7 @@
   }
   .pyText .pyLink { align-self: center; }
   .pyText .pyCtaRow { justify-content: center; }
-  .pyTitle { font-size: clamp(2.4rem, 8.5vw, 3.2rem); text-align: center; }
+  .pyTitle { font-size: clamp(1.9rem, 7.5vw, 2.6rem); text-align: center; }
   .pyEyebrow { text-align: center; }
   .pyVisual { justify-self: center !important; width: 100%; }
 
@@ -1276,7 +1271,7 @@
   }
   .pulseWrap { gap: 1.2rem; }
   .pulseHead { padding: 0 0.3rem; }
-  .pulseHeadTitle { font-size: clamp(2rem, 8vw, 2.8rem); }
+  .pulseHeadTitle { font-size: clamp(1.7rem, 7vw, 2.4rem); }
   .pulseCounters {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
@@ -1302,25 +1297,20 @@
   .pulseFlowLabel { font-size: 0.76rem; }
   .pulseFlowDesc { font-size: 0.54rem; }
 
-  /* ── Global veil: darken more on mobile so text is always readable ── */
-  .globalVeil {
-    background:
-      linear-gradient(180deg,
-        rgba(5, 6, 9, 0.85) 0%,
-        rgba(5, 6, 9, 0.78) 40%,
-        rgba(5, 6, 9, 0.86) 75%,
-        rgba(5, 6, 9, 0.94) 100%);
-  }
-
   /* Kill nav dots on mobile - too small to be useful */
   .dots { display: none; }
 }
 
 /* ── Very small screens (≤ 400px): extra tightening ── */
 @media (max-width: 400px) {
-  .pyTitle { font-size: 2.2rem; }
+  .pyTitle { font-size: 1.75rem; }
   .pulseCounters { grid-template-columns: 1fr 1fr; }
   .pulseCounterN { font-size: 1.15rem; }
   .heroCard { max-width: 100%; }
-  .hl1, .hl2 { font-size: 2rem; }
+  .hl1, .hl2 { font-size: 1.7rem; }
+}
+
+/* Nav: hide centered links between 700-1100px where actions crowd them */
+@media (max-width: 1100px) and (min-width: 700px) {
+  .navLinks { display: none; }
 }
