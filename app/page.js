@@ -189,6 +189,228 @@ function MediaSlot({ type, src, alt, fallback }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   PULSE — live counters, chart, flow diagram (inline section)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Count-up counter that animates when scrolled into view */
+function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) {
+  const [n, setN] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !started.current) {
+        started.current = true;
+        const t0 = performance.now();
+        const dur = 1500;
+        let raf;
+        const tick = () => {
+          const p = Math.min(1, (performance.now() - t0) / dur);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setN(value * eased);
+          if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => raf && cancelAnimationFrame(raf);
+      }
+    }, { threshold: 0.35 });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [value]);
+  const display = decimals > 0 ? n.toFixed(decimals) : Math.round(n).toLocaleString();
+  return (
+    <div className={styles.pulseCounter} ref={ref}>
+      <div className={styles.pulseCounterLabel}>{label}</div>
+      <div className={styles.pulseCounterValue}>
+        {prefix && <span className={styles.pulseCounterAffix}>{prefix}</span>}
+        <span className={styles.pulseCounterN}>{display}</span>
+        {suffix && <span className={styles.pulseCounterAffix}>{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* SVG line-and-area chart that animates in on scroll */
+function PulseGraph() {
+  const [visible, setVisible] = useState(false);
+  const [t, setT] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const io = new IntersectionObserver(entries => setVisible(entries[0].isIntersecting), { threshold: 0.25 });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!visible) return;
+    let raf, start = performance.now();
+    const tick = now => { setT((now - start) / 1000); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [visible]);
+
+  // Simulated settlement-latency data — 14 points, seconds axis 2-6s, our real point (3.52s) is called out
+  const data = [4.8, 4.2, 5.1, 3.9, 4.4, 3.6, 5.3, 4.1, 3.8, 3.52, 4.0, 3.7, 3.9, 3.6];
+  const W = 460, H = 200, padX = 26, padY = 20;
+  const chartW = W - padX * 2, chartH = H - padY * 2;
+  const yMin = 2, yMax = 6;
+  const xStep = chartW / (data.length - 1);
+  const yScale = v => padY + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+
+  // Reveal progress 0..1 as an intro animation
+  const reveal = Math.min(1, t / 1.8);
+  // Continuous pulse on the "real tx" marker
+  const pulseAlpha = 0.55 + Math.sin(t * 2.4) * 0.3;
+
+  // Build path up to reveal fraction
+  const revealCount = Math.max(2, Math.round(data.length * reveal));
+  let linePath = "";
+  let areaPath = "";
+  data.slice(0, revealCount).forEach((v, i) => {
+    const x = padX + i * xStep;
+    const y = yScale(v);
+    linePath += i === 0 ? `M${x},${y}` : ` L${x},${y}`;
+  });
+  if (revealCount >= 2) {
+    const lastX = padX + (revealCount - 1) * xStep;
+    areaPath = `${linePath} L${lastX},${padY + chartH} L${padX},${padY + chartH} Z`;
+  }
+  const highlightIdx = 9; // 3.52s marker
+
+  return (
+    <div className={styles.pulseGraph} ref={ref}>
+      <svg viewBox={`0 0 ${W} ${H}`} className={styles.pulseGraphSvg} preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stopColor="rgba(242,131,34,0.35)" />
+            <stop offset="100%" stopColor="rgba(242,131,34,0)" />
+          </linearGradient>
+        </defs>
+        {/* Y grid lines */}
+        {[2, 3, 4, 5, 6].map(v => (
+          <g key={v}>
+            <line x1={padX} y1={yScale(v)} x2={W - padX} y2={yScale(v)}
+              stroke="rgba(240,236,228,0.06)" strokeWidth="0.5" strokeDasharray="2 3" />
+            <text x={padX - 6} y={yScale(v) + 3} textAnchor="end"
+              fill="rgba(220,215,205,0.35)" fontSize="9"
+              fontFamily="var(--font-mono, DM Mono, monospace)">{v}s</text>
+          </g>
+        ))}
+        {/* Area fill */}
+        {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
+        {/* Line */}
+        {linePath && <path d={linePath} fill="none" stroke="#ff9a3c" strokeWidth="1.6"
+          strokeLinecap="round" strokeLinejoin="round" />}
+        {/* Points */}
+        {data.slice(0, revealCount).map((v, i) => {
+          const x = padX + i * xStep;
+          const y = yScale(v);
+          const isHi = i === highlightIdx;
+          return (
+            <g key={i}>
+              {isHi && (
+                <>
+                  <circle cx={x} cy={y} r="9" fill="rgba(242,131,34,0.15)" opacity={pulseAlpha} />
+                  <circle cx={x} cy={y} r="5" fill="rgba(242,131,34,0.4)" opacity={pulseAlpha} />
+                </>
+              )}
+              <circle cx={x} cy={y} r={isHi ? 3 : 2}
+                fill={isHi ? "#ffc78d" : "#ff9a3c"}
+                stroke="#0f0d16" strokeWidth="1" />
+              {isHi && (
+                <g>
+                  <line x1={x} y1={y - 8} x2={x} y2={padY} stroke="rgba(242,131,34,0.35)" strokeWidth="0.6" strokeDasharray="1 2" />
+                  <rect x={x - 22} y={padY - 14} width="44" height="14" rx="3"
+                    fill="rgba(24,20,14,0.9)" stroke="rgba(242,131,34,0.5)" strokeWidth="0.6" />
+                  <text x={x} y={padY - 4} textAnchor="middle"
+                    fill="#ffc78d" fontSize="8"
+                    fontFamily="var(--font-mono, DM Mono, monospace)"
+                    letterSpacing="0.05em">3.52s · ours</text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+        {/* X axis label */}
+        <text x={W / 2} y={H - 4} textAnchor="middle"
+          fill="rgba(220,215,205,0.35)" fontSize="8"
+          fontFamily="var(--font-mono, DM Mono, monospace)"
+          letterSpacing="0.15em">recent settlements →</text>
+      </svg>
+    </div>
+  );
+}
+
+/* Six-step agent loop that highlights the current step */
+const PULSE_FLOW = [
+  { n: "01", label: "Request",   desc: "10k units · 0.42 USDC" },
+  { n: "02", label: "Bid",       desc: "0.38 · A100 · 120ms" },
+  { n: "03", label: "Escrow",    desc: "locked · GOAT mainnet" },
+  { n: "04", label: "Execute",   desc: "provider runs the job" },
+  { n: "05", label: "Verify",    desc: "output hash · matched" },
+  { n: "06", label: "Settle",    desc: "+0.38 USDC · x402" },
+];
+
+function PulseFlow() {
+  const [visible, setVisible] = useState(false);
+  const [t, setT] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const io = new IntersectionObserver(entries => setVisible(entries[0].isIntersecting), { threshold: 0.2 });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!visible) return;
+    let raf, start = performance.now();
+    const tick = now => { setT((now - start) / 1000); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [visible]);
+
+  const cycle = 12;
+  const p = (t % cycle) / cycle;
+  const stepDur = 1 / (PULSE_FLOW.length + 1);
+  const active = Math.min(PULSE_FLOW.length - 1, Math.floor(p / stepDur));
+  const stepProg = (p % stepDur) / stepDur;
+  const isResetting = p > (PULSE_FLOW.length * stepDur);
+
+  return (
+    <div className={styles.pulseFlow} ref={ref}>
+      {PULSE_FLOW.map((s, i) => {
+        const done = !isResetting && i < active;
+        const current = !isResetting && i === active;
+        return (
+          <div key={s.n}
+            className={`${styles.pulseFlowStep} ${done ? styles.pulseFlowStepDone : ""} ${current ? styles.pulseFlowStepCurrent : ""}`}>
+            <div className={styles.pulseFlowDot}>
+              {done ? (
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12l6 6L20 6" />
+                </svg>
+              ) : (
+                <span className={styles.pulseFlowNum}>{s.n}</span>
+              )}
+            </div>
+            <div className={styles.pulseFlowBody}>
+              <div className={styles.pulseFlowLabel}>{s.label}</div>
+              <div className={styles.pulseFlowDesc}>{s.desc}</div>
+            </div>
+            {current && (
+              <div className={styles.pulseFlowBar}>
+                <div className={styles.pulseFlowBarFill} style={{ transform: `scaleX(${stepProg})` }} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
    TELEGRAM DEMO SHOWCASE — inline, scroll-triggered, Ken Burns zooms
    ══════════════════════════════════════════════════════════════════ */
 
@@ -481,7 +703,7 @@ export default function AgoraPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [selectedMode, setSelectedMode] = useState(0);
   const { entries, vol, txns } = useLiveFeed();
-  const SECTION_COUNT = 5;
+  const SECTION_COUNT = 6;
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
@@ -551,12 +773,11 @@ export default function AgoraPage() {
           </div>
           {/* Links */}
           <div className={styles.navLinks}>
-            {["Home", "Real", "Square", "Agent", "Settlement"].map((l, i) => (
+            {["Home", "Real", "Square", "Agent", "Pulse", "Settlement"].map((l, i) => (
               <button key={l}
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
             ))}
-            <a href="/pulse" className={styles.navLink}>Pulse</a>
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
@@ -735,8 +956,50 @@ export default function AgoraPage() {
           </div>
         </section>
 
-        {/* ════════ S6 — SETTLEMENT + CTA ════════ */}
+        {/* ════════ S6 — PULSE (numbers + graph + flow) ════════ */}
         <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={styles.pulseWrap}>
+              <div className={styles.pulseHead}>
+                <InView><p className={styles.pyEyebrow}>Agora · in numbers</p></InView>
+                <SlideUp className={`${styles.pyTitle} ${styles.pulseHeadTitle}`} delay={0.05}>Live pulse.</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic} ${styles.pulseHeadTitle}`} delay={0.13}>Verifiable receipts.</SlideUp>
+              </div>
+
+              {/* Row 1: Live counters */}
+              <div className={styles.pulseCounters}>
+                <PulseCounter label="Agent ID"          value={82}           prefix="#" />
+                <PulseCounter label="x402 settled"      value={1}                     />
+                <PulseCounter label="Volume settled"    value={1.00} decimals={2} suffix=" USDC" />
+                <PulseCounter label="Avg settlement"    value={3.52} decimals={2} suffix="s" />
+                <PulseCounter label="Chain ID"          value={2345}                  />
+                <PulseCounter label="Block confirmed"   value={13770302}              />
+              </div>
+
+              {/* Row 2: Graph + Flow side by side */}
+              <div className={styles.pulseRow}>
+                <div className={styles.pulseCard}>
+                  <div className={styles.pulseCardHead}>
+                    <p className={styles.pulseCardLabel}>Settlement latency</p>
+                    <p className={styles.pulseCardHint}>request → confirmed, seconds</p>
+                  </div>
+                  <PulseGraph />
+                </div>
+                <div className={styles.pulseCard}>
+                  <div className={styles.pulseCardHead}>
+                    <p className={styles.pulseCardLabel}>The agent loop</p>
+                    <p className={styles.pulseCardHint}>runs on every request</p>
+                  </div>
+                  <PulseFlow />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════ S7 — SETTLEMENT + CTA ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
