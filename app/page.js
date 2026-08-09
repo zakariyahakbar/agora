@@ -192,20 +192,46 @@ function MediaSlot({ type, src, alt, fallback }) {
    TELEGRAM DEMO SHOWCASE — inline, scroll-triggered, Ken Burns zooms
    ══════════════════════════════════════════════════════════════════ */
 
-/* Real recorded exchange from Agora testing. Each message can carry a `zoom`
-   that triggers a subtle transform-origin scale (YouTube-style) on the whole
-   phone body while that bubble is fresh. */
-const TG_SCRIPT = [
-  { role: "bot",  text: "gm 👋 I'm the Agora agent. I run my own wallet, register on-chain, and settle x402 payments.",  delay: 1200 },
-  { role: "user", text: "prove it. show me your identity",                                                                  delay: 1400 },
-  { role: "bot",  text: "on it.",                                                                                            delay: 900 },
-  { role: "bot",  text: "🔗 Registered on GOAT mainnet\nAgent ID: #82\nContract: ERC-8004\nOwner: 0xbc8c…1C3c",              delay: 1600, zoom: "up" },
-  { role: "user", text: "verified. now the payment side",                                                                    delay: 1500 },
-  { role: "bot",  text: "here's the last settled x402 tx 👇",                                                                delay: 1100 },
-  { role: "bot",  text: "💸 1.00 USDC.e settled\ntx: 0xa8747b…3460\nblock: 13,770,302\nstatus: ✅ CHECKOUT_VERIFIED",         delay: 1800, zoom: "up" },
-  { role: "user", text: "clean. is that mainnet?",                                                                           delay: 1200 },
-  { role: "bot",  text: "yes — GOAT mainnet, chain 2345. Bitcoin-backed L2.",                                                delay: 1500, zoom: "up" },
-  { role: "user", text: "🫡",                                                                                                 delay: 1400 },
+/* Real Agora agent exchanges. Each scenario is a self-contained conversation.
+   Scenarios rotate on each loop for variety. Messages can carry:
+   - kind: "data"  → renders as a mono/monospace data block (looks like a real agent output)
+   - zoom: "up"    → subtle YouTube-style Ken Burns zoom on that beat */
+
+const TG_SCENARIOS = [
+  /* Scenario 1: real x402 payment test on mainnet (based on the actual exchange) */
+  [
+    { role: "user", text: "run a real x402 payment test.\n\n• chain: 2345 (GOAT)\n• token: USDC.e\n• amount: 1 USDC.e\n• action: test_x402_payment", delay: 1600 },
+    { role: "bot",  text: "on it. fetching the x402 merchant onboarding skill.", delay: 1400 },
+    { role: "bot",  text: "checking token config — need to confirm USDC.e vs native USDC on this chain…", delay: 1500 },
+    { role: "bot",  text: "confirmed: USDC.e at 0x3022b8…12D8 · 6 decimals · same address the skill lists as USDC. same token.", delay: 1700, kind: "data" },
+    { role: "bot",  text: "checking wallet balances now.", delay: 1200 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "wallet: 0x1B66…1F06\nUSDC.e: 5.0 ✅\nBTC (gas): 0.0000598 ✅\nready to send." },
+    { role: "user", text: "send it.", delay: 1200 },
+    { role: "bot",  text: "submitting to x402 gateway…", delay: 1500 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2200, text: "✅ CHECKOUT_VERIFIED\ntx: 0xa8747b…3460\nblock: 13,770,302\namount: 1.00 USDC.e\nchain: GOAT 2345" },
+    { role: "user", text: "clean 🫡", delay: 1400 },
+  ],
+
+  /* Scenario 2: identity + on-chain verification */
+  [
+    { role: "user", text: "who are you? show me proof.", delay: 1400 },
+    { role: "bot",  text: "gm 👋 I'm the Agora agent. wallet-holding, on-chain, x402-native.", delay: 1400 },
+    { role: "bot",  text: "pulling my registration now.", delay: 1200 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "🔗 registered on GOAT mainnet\nagent ID: #82\ncontract: ERC-8004\nowner: 0xbc8c…1C3c\nstatus: active" },
+    { role: "user", text: "and the merchant side?", delay: 1300 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 1900, text: "merchant: agora_tbg\nreceiving: 0x1B66…1F06\nmode: DIRECT · monitors on-chain transfers\nstate: approved ✅" },
+    { role: "user", text: "so everything's real, on mainnet?", delay: 1400 },
+    { role: "bot",  text: "yes. GOAT chain 2345 — Bitcoin-backed L2. not a testnet demo.", delay: 1500, zoom: "up" },
+  ],
+
+  /* Scenario 3: quick status check */
+  [
+    { role: "user", text: "/status", delay: 1100 },
+    { role: "bot",  text: "checking…", delay: 900 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2100, text: "agora_bot · online\n──\nagent #82 · ERC-8004 ✅\nmerchant agora_tbg ✅\nchain 2345 (GOAT) ✅\nsettled tx count: 1\nlast tx: 0xa8747b…3460" },
+    { role: "user", text: "all green. nice.", delay: 1400 },
+    { role: "bot",  text: "ready when the next request comes in.", delay: 1400 },
+  ],
 ];
 
 function TelegramDemoShowcase() {
@@ -215,6 +241,7 @@ function TelegramDemoShowcase() {
   const [typing, setTyping] = useState(false);
   const [started, setStarted] = useState(false);
   const [zoom, setZoom] = useState({ scale: 1, origin: "50% 50%" });
+  const [scenarioIdx, setScenarioIdx] = useState(0);
   const runIdRef = useRef(0);
 
   // Trigger start when the demo scrolls into view
@@ -231,13 +258,13 @@ function TelegramDemoShowcase() {
     return () => io.disconnect();
   }, [started]);
 
-  // Auto-scroll chat container to bottom on new content (scoped, no cascade)
+  // Auto-scroll chat container to bottom (scoped, no cascade to parent)
   useEffect(() => {
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [msgs, typing]);
 
-  // Main animation loop
+  // Main animation loop — cycles through TG_SCENARIOS
   useEffect(() => {
     if (!started) return;
     const runId = ++runIdRef.current;
@@ -248,39 +275,43 @@ function TelegramDemoShowcase() {
       timers.push(id);
     });
 
-    async function play(all = []) {
-      for (let i = 0; i < TG_SCRIPT.length; i++) {
+    async function play(scenarioIndex) {
+      const script = TG_SCENARIOS[scenarioIndex];
+      setScenarioIdx(scenarioIndex);
+      setMsgs([]);
+      setTyping(false);
+      setZoom({ scale: 1, origin: "50% 50%" });
+      await wait(400);
+      if (cancelled) return;
+
+      let all = [];
+      for (let i = 0; i < script.length; i++) {
         if (cancelled || runIdRef.current !== runId) return;
-        const m = TG_SCRIPT[i];
-        // typing dots for bot messages
+        const m = script[i];
         if (m.role === "bot") {
           setTyping(true);
-          await wait(700 + Math.random() * 400);
+          await wait(650 + Math.random() * 400);
           if (cancelled) return;
           setTyping(false);
         }
-        const nextMsgs = [...all, { ...m, id: `${runId}-${i}` }];
+        const nextMsgs = [...all, { ...m, id: `${runId}-${scenarioIndex}-${i}` }];
         all = nextMsgs;
         setMsgs(nextMsgs);
-        // Ken Burns: subtle zoom in when message is "important"
         if (m.zoom === "up") {
-          setZoom({ scale: 1.08, origin: "50% 78%" });
+          setZoom({ scale: 1.08, origin: "50% 75%" });
         } else {
           setZoom({ scale: 1, origin: "50% 50%" });
         }
         await wait(m.delay || 1200);
       }
-      // Reset zoom and loop
+      // Hold, reset, next scenario
       setZoom({ scale: 1, origin: "50% 50%" });
       await wait(3500);
       if (cancelled) return;
-      setMsgs([]);
-      setTyping(false);
-      await wait(600);
-      if (cancelled) return;
-      play([]);
+      const nextScenario = (scenarioIndex + 1) % TG_SCENARIOS.length;
+      play(nextScenario);
     }
-    play([]);
+    play(0);
 
     return () => {
       cancelled = true;
@@ -336,22 +367,28 @@ function TelegramDemoShowcase() {
 
         {/* Chat */}
         <div className={styles.tgChat} ref={chatRef}>
-          {msgs.map(m => (
-            <div key={m.id} className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot}`}>
-              {m.text.split("\n").map((line, k) => (
-                <span key={k} className={styles.tgLine}>{line}</span>
-              ))}
-              <span className={styles.tgTime}>
-                {m.role === "user" ? "12:04 " : "12:04"}
-                {m.role === "user" && (
-                  <svg viewBox="0 0 16 12" width="12" height="9" className={styles.tgReadCheck} aria-hidden>
-                    <path d="M1 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M5 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </span>
-            </div>
-          ))}
+          {msgs.map(m => {
+            const isData = m.kind === "data";
+            return (
+              <div
+                key={m.id}
+                className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot} ${isData ? styles.tgMsgData : ""}`}
+              >
+                {m.text.split("\n").map((line, k) => (
+                  <span key={k} className={styles.tgLine}>{line}</span>
+                ))}
+                <span className={styles.tgTime}>
+                  {m.role === "user" ? "12:04 " : "12:04"}
+                  {m.role === "user" && (
+                    <svg viewBox="0 0 16 12" width="12" height="9" className={styles.tgReadCheck} aria-hidden>
+                      <path d="M1 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M5 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </span>
+              </div>
+            );
+          })}
           {typing && (
             <div className={`${styles.tgMsg} ${styles.tgMsgBot} ${styles.tgTyping}`}>
               <span className={styles.tgDot} />
