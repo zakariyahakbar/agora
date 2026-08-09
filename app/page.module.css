@@ -827,9 +827,13 @@
   color: rgba(180, 200, 220, 0.55);
 }
 
-/* Demo frame body: the Telegram UI takes over the whole frame including behind the label */
+/* Demo frame body: the Telegram UI takes over the whole frame */
 .demoFrame .pyFrameBody {
   padding-top: 0;
+}
+/* Hide the pyFrame label pill on the demo — the Telegram header itself is our chrome */
+.demoFrame .pyFrameLabel {
+  display: none;
 }
 /* Data-block bubbles: monospace, tighter, feels like agent output */
 .tgMsgData {
