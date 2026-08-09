@@ -113,22 +113,6 @@ export default function SquarePage() {
   const [isTouch, setIsTouch] = useState(false);
   const [webglFail, setWebglFail] = useState(false);
 
-  /* Discus toss minigame */
-  const [discusScore, setDiscusScore] = useState(0);
-  const [discusBest, setDiscusBest] = useState(0);
-  const [discusThrows, setDiscusThrows] = useState(0);
-  const [discusHint, setDiscusHint] = useState("");
-  const discusKeyRef = useRef(null);
-  const discusHintTargetRef = useRef("");
-  const discusStateRef = useRef({
-    held: false,           // player is holding discus
-    flying: false,         // discus in the air
-    pos: new THREE.Vector3(-14, 0.3, -8),  // start position on the ground
-    vel: new THREE.Vector3(),
-    spinT: 0,
-    homePos: new THREE.Vector3(-14, 0.3, -8),
-  });
-
   useEffect(() => { enteredRef.current = entered; }, [entered]);
   useEffect(() => { actionsRef.current = actionsDone; }, [actionsDone]);
   useEffect(() => {
@@ -243,8 +227,8 @@ export default function SquarePage() {
     renderer.domElement.style.touchAction = "none";
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080712);
-    scene.fog = new THREE.FogExp2(0x0a0916, 0.026);
+    scene.background = new THREE.Color(0x060614);
+    scene.fog = new THREE.FogExp2(0x0c0a1c, 0.028);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -355,18 +339,33 @@ export default function SquarePage() {
 
     const mosaic = new THREE.Mesh(
       new THREE.RingGeometry(1.7, 2.5, 48),
-      new THREE.MeshStandardMaterial({ color: 0x191510, roughness: 0.8, envMapIntensity: ENV })
+      new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.85, envMapIntensity: ENV * 0.7 })
     );
     mosaic.rotation.x = -Math.PI / 2;
     mosaic.position.y = 0.012;
     scene.add(mosaic);
+    // Thin cyan holo ring inlaid in the stone - Star Wars accent
     const mosaicGlow = new THREE.Mesh(
-      new THREE.RingGeometry(2.44, 2.52, 48),
-      new THREE.MeshStandardMaterial({ color: 0x1a1208, emissive: 0xf28322, emissiveIntensity: 0.55, roughness: 0.6 })
+      new THREE.RingGeometry(2.46, 2.52, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x4dd4ff, transparent: true, opacity: 0.5,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      })
     );
     mosaicGlow.rotation.x = -Math.PI / 2;
     mosaicGlow.position.y = 0.014;
     scene.add(mosaicGlow);
+    // Second thinner inner accent ring for depth
+    const mosaicInner = new THREE.Mesh(
+      new THREE.RingGeometry(1.71, 1.74, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x4dd4ff, transparent: true, opacity: 0.35,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      })
+    );
+    mosaicInner.rotation.x = -Math.PI / 2;
+    mosaicInner.position.y = 0.014;
+    scene.add(mosaicInner);
 
     /* sky */
     /* sky — purplesky.png wrapped on a dome, slowly rotating */
@@ -941,15 +940,15 @@ export default function SquarePage() {
       const ang = Math.atan2(spot.z, spot.x);
       const innerR = 2.6, outerR = len - 1.4;
       const plen = outerR - innerR;
-      // carved runner slab
+      // carved runner slab - subtle dark stone base, holo-line runs down center
       const rt = runnerTex.clone();
       rt.needsUpdate = true;
       rt.repeat.set(Math.max(2, Math.round(plen / 1.6)), 1);
       const runner = new THREE.Mesh(
-        new THREE.PlaneGeometry(plen, 0.9),
+        new THREE.PlaneGeometry(plen, 0.55),
         new THREE.MeshStandardMaterial({
-          map: rt, roughness: 0.7, metalness: 0.1, envMapIntensity: ENV,
-          emissive: 0xff7a1a, emissiveMap: rt, emissiveIntensity: 0.5,
+          map: rt, roughness: 0.9, metalness: 0.05, envMapIntensity: ENV * 0.6,
+          emissive: 0x1a1410, emissiveIntensity: 0.15,
         })
       );
       runner.rotation.x = -Math.PI / 2;
@@ -957,18 +956,30 @@ export default function SquarePage() {
       runner.position.set(Math.cos(ang) * (innerR + plen / 2), 0.02, Math.sin(ang) * (innerR + plen / 2));
       runner.receiveShadow = true;
       scene.add(runner);
-      // bright travelling pulse
-      const pulse = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.7, 0.9),
+      // Thin holographic light line running down the center — cyan for the Star Wars accent
+      const holoLine = new THREE.Mesh(
+        new THREE.PlaneGeometry(plen, 0.08),
         new THREE.MeshBasicMaterial({
-          color: 0xffd9a0, transparent: true, opacity: 0.7,
+          color: 0x4dd4ff, transparent: true, opacity: 0.55,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        })
+      );
+      holoLine.rotation.x = -Math.PI / 2;
+      holoLine.rotation.z = -ang;
+      holoLine.position.set(Math.cos(ang) * (innerR + plen / 2), 0.03, Math.sin(ang) * (innerR + plen / 2));
+      scene.add(holoLine);
+      // bright travelling pulse - warmer, smaller
+      const pulse = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.55, 0.5),
+        new THREE.MeshBasicMaterial({
+          color: 0xffb46a, transparent: true, opacity: 0.85,
           blending: THREE.AdditiveBlending, depthWrite: false,
         })
       );
       pulse.rotation.x = -Math.PI / 2;
       pulse.rotation.z = -ang;
       scene.add(pulse);
-      pathFlows.push({ idx: spot.idx, ang, innerR, plen, runner, rt, pulse });
+      pathFlows.push({ idx: spot.idx, ang, innerR, plen, runner, rt, pulse, holoLine });
     });
 
     /* bloom */
@@ -998,10 +1009,6 @@ export default function SquarePage() {
       const k = e.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) {
         keys[k] = true;
-        e.preventDefault();
-      }
-      if (k === "e" && discusKeyRef.current) {
-        discusKeyRef.current();
         e.preventDefault();
       }
     };
@@ -1084,90 +1091,6 @@ export default function SquarePage() {
     } else {
       pitch = targetPitch = START.pitch;
     }
-
-    /* ═══ DISCUS MINIGAME OBJECTS ═══ */
-    // Stone target ring — a low ring of stones on the ground about 22 units away from discus start
-    const targetPos = new THREE.Vector3(14, 0, -8);
-    const TARGET_RADIUS = 2.4;
-    const targetRing = new THREE.Group();
-    const ringStoneMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.95, metalness: 0.05 });
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      const r = TARGET_RADIUS + (Math.random() - 0.5) * 0.15;
-      const stone = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35 + Math.random() * 0.15, 0.25 + Math.random() * 0.1, 0.35 + Math.random() * 0.15),
-        ringStoneMat
-      );
-      stone.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r);
-      stone.rotation.y = Math.random() * Math.PI;
-      targetRing.add(stone);
-    }
-    // Faint glow inside the target
-    const targetGlow = new THREE.Mesh(
-      new THREE.CircleGeometry(TARGET_RADIUS - 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({
-        color: 0xf28322, transparent: true, opacity: 0.06, depthWrite: false,
-      })
-    );
-    targetGlow.position.y = 0.02;
-    targetRing.add(targetGlow);
-    targetRing.position.copy(targetPos);
-    scene.add(targetRing);
-
-    // Discus mesh — small bronze disc
-    const discusGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.09, 20);
-    const discusMat = new THREE.MeshStandardMaterial({
-      color: 0xa87840, roughness: 0.45, metalness: 0.75, emissive: 0x2a1a08, emissiveIntensity: 0.4,
-    });
-    const discus = new THREE.Mesh(discusGeo, discusMat);
-    discus.position.copy(discusStateRef.current.homePos);
-    scene.add(discus);
-    // Small glow under it so you can spot it in the dark
-    const discusGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeRadialTex("rgba(255,180,90,0.9)", "rgba(255,140,50,0)", 0.4),
-      blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55, fog: false,
-    }));
-    discusGlow.scale.set(2.6, 2.6, 1);
-    discusGlow.position.copy(discusStateRef.current.homePos);
-    discusGlow.position.y = 0.3;
-    scene.add(discusGlow);
-    // Hide in embed mode
-    if (embedRef.current) {
-      discus.visible = false;
-      discusGlow.visible = false;
-      targetRing.visible = false;
-    }
-
-    // Handle E key for discus pickup / throw
-    const discusHandler = () => {
-      const st = discusStateRef.current;
-      const pPos = yawObj.position;
-      if (st.flying) return; // ignore E while flying
-      if (!st.held) {
-        // try to pick up if close
-        const dx = pPos.x - st.pos.x;
-        const dz = pPos.z - st.pos.z;
-        if (Math.hypot(dx, dz) < 2.2) {
-          st.held = true;
-          setDiscusHint("picked up · press E to throw");
-        }
-      } else {
-        // throw in the direction the player is facing
-        const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-        st.pos.copy(pPos);
-        st.pos.y = 1.4;
-        st.pos.add(forward.clone().multiplyScalar(1.2));
-        st.vel.copy(forward).multiplyScalar(22);
-        st.vel.y = 5.5;
-        st.flying = true;
-        st.held = false;
-        st.spinT = 0;
-        setDiscusThrows(n => n + 1);
-        setDiscusHint("");
-      }
-    };
-    discusKeyRef.current = discusHandler;
-
     const clock = new THREE.Clock();
     const vel = new THREE.Vector2(0, 0);
     let bobPhase = 0;
@@ -1297,82 +1220,9 @@ export default function SquarePage() {
 
       core.material.emissiveIntensity = 2.8 + Math.sin(t * 1.6) * 0.7;
       beam.material.opacity = 0.11 + Math.sin(t * 1.6) * 0.03;
-      mosaicGlow.material.emissiveIntensity = 0.45 + Math.sin(t * 1.6) * 0.18;
+      mosaicGlow.material.opacity = 0.45 + Math.sin(t * 1.6) * 0.15;
+      mosaicInner.material.opacity = 0.3 + Math.sin(t * 1.6 + 0.5) * 0.1;
       starMat.size = 0.75 + Math.sin(t * 0.8) * 0.06;
-
-      /* ═══ DISCUS PHYSICS ═══ */
-      if (!embedRef.current) {
-        const st = discusStateRef.current;
-        if (st.held) {
-          // stick to player, floating above their hand
-          const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-          const holdPos = yawObj.position.clone().add(forward.multiplyScalar(0.9));
-          holdPos.y = 1.55 + Math.sin(t * 4) * 0.04;
-          discus.position.copy(holdPos);
-          discus.rotation.y = t * 3;
-          discus.rotation.x = 0;
-          discusGlow.position.copy(holdPos);
-          discusGlow.material.opacity = 0.4;
-        } else if (st.flying) {
-          // ballistic arc + spin + gravity
-          st.vel.y -= 12 * dt; // gravity
-          st.pos.addScaledVector(st.vel, dt);
-          st.spinT += dt * 18;
-          discus.position.copy(st.pos);
-          discus.rotation.y = st.spinT;
-          discus.rotation.x = Math.sin(st.spinT * 0.5) * 0.2;
-          discusGlow.position.copy(st.pos);
-          discusGlow.material.opacity = 0.7;
-          // land
-          if (st.pos.y <= 0.3) {
-            st.pos.y = 0.3;
-            st.flying = false;
-            st.vel.set(0, 0, 0);
-            // scoring: distance from target center
-            const dx = st.pos.x - targetPos.x;
-            const dz = st.pos.z - targetPos.z;
-            const dist = Math.hypot(dx, dz);
-            let points = 0;
-            let msg = "missed · try again";
-            if (dist < 0.6)      { points = 100; msg = "🎯 bullseye · +100"; }
-            else if (dist < 1.2) { points = 60;  msg = "close · +60"; }
-            else if (dist < TARGET_RADIUS) { points = 25; msg = "in the ring · +25"; }
-            if (points > 0) {
-              setDiscusScore(s => s + points);
-              setDiscusBest(b => Math.max(b, points));
-            }
-            setDiscusHint(msg);
-            // reset back to home after a beat
-            setTimeout(() => {
-              st.pos.copy(st.homePos);
-              discus.position.copy(st.homePos);
-              discusGlow.position.copy(st.homePos);
-              discusGlow.position.y = 0.3;
-              setDiscusHint("");
-            }, 2400);
-          }
-        } else {
-          // resting — subtle idle rotation
-          discus.rotation.y = t * 0.4;
-          discus.rotation.x = 0;
-          discusGlow.material.opacity = 0.4 + Math.sin(t * 2.2) * 0.15;
-        }
-        // Prompt when player is near the discus and not holding/flying
-        if (!st.held && !st.flying) {
-          const pd = Math.hypot(yawObj.position.x - st.pos.x, yawObj.position.z - st.pos.z);
-          if (pd < 2.2 && discusHintTargetRef.current !== "near") {
-            discusHintTargetRef.current = "near";
-            setDiscusHint("press E · pick up the discus");
-          } else if (pd >= 2.2 && discusHintTargetRef.current === "near") {
-            discusHintTargetRef.current = "";
-            setDiscusHint("");
-          }
-        }
-      }
-
-      /* target ring gentle pulse */
-      targetGlow.material.opacity = 0.05 + Math.sin(t * 1.4) * 0.03;
-
       /* shooting star */
       shootT -= dt;
       if (shootT <= 0 && shootLife <= 0) {
@@ -1477,12 +1327,17 @@ export default function SquarePage() {
       /* pathway flow — a bright pulse streams along each unserved runner */
       for (const pf of pathFlows) {
         const served = !!acts[STATIONS[pf.idx].action.key];
-        pf.runner.material.emissiveIntensity = served ? 0.12 : 0.45 + Math.sin(t * 2 + pf.idx) * 0.15;
-        pf.runner.material.emissive.setHex(served ? 0x2ed573 : 0xff7a1a);
+        // Runner stone base stays subtle - holo line is the accent
+        pf.runner.material.emissiveIntensity = 0.15;
+        // Holo line: cyan when unserved, green when done, with a subtle pulse
+        pf.holoLine.material.color.setHex(served ? 0x7ee8a8 : 0x4dd4ff);
+        pf.holoLine.material.opacity = served
+          ? 0.35 + Math.sin(t * 1.4 + pf.idx) * 0.08
+          : 0.55 + Math.sin(t * 2 + pf.idx) * 0.15;
         const frac = ((t * 0.32 + pf.idx * 0.2) % 1);
         const along = pf.innerR + frac * pf.plen;
-        pf.pulse.position.set(Math.cos(pf.ang) * along, 0.03, Math.sin(pf.ang) * along);
-        pf.pulse.material.opacity = served ? 0 : Math.sin(frac * Math.PI) * 0.7;
+        pf.pulse.position.set(Math.cos(pf.ang) * along, 0.04, Math.sin(pf.ang) * along);
+        pf.pulse.material.opacity = served ? 0 : Math.sin(frac * Math.PI) * 0.85;
         pf.pulse.visible = !served;
       }
 
@@ -1590,22 +1445,6 @@ export default function SquarePage() {
         <span>map</span>
       </button>
 
-      {/* Discus game HUD */}
-      {entered && !embed && (
-        <div className={styles.discus}>
-          <div className={styles.discusHead}>
-            <span className={styles.discusEyebrow}>Discus Toss</span>
-            <span className={styles.discusScore}>{discusScore}</span>
-          </div>
-          <div className={styles.discusStats}>
-            <span>throws · {discusThrows}</span>
-            <span>best · {discusBest}</span>
-          </div>
-          {discusHint && (
-            <div className={styles.discusHint}>{discusHint}</div>
-          )}
-        </div>
-      )}
 
       {/* station card */}
       <div className={`${styles.card} ${st ? styles.cardOn : ""}`} aria-live="polite">
