@@ -113,12 +113,32 @@ export default function SquarePage() {
   const [isTouch, setIsTouch] = useState(false);
   const [webglFail, setWebglFail] = useState(false);
   const [pointerLocked, setPointerLocked] = useState(false);
+  const canvasElRef = useRef(null);
+  const tryLockRef = useRef(null);
 
   useEffect(() => { enteredRef.current = entered; }, [entered]);
   useEffect(() => { actionsRef.current = actionsDone; }, [actionsDone]);
   useEffect(() => {
     overlayRef.current = mapOpen || formOpen || intro || complete;
-  }, [mapOpen, formOpen, intro, complete]);
+    const overlay = overlayRef.current;
+    const el = canvasElRef.current;
+    if (!el) return;
+    if (overlay) {
+      // Release pointer lock while an overlay is open
+      if (document.pointerLockElement === el) document.exitPointerLock?.();
+    } else if (entered && !embed) {
+      // Try to re-lock after overlay closes (small delay to let animation settle)
+      const t = setTimeout(() => tryLockRef.current?.(), 60);
+      return () => clearTimeout(t);
+    }
+  }, [mapOpen, formOpen, intro, complete, entered, embed]);
+
+  // Auto-lock the moment we transition to entered (desktop only)
+  useEffect(() => {
+    if (!entered || embed) return;
+    const t = setTimeout(() => tryLockRef.current?.(), 200);
+    return () => clearTimeout(t);
+  }, [entered, embed]);
 
   useEffect(() => {
     if (entered && !intro) {
@@ -466,6 +486,108 @@ export default function SquarePage() {
     scene.add(shoot);
     let shootT = 8, shootLife = 0;
     const shootDir = new THREE.Vector3();
+
+    /* ═══ STAR WARS EASTER EGGS ═══ */
+    // 1) Holo projection column on top of the beacon - subtle cyan hologram
+    const holoTable = new THREE.Group();
+    // A dim data-cylinder rising from the beacon top
+    const holoCyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.42, 1.4, 20, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0x7ae0ff, transparent: true, opacity: 0.18,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      })
+    );
+    holoCyl.position.y = 2.6;
+    holoTable.add(holoCyl);
+    // Cross-lines around it for that scanline feel
+    for (let i = 0; i < 5; i++) {
+      const line = new THREE.Mesh(
+        new THREE.RingGeometry(0.38 + i * 0.005, 0.4 + i * 0.005, 24),
+        new THREE.MeshBasicMaterial({
+          color: 0x7ae0ff, transparent: true, opacity: 0.35,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        })
+      );
+      line.rotation.x = -Math.PI / 2;
+      line.position.y = 1.95 + i * 0.28;
+      holoTable.add(line);
+    }
+    scene.add(holoTable);
+
+    // 2) Two Imperial-style banners hanging from a hidden crossbar on the outer perimeter
+    const bannerMat = new THREE.MeshStandardMaterial({
+      color: 0x2a1010, roughness: 0.85, side: THREE.DoubleSide,
+    });
+    const impBannerMat = new THREE.MeshStandardMaterial({
+      color: 0x8a1a1a, roughness: 0.85, side: THREE.DoubleSide, emissive: 0x2a0505, emissiveIntensity: 0.2,
+    });
+    [-24, 24].forEach((xPos) => {
+      // hanging crossbar (dark, mostly hidden)
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(4.5, 0.15, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0x1a1610, roughness: 0.9 })
+      );
+      bar.position.set(xPos, 8, -18);
+      scene.add(bar);
+      // banner cloth
+      const banner = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 5, 4, 10), impBannerMat);
+      banner.position.set(xPos, 5.3, -18);
+      scene.add(banner);
+      // Imperial cog symbol - simple ring with spokes
+      const cog = new THREE.Mesh(
+        new THREE.RingGeometry(0.35, 0.42, 16),
+        new THREE.MeshBasicMaterial({ color: 0x2a0808, transparent: true, opacity: 0.85 })
+      );
+      cog.position.set(xPos, 6.2, -17.99);
+      scene.add(cog);
+    });
+
+    // 3) Docking-bay style light strips on 4 columns (thin cyan vertical lines)
+    const dockLightGeo = new THREE.PlaneGeometry(0.06, 3.5);
+    const dockLightMat = new THREE.MeshBasicMaterial({
+      color: 0x7ae0ff, transparent: true, opacity: 0.55,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const dockLights = [];
+    // Put them on the outer 4 diagonal columns
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      const rr = 15;
+      const strip = new THREE.Mesh(dockLightGeo, dockLightMat.clone());
+      strip.position.set(Math.cos(a) * rr, 3, Math.sin(a) * rr);
+      strip.rotation.y = a + Math.PI;
+      scene.add(strip);
+      dockLights.push(strip);
+    }
+
+    // 4) Distant ship silhouette in the sky - small cruiser easter egg
+    const shipGroup = new THREE.Group();
+    const shipMat = new THREE.MeshBasicMaterial({ color: 0x111420, transparent: true, opacity: 0.9, fog: false });
+    // Wedge body
+    const shipBody = new THREE.Mesh(new THREE.ConeGeometry(2.5, 8, 4), shipMat);
+    shipBody.rotation.z = Math.PI / 2;
+    shipBody.rotation.y = Math.PI / 2;
+    shipGroup.add(shipBody);
+    // Engine glows - two small orange dots at the back
+    const engineMat = new THREE.MeshBasicMaterial({
+      color: 0xff6a2a, transparent: true, opacity: 0.85,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+    });
+    [-0.9, 0.9].forEach((dz) => {
+      const engine = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), engineMat);
+      engine.position.set(-3.8, 0, dz);
+      shipGroup.add(engine);
+    });
+    shipGroup.position.set(-70, 32, -80);
+    shipGroup.rotation.y = -0.4;
+    scene.add(shipGroup);
+    // Hide star wars easter eggs in embed mode - keep homepage showcase clean
+    if (embedRef.current) {
+      holoTable.visible = false;
+      shipGroup.visible = false;
+      dockLights.forEach(l => l.visible = false);
+    }
 
     const cypressMat = new THREE.MeshBasicMaterial({ color: 0x04040a });
     for (let i = 0; i < 16; i++) {
@@ -998,16 +1120,8 @@ export default function SquarePage() {
       pathFlows.push({ idx: spot.idx, ang, innerR, plen, runner, rt, pulse, holoLine });
     });
 
-    /* bloom */
+    /* No post-processing bloom - cleaner scene without haze spread */
     let composer = null;
-    if (!coarse) {
-      composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new UnrealBloomPass(
-        new THREE.Vector2(wrap.clientWidth, wrap.clientHeight), 0.68, 0.7, 0.8
-      ));
-      composer.addPass(new OutputPass());
-    }
 
     /* input */
     const keys = {};
@@ -1061,6 +1175,7 @@ export default function SquarePage() {
     }
 
     const el = renderer.domElement;
+    canvasElRef.current = el;
     const isTouchDevice = () => {
       return (typeof window !== "undefined") && (
         "ontouchstart" in window ||
@@ -1068,17 +1183,18 @@ export default function SquarePage() {
       );
     };
 
-    // Pointer-lock look (desktop) — click to capture, ESC or click away to release
-    const onCanvasClick = () => {
+    // Pointer-lock look (desktop). Attempts to lock whenever entered + no overlay.
+    const tryLock = () => {
       if (embedRef.current || isTouchDevice() || overlayRef.current) return;
       if (!enteredRef.current) return;
       if (document.pointerLockElement !== el) {
         el.requestPointerLock?.();
       }
     };
+    const onCanvasClick = () => tryLock();
+    tryLockRef.current = tryLock;
     const onPointerLockMove = e => {
       if (document.pointerLockElement !== el) return;
-      // movementX/Y is native pointer-lock delta — smooth and precise
       targetYaw -= e.movementX * 0.0022;
       targetPitch -= e.movementY * 0.0022;
       targetPitch = Math.max(-0.58, Math.min(0.5, targetPitch));
@@ -1209,7 +1325,7 @@ export default function SquarePage() {
         const mlen = Math.hypot(mx, mz);
         if (mlen > 1) { mx /= mlen; mz /= mlen; }
         running = !!keys["shift"] && mlen > 0.01;
-        const speed = running ? 7.2 : 4.4;
+        const speed = running ? 5.6 : 3.8;
         const cos = Math.cos(yaw), sin = Math.sin(yaw);
         const wx = (mx * cos + mz * sin) * speed;
         const wz = (-mx * sin + mz * cos) * speed;
@@ -1277,6 +1393,18 @@ export default function SquarePage() {
       beam.material.opacity = 0.11 + Math.sin(t * 1.6) * 0.03;
       mosaicGlow.material.opacity = 0.45 + Math.sin(t * 1.6) * 0.15;
       mosaicInner.material.opacity = 0.3 + Math.sin(t * 1.6 + 0.5) * 0.1;
+
+      // Star Wars easter egg ticks
+      // Hologram scanlines flicker + slow rotation
+      holoTable.rotation.y = t * 0.35;
+      holoCyl.material.opacity = 0.14 + Math.sin(t * 6) * 0.06;
+      // Dock lights flicker at slightly different phases
+      dockLights.forEach((l, i) => {
+        l.material.opacity = 0.4 + Math.sin(t * 1.2 + i * 1.3) * 0.2;
+      });
+      // Distant ship slowly drifts across the sky
+      shipGroup.position.x = -70 + Math.sin(t * 0.06) * 12;
+      shipGroup.position.y = 32 + Math.sin(t * 0.05) * 1.5;
       starMat.size = 0.75 + Math.sin(t * 0.8) * 0.06;
       /* shooting star */
       shootT -= dt;
@@ -1479,17 +1607,10 @@ export default function SquarePage() {
   return (
     <div className={`${styles.root} ${embed ? styles.embed : ""}`}>
       <div ref={wrapRef} className={styles.canvasWrap} />
-      {/* Crosshair — shown only when pointer is locked (desktop FPS mode) */}
-      {pointerLocked && (
+      {/* Fortnite-style crosshair - always visible when playing on desktop */}
+      {entered && !embed && !isTouch && !mapOpen && !formOpen && !intro && !complete && (
         <div className={styles.crosshair} aria-hidden>
           <span className={styles.crosshairDot} />
-          <span className={styles.crosshairRing} />
-        </div>
-      )}
-      {/* Click to look — hint when entered on desktop and not yet locked */}
-      {entered && !embed && !isTouch && !pointerLocked && !mapOpen && !formOpen && !intro && !complete && (
-        <div className={styles.lookHint}>
-          <span>click to look around · ESC to release</span>
         </div>
       )}
       <div className={styles.vignette} aria-hidden />
