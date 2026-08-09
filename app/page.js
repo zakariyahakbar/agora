@@ -630,6 +630,223 @@ function TelegramDemoShowcase() {
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   AGENT PANEL — toggles between recorded demo and live chat
+   ══════════════════════════════════════════════════════════════════ */
+
+function AgentPanel() {
+  const [mode, setMode] = useState("demo"); // "demo" | "live"
+  return (
+    <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
+      <div className={styles.pyFrameLabel}>
+        {mode === "demo"
+          ? "Telegram · @agoraa_bot · recorded"
+          : "Live · @agoraa_bot · you're chatting"}
+      </div>
+      {/* Mode toggle */}
+      <div className={styles.agentToggle}>
+        <button
+          className={`${styles.agentToggleBtn} ${mode === "demo" ? styles.agentToggleBtnActive : ""}`}
+          onClick={() => setMode("demo")}
+          type="button"
+        >Demo</button>
+        <button
+          className={`${styles.agentToggleBtn} ${mode === "live" ? styles.agentToggleBtnActive : ""}`}
+          onClick={() => setMode("live")}
+          type="button"
+        >Live chat</button>
+      </div>
+      <div className={styles.pyFrameBody}>
+        {mode === "demo" ? <TelegramDemoShowcase /> : <LiveAgentChat />}
+      </div>
+    </div>
+  );
+}
+
+/* ── LiveAgentChat: real chat via /api/chat proxy, SSE-streamed ── */
+function LiveAgentChat() {
+  const [msgs, setMsgs] = useState([
+    { role: "bot", text: "gm 👋 I'm the Agora agent. Ask me about my identity, my wallet, or the x402 payment I settled." },
+  ]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [errText, setErrText] = useState("");
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs, sending]);
+
+  const send = async (e) => {
+    e?.preventDefault?.();
+    const text = input.trim();
+    if (!text || sending) return;
+    setErrText("");
+    setSending(true);
+    setInput("");
+    const userMsg = { role: "user", text };
+    setMsgs(prev => [...prev, userMsg, { role: "bot", text: "", streaming: true }]);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) {
+        let msg = "Something went wrong. Try again.";
+        try {
+          const j = await res.json();
+          if (j?.message) msg = j.message;
+        } catch { /* body wasn't JSON */ }
+        setErrText(msg);
+        setMsgs(prev => prev.filter(m => !m.streaming));
+        setSending(false);
+        return;
+      }
+      if (!res.body) {
+        setErrText("No response from the agent.");
+        setMsgs(prev => prev.filter(m => !m.streaming));
+        setSending(false);
+        return;
+      }
+      // Parse SSE stream — OpenAI-compatible chunks
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let full = "";
+      let done = false;
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop(); // keep last incomplete line
+        for (const raw of lines) {
+          const line = raw.trim();
+          if (!line || !line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (payload === "[DONE]") { done = true; break; }
+          try {
+            const chunk = JSON.parse(payload);
+            const delta = chunk?.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta.length) {
+              full += delta;
+              setMsgs(prev => {
+                const copy = [...prev];
+                for (let i = copy.length - 1; i >= 0; i--) {
+                  if (copy[i].streaming) { copy[i] = { ...copy[i], text: full }; break; }
+                }
+                return copy;
+              });
+            }
+          } catch { /* ignore malformed chunk */ }
+        }
+      }
+      // Finalize: clear streaming flag
+      setMsgs(prev => prev.map(m => m.streaming ? { ...m, streaming: false } : m));
+    } catch (err) {
+      setErrText("Connection failed. Check your network and try again.");
+      setMsgs(prev => prev.filter(m => !m.streaming));
+    } finally {
+      setSending(false);
+      // Refocus input for quick next question
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  return (
+    <div className={styles.tg}>
+      <div className={styles.tgBody}>
+        <img className={styles.tgWallpaper} src="/telegram.png" alt="" aria-hidden draggable={false} />
+        <div className={styles.tgWallTint} />
+
+        {/* Header */}
+        <div className={styles.tgHeader}>
+          <div className={styles.tgHeaderBack}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </div>
+          <div className={styles.tgHeaderAv}>
+            <img src="/mylogo.png" alt="AGORA" draggable={false} />
+          </div>
+          <div className={styles.tgHeaderText}>
+            <div className={styles.tgHeaderName}>agora_bot</div>
+            <div className={styles.tgHeaderSub}>
+              {sending ? "typing…" : "bot · online"}
+            </div>
+          </div>
+          <div className={styles.tgHeaderIcons}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="5" r="1.6" />
+              <circle cx="12" cy="12" r="1.6" />
+              <circle cx="12" cy="19" r="1.6" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Chat */}
+        <div className={styles.tgChat} ref={scrollRef}>
+          {msgs.map((m, i) => (
+            <div
+              key={i}
+              className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot}`}
+            >
+              {m.text
+                ? m.text.split("\n").map((line, k) => (
+                    <span key={k} className={styles.tgLine}>{line}</span>
+                  ))
+                : (
+                  <div className={styles.tgTyping}>
+                    <span className={styles.tgDot} />
+                    <span className={styles.tgDot} />
+                    <span className={styles.tgDot} />
+                  </div>
+                )}
+            </div>
+          ))}
+          {errText && (
+            <div className={styles.tgErr}>{errText}</div>
+          )}
+        </div>
+
+        {/* Input */}
+        <form className={styles.tgInputBar} onSubmit={send}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9.5" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            className={styles.tgInputField}
+            placeholder={sending ? "waiting for agent…" : "Message @agoraa_bot"}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={sending}
+            maxLength={2000}
+          />
+          <button
+            type="submit"
+            className={styles.tgSend}
+            disabled={sending || !input.trim()}
+            aria-label="Send"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M2 21l21-9L2 3v7l15 2-15 2z" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function GlobalVideo() {
   const vRef = useRef(null);
   useEffect(() => {
@@ -928,20 +1145,15 @@ export default function AgoraPage() {
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
               <InView delay={0.2} className={styles.pyVisual}>
-                <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
-                  <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot · live</div>
-                  <div className={styles.pyFrameBody}>
-                    <TelegramDemoShowcase />
-                  </div>
-                </div>
+                <AgentPanel />
               </InView>
               <div className={styles.pyText}>
                 <InView><p className={styles.pyEyebrow}>The Agent · Live</p></InView>
                 <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, and settles x402 payments on GOAT mainnet. Six steps, zero human approvals — the whole loop, running.</p></InView>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, and settles x402 payments on GOAT mainnet. Watch the demo, or chat with the real agent yourself. Six steps, zero human approvals.</p></InView>
                 <InView delay={0.32}>
-                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Talk to the agent →</a>
+                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Open in Telegram →</a>
                 </InView>
               </div>
             </div>
