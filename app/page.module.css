@@ -1049,3 +1049,12 @@
   .pulseCounters { grid-template-columns: repeat(2, 1fr); }
   .pulseCounterN { font-size: 1.4rem; }
 }
+
+/* Pulse: align content to top with safe clearance under the sticky nav */
+.py:has(.pulseWrap) {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 6rem;
+  padding-bottom: 3rem;
+  overflow-y: auto;
+}
