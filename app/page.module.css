@@ -1058,3 +1058,95 @@
   padding-bottom: 3rem;
   overflow-y: auto;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   AGENT PANEL — demo/live toggle + real input
+   ══════════════════════════════════════════════════════════════════ */
+
+.agentToggle {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.7rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.2rem;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.75);
+  border: 1px solid rgba(240, 236, 228, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.agentToggleBtn {
+  background: transparent;
+  border: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+.agentToggleBtn:hover {
+  color: rgba(240, 236, 228, 0.9);
+}
+.agentToggleBtnActive {
+  background: rgba(242, 131, 34, 0.18);
+  color: #ffc78d;
+}
+.agentToggleBtnActive:hover {
+  color: #ffd6a0;
+}
+
+/* Live chat input field */
+.tgInputField {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 0.75rem;
+  color: rgba(240, 245, 250, 0.95);
+}
+.tgInputField::placeholder {
+  color: rgba(180, 200, 220, 0.5);
+}
+.tgInputField:disabled {
+  opacity: 0.55;
+}
+.tgSend {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  color: #6ab7ff;
+  cursor: pointer;
+  transition: transform 140ms ease, opacity 140ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tgSend:hover:not(:disabled) {
+  transform: translateX(1px);
+}
+.tgSend:disabled {
+  color: rgba(180, 200, 220, 0.3);
+  cursor: not-allowed;
+}
+.tgErr {
+  align-self: center;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(220, 60, 40, 0.12);
+  border: 1px solid rgba(220, 60, 40, 0.35);
+  color: #ffb4a8;
+  font-family: -apple-system, "SF Pro Text", sans-serif;
+  font-size: 0.66rem;
+  text-align: center;
+  margin: 0.5rem 0;
+  max-width: 90%;
+}
