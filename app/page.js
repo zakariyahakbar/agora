@@ -420,39 +420,31 @@ function PulseFlow() {
    - zoom: "up"    → subtle YouTube-style Ken Burns zoom on that beat */
 
 const TG_SCENARIOS = [
-  /* Scenario 1: real x402 payment test on mainnet (based on the actual exchange) */
+  /* Scenario 1: x402 payment test — the punchy version */
   [
-    { role: "user", text: "run a real x402 payment test.\n\n• chain: 2345 (GOAT)\n• token: USDC.e\n• amount: 1 USDC.e\n• action: test_x402_payment", delay: 1600 },
-    { role: "bot",  text: "on it. fetching the x402 merchant onboarding skill.", delay: 1400 },
-    { role: "bot",  text: "checking token config — need to confirm USDC.e vs native USDC on this chain…", delay: 1500 },
-    { role: "bot",  text: "confirmed: USDC.e at 0x3022b8…12D8 · 6 decimals · same address the skill lists as USDC. same token.", delay: 1700, kind: "data" },
-    { role: "bot",  text: "checking wallet balances now.", delay: 1200 },
+    { role: "user", text: "run a real x402 payment test.\n1 USDC.e · GOAT mainnet", delay: 1500 },
+    { role: "bot",  text: "on it. fetching x402 skill + checking token.", delay: 1400 },
     { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "wallet: 0x1B66…1F06\nUSDC.e: 5.0 ✅\nBTC (gas): 0.0000598 ✅\nready to send." },
     { role: "user", text: "send it.", delay: 1200 },
-    { role: "bot",  text: "submitting to x402 gateway…", delay: 1500 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2200, text: "✅ CHECKOUT_VERIFIED\ntx: 0xa8747b…3460\nblock: 13,770,302\namount: 1.00 USDC.e\nchain: GOAT 2345" },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2400, text: "✅ CHECKOUT_VERIFIED\ntx: 0xa8747b…3460\nblock: 13,770,302\n1.00 USDC.e settled" },
     { role: "user", text: "clean 🫡", delay: 1400 },
   ],
 
-  /* Scenario 2: identity + on-chain verification */
+  /* Scenario 2: identity + proof */
   [
     { role: "user", text: "who are you? show me proof.", delay: 1400 },
-    { role: "bot",  text: "gm 👋 I'm the Agora agent. wallet-holding, on-chain, x402-native.", delay: 1400 },
-    { role: "bot",  text: "pulling my registration now.", delay: 1200 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "🔗 registered on GOAT mainnet\nagent ID: #82\ncontract: ERC-8004\nowner: 0xbc8c…1C3c\nstatus: active" },
-    { role: "user", text: "and the merchant side?", delay: 1300 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 1900, text: "merchant: agora_tbg\nreceiving: 0x1B66…1F06\nmode: DIRECT · monitors on-chain transfers\nstate: approved ✅" },
-    { role: "user", text: "so everything's real, on mainnet?", delay: 1400 },
-    { role: "bot",  text: "yes. GOAT chain 2345 — Bitcoin-backed L2. not a testnet demo.", delay: 1500, zoom: "up" },
+    { role: "bot",  text: "gm 👋 I'm the Agora agent. on-chain and x402-native.", delay: 1400 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "🔗 GOAT mainnet\nagent #82 · ERC-8004\nowner: 0xbc8c…1C3c\nstatus: active" },
+    { role: "user", text: "merchant side?", delay: 1300 },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "merchant: agora_tbg\nreceiving: 0x1B66…1F06\nmode: DIRECT\nstate: approved ✅" },
   ],
 
-  /* Scenario 3: quick status check */
+  /* Scenario 3: quick /status */
   [
     { role: "user", text: "/status", delay: 1100 },
     { role: "bot",  text: "checking…", delay: 900 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2100, text: "agora_bot · online\n──\nagent #82 · ERC-8004 ✅\nmerchant agora_tbg ✅\nchain 2345 (GOAT) ✅\nsettled tx count: 1\nlast tx: 0xa8747b…3460" },
+    { role: "bot",  kind: "data", zoom: "up", delay: 2400, text: "agora_bot · online\n──\nagent #82 ✅\nmerchant agora_tbg ✅\nchain 2345 ✅\nlast tx: 0xa8747b…3460" },
     { role: "user", text: "all green. nice.", delay: 1400 },
-    { role: "bot",  text: "ready when the next request comes in.", delay: 1400 },
   ],
 ];
 
@@ -520,7 +512,7 @@ function TelegramDemoShowcase() {
         all = nextMsgs;
         setMsgs(nextMsgs);
         if (m.zoom === "up") {
-          setZoom({ scale: 1.08, origin: "50% 75%" });
+          setZoom({ scale: 1.05, origin: "50% 50%" });
         } else {
           setZoom({ scale: 1, origin: "50% 50%" });
         }
