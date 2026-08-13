@@ -109,9 +109,9 @@
 .btnGhost:hover { border-color: rgba(240,236,228,.4); color: rgba(240,236,228,.92); }
 
 /* VIEWPORT */
-.viewport { position: relative; z-index: 2; width: 100%; height: 100dvh; overflow-y: scroll; overflow-x: hidden; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; scrollbar-width: none; }
+.viewport { position: relative; z-index: 2; width: 100%; height: 100dvh; overflow-y: scroll; overflow-x: hidden; scroll-snap-type: y proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; scrollbar-width: none; scroll-behavior: smooth; }
 .viewport::-webkit-scrollbar { display: none; }
-.section { position: relative; width: 100%; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; }
+.section { position: relative; width: 100%; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; scroll-snap-align: start; scroll-margin-top: 4.5rem; }
 
 /* ─── TYPE ─── */
 .eyebrow { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 1rem; font-family: var(--font-mono,"DM Mono",monospace); }
