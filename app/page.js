@@ -1,1233 +1,1408 @@
-"use client";
+/* ══════════════════════════════════════════
+   AGORA — Final clean CSS
+══════════════════════════════════════════ */
+.root { position: relative; width: 100%; height: 100dvh; background: #06070a; color: #f0ece4; overflow: hidden; }
 
-import Image from "next/image";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import styles from "./page.module.css";
+.grain { display: none; }
+@keyframes grain { 0%{background-position:0 0} 25%{background-position:-36px -16px} 50%{background-position:16px -36px} 75%{background-position:-16px 36px} }
 
-const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
-
-const SPONSORS = [
-  { name: "GOAT Network", img: "/goat.png"   },
-  { name: "CryptoChicks", img: "/chicks.png"  },
-  { name: "MindFuel",     img: "/mind.png"    },
-  { name: "Metis",        img: "/metis.png"    },
-];
-
-const AGENT_MODES = [
-  { id: "request", label: "Request", tag: "Define the job. Set the budget.",
-    body: "AGORA autonomously broadcasts compute jobs to the network, specifying units, latency requirements, and maximum spend. No human writes the RFP." },
-  { id: "bid",     label: "Compete", tag: "Providers bid. Best price wins.",
-    body: "Provider nodes respond with price, GPU specs, and reputation scores. AGORA evaluates all bids autonomously and selects the optimal provider in milliseconds." },
-  { id: "settle",  label: "Settle",  tag: "Verify. Release. Done.",
-    body: "Output is cryptographically verified. Escrow releases via x402 on GOAT Network. Bitcoin-backed settlement, zero human approval, full on-chain auditability." },
-];
-
-const FEED_EVENTS = [
-  { t: "r", msg: (a) => `Example: broadcast 10k inference units · budget ${a} USDC` },
-  { t: "b", msg: () => `Example: provider bid 0.38 USDC · A100 · 120ms` },
-  { t: "b", msg: () => `Example: counter-bid 0.41 USDC · H100 · 62ms` },
-  { t: "e", msg: (a) => `Example: escrow locked · ${a} USDC · GOAT mainnet` },
-  { t: "v", msg: () => `Example: output verified via cryptographic proof` },
-  { t: "s", msg: (a) => `Example: settled · +${a} USDC via x402` },
-];
-
-const STEPS = [
-  { n: "01", label: "Request",  body: "AGORA defines the job, sets the budget, broadcasts to the network." },
-  { n: "02", label: "Bid",      body: "Provider nodes compete autonomously on price, speed, and reputation." },
-  { n: "03", label: "Escrow",   body: "Payment locked in GOAT smart contract. Untouchable until verified." },
-  { n: "04", label: "Execute",  body: "Provider runs the job. No human oversight. Pure machine coordination." },
-  { n: "05", label: "Verify",   body: "Output hash validated cryptographically. Objective, not subjective." },
-  { n: "06", label: "Settle",   body: "x402 releases escrow. Bitcoin-backed payment. On-chain forever." },
-];
-
-/* ── Sponsor strip ── */
-function SponsorStrip() {
-  const items = [...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS];
-  return (
-    <div className={styles.sponsorWrap}>
-      <div className={styles.sponsorFadeL} />
-      <div className={styles.sponsorFadeR} />
-      <div className={styles.sponsorLabel}>Hackathon Sponsors</div>
-      <div className={styles.sponsorTrackWrap}>
-        <motion.div className={styles.sponsorTrack}
-          animate={{ x: ["0%", "-25%"] }}
-          transition={{ duration: 28, ease: "linear", repeat: Infinity }}>
-          {items.map((s, i) => (
-            <div key={i} className={styles.sponsorItem}>
-              {s.img
-                ? <img src={s.img} alt={s.name} className={styles.sponsorLogo} />
-                : <span className={styles.sponsorTextLogo}>{s.name}</span>
-              }
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </div>
-  );
+.globalVideo {
+  position: fixed;
+  top: -2px; right: -2px; bottom: -2px; left: -2px; /* slight overscan kills subpixel edge gaps */
+  z-index: 1; overflow: hidden; pointer-events: none; transform: translateZ(0);
 }
-
-/* ── Blur-up (hero, fires on mount) ── */
-function BlurUp({ children, className, delay = 0, style }) {
-  return (
-    <motion.div className={className} style={style}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>
-      {children}
-    </motion.div>
-  );
-}
-
-/* ── Reveal on scroll ── */
-function InView({ children, className, delay = 0, style }) {
-  return (
-    <motion.div className={className} style={style}
-      initial={{ opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ delay, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}>
-      {children}
-    </motion.div>
-  );
-}
-
-/* ── Clip-up ── */
-function SlideUp({ children, className, delay = 0 }) {
-  return (
-    <div style={{ overflow: "hidden" }}>
-      <motion.div className={className}
-        initial={{ y: "108%", opacity: 0 }}
-        whileInView={{ y: "0%", opacity: 1 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ delay, duration: 0.78, ease: [0.16, 1, 0.3, 1] }}>
-        {children}
-      </motion.div>
-    </div>
-  );
-}
-
-/* ── Magnetic button ── */
-function MagBtn({ children, className, href, target, onClick }) {
-  const ref = useRef(null);
-  const x = useMotionValue(0); const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 300, damping: 24 });
-  const sy = useSpring(y, { stiffness: 300, damping: 24 });
-  const onMove = (e) => {
-    const r = ref.current.getBoundingClientRect();
-    x.set((e.clientX - (r.left + r.width / 2)) * 0.28);
-    y.set((e.clientY - (r.top + r.height / 2)) * 0.28);
-  };
-  const onLeave = () => { x.set(0); y.set(0); };
-  const Tag = href ? "a" : "button";
-  return (
-    <motion.div style={{ x: sx, y: sy, display: "inline-flex" }}
-      onMouseMove={onMove} onMouseLeave={onLeave} ref={ref}>
-      <Tag href={href} target={target}
-        rel={target === "_blank" ? "noopener noreferrer" : undefined}
-        className={className} onClick={onClick}>{children}</Tag>
-    </motion.div>
-  );
-}
-
-/* ── Counter ── */
-function Counter({ value, decimals = 0 }) {
-  const [d, setD] = useState(0);
-  useEffect(() => {
-    let s = 0; const end = parseFloat(value);
-    const id = setInterval(() => {
-      s += (end / 1200) * 16;
-      if (s >= end) { setD(end); clearInterval(id); return; }
-      setD(s);
-    }, 16);
-    return () => clearInterval(id);
-  }, [value]);
-  return <>{decimals > 0 ? d.toFixed(decimals) : Math.floor(d)}</>;
-}
-
-/* ── Media slot: shows an <img>/<video> if the file exists, else a labeled empty state ── */
-function MediaSlot({ type, src, alt, fallback }) {
-  const [failed, setFailed] = useState(false);
-  const vRef = useRef(null);
-  useEffect(() => {
-    if (type !== "video") return;
-    const v = vRef.current; if (!v) return;
-    v.play().catch(() => {});
-  }, [type, src, failed]);
-  if (failed) {
-    return (
-      <div className={styles.mediaEmpty} role="img" aria-label={alt}>
-        <span className={styles.mediaEmptyDot} />
-        <span className={styles.mediaEmptyLabel}>{fallback}</span>
-        <span className={styles.mediaEmptySub}>coming soon</span>
-      </div>
+.videoBg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; transform: translateZ(0); }
+/* Veil now lives INSIDE the same fixed wrapper as the video, so it is
+   guaranteed to share identical bounds — it can never drift apart from the
+   video on resize, orientation change, or mobile browser chrome collapse. */
+.globalVeil {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(5, 6, 9, 0.88) 0%,
+      rgba(5, 6, 9, 0.8) 40%,
+      rgba(5, 6, 9, 0.88) 75%,
+      rgba(5, 6, 9, 0.96) 100%
     );
-  }
-  if (type === "video") {
-    return (
-      <video
-        ref={vRef}
-        className={styles.mediaVideo}
-        src={src}
-        muted
-        playsInline
-        loop
-        preload="metadata"
-        onError={() => setFailed(true)}
-        aria-label={alt}
-      />
-    );
-  }
-  return (
-    <img
-      className={styles.mediaImage}
-      src={src}
-      alt={alt}
-      onError={() => setFailed(true)}
-    />
-  );
+}
+
+.orb {
+  position: absolute;
+  width: var(--os, 45vw); height: var(--os, 45vw);
+  max-width: 640px; max-height: 640px;
+  left: var(--ox); top: var(--oy);
+  transform: translate(-50%,-50%) translateZ(0);
+  background: radial-gradient(circle, var(--oc) 0%, transparent 68%);
+  filter: blur(80px); pointer-events: none; z-index: 1;
+  opacity: 0.55;
+  will-change: opacity;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orb { animation: orbFade 26s ease-in-out infinite alternate; }
+}
+@keyframes orbFade { from{opacity:.55} to{opacity:.95} }
+
+.tint     { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(160deg, rgba(5,6,9,.87) 0%, rgba(6,7,10,.90) 50%, rgba(5,6,9,.87) 100%); }
+.tintDark { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(150deg, rgba(5,6,9,.91) 0%, rgba(7,8,11,.94) 50%, rgba(5,6,9,.91) 100%); }
+.tintDeep { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(155deg, rgba(5,6,9,.93) 0%, rgba(6,7,10,.96) 50%, rgba(5,6,9,.93) 100%); }
+
+/* ─── NAV — flex, everything inside pill ─── */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; padding: .85rem 1.5rem 0; pointer-events: none; }
+.navCluster {
+  max-width: 820px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+}
+.navBar {
+  width: 100%;
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 .5rem 0 .65rem; height: 46px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 8px 32px rgba(0,0,0,.55);
+  pointer-events: all;
+  transition: background 320ms ease, border-color 320ms ease;
+  overflow: hidden;
+}
+.navScrolled .navBar { background: rgba(5,6,9,.97); border-color: rgba(255,255,255,.07); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 20px rgba(0,0,0,.75); }
+.navLogo { display: inline-flex; align-items: center; gap: .42rem; border: none; background: transparent; cursor: default; padding: 0; flex-shrink: 0; }
+.navLogoImg { width: 20px; height: 20px; object-fit: contain; }
+.navLogoText { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: .84rem; font-weight: 600; font-style: italic; letter-spacing: .07em; color: rgba(240,236,228,.9); }
+.navLinks {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 0;
+  pointer-events: auto;
+}
+.navLink { display: inline-flex; align-items: center; padding: .3rem .5rem; border: none; background: transparent; color: rgba(240,236,228,.34); font-size: .56rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; border-radius: 999px; transition: color 120ms ease, background 120ms ease; white-space: nowrap; font-family: var(--font-ui,"DM Sans",sans-serif); }
+.navLink:hover { color: rgba(240,236,228,.88); background: rgba(255,255,255,.07); }
+.navLinkActive { color: rgba(240,236,228,.88) !important; background: rgba(255,255,255,.07); }
+.navActions { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.navTg { display: inline-flex; align-items: center; gap: .34rem; padding: .26rem .65rem; border-radius: 999px; font-size: .59rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(240,236,228,.7); text-decoration: none; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.055); font-family: var(--font-ui,"DM Sans",sans-serif); transition: all 150ms ease; white-space: nowrap; }
+.navTg:hover { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.22); }
+.livePill { display: inline-flex; align-items: center; gap: .36rem; padding: .26rem .65rem; border: 1px solid rgba(46,213,115,.2); border-radius: 999px; background: rgba(46,213,115,.06); font-size: .57rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(110,225,155,.9); font-family: var(--font-mono,"DM Mono",monospace); }
+
+.navAuthDivider { width: 1px; height: 16px; background: rgba(255,255,255,.1); margin: 0 .1rem; flex-shrink: 0; }
+.navLogin { display: inline-flex; align-items: center; padding: .26rem .6rem; border-radius: 999px; font-size: .59rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(240,236,228,.62); text-decoration: none; border: 1px solid transparent; background: transparent; font-family: var(--font-ui,"DM Sans",sans-serif); cursor: pointer; transition: all 150ms ease; white-space: nowrap; }
+.navLogin:hover { color: #fff; }
+.navSignup { display: inline-flex; align-items: center; padding: .26rem .75rem; border-radius: 999px; font-size: .59rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.14); background: linear-gradient(135deg, rgba(240,112,32,.9) 0%, rgba(184,77,8,.9) 100%); font-family: var(--font-ui,"DM Sans",sans-serif); cursor: pointer; white-space: nowrap; box-shadow: 0 2px 12px rgba(220,90,15,.35); transition: all 150ms ease; }
+.navSignup:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(220,90,15,.5); }
+.liveDot { width: 5px; height: 5px; border-radius: 50%; background: #2ed573; box-shadow: 0 0 8px rgba(46,213,115,.9); animation: pulse 2.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.5)} }
+
+/* NAV DOTS */
+.dots { position: fixed; right: 1.1rem; top: 50%; transform: translateY(-50%); z-index: 250; display: flex; flex-direction: column; align-items: center; gap: .44rem; }
+.dot { width: 4px; height: 4px; border-radius: 999px; border: none; background: rgba(255,255,255,.14); cursor: pointer; padding: 0; transition: all 280ms cubic-bezier(.34,1.2,.64,1); }
+.dotActive { width: 3px; height: 24px; background: linear-gradient(180deg, #f07020 0%, #a04008 100%); box-shadow: 0 0 10px rgba(220,90,15,.9), 0 0 20px rgba(220,90,15,.3); }
+
+/* BUTTONS */
+.btnRed { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: .46rem; min-height: 2.5rem; padding: 0 1.4rem; border: none; border-radius: 999px; background: transparent; color: #fff; font-size: .65rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; cursor: pointer; font-family: var(--font-ui,"DM Sans",sans-serif); transition: transform 220ms cubic-bezier(.34,1.2,.64,1); }
+.btnRed:hover { transform: translateY(-1px); }
+.btnRedGlow { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: linear-gradient(135deg, #f07020 0%, #b84d08 100%); box-shadow: 0 4px 20px rgba(220,90,15,.55), inset 0 1px 0 rgba(255,160,80,.2); transition: filter 180ms ease; }
+.btnRed > * { position: relative; z-index: 1; }
+.btnRed:hover .btnRedGlow { filter: brightness(1.12); }
+.btnGhost { display: inline-flex; align-items: center; padding: 0 1.3rem; min-height: 2.5rem; background: transparent; border: 1px solid rgba(240,236,228,.18); border-radius: 999px; color: rgba(240,236,228,.62); font-size: .65rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; text-decoration: none; font-family: var(--font-ui,"DM Sans",sans-serif); transition: all 180ms ease; }
+.btnGhost:hover { border-color: rgba(240,236,228,.4); color: rgba(240,236,228,.92); }
+
+/* VIEWPORT */
+.viewport { position: relative; z-index: 2; width: 100%; height: 100dvh; overflow-y: scroll; overflow-x: hidden; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; scrollbar-width: none; }
+.viewport::-webkit-scrollbar { display: none; }
+.section { position: relative; width: 100%; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; scroll-snap-align: start; padding-top: 4.5rem; }
+
+/* ─── TYPE ─── */
+.eyebrow { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 1rem; font-family: var(--font-mono,"DM Mono",monospace); }
+.glassPill {
+  display: inline-flex; align-items: center; gap: .34rem;
+  margin: 0 0 1rem; max-width: 100%; flex-wrap: wrap; line-height: 1.35;
+  padding: .3rem .85rem; border-radius: 999px; width: fit-content;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 4px 20px rgba(0,0,0,.45);
+  font-size: .55rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(240,236,228,.78); font-family: var(--font-mono,"DM Mono",monospace);
+}
+.sectionLabel { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 .6rem; font-family: var(--font-mono,"DM Mono",monospace); }
+.sectionTitle { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.5rem,5.5vw,4.4rem); font-weight: 600; line-height: 1.0; color: #f0ece4; letter-spacing: -.023em; margin: 0; display: block; text-shadow: 0 2px 24px rgba(0,0,0,.6); }
+.sectionTitleItalic { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.5rem,5.5vw,4.4rem); font-style: italic; font-weight: 400; line-height: 1.0; color: rgba(240,236,228,.38); letter-spacing: -.023em; margin: 0; display: block; text-shadow: 0 2px 16px rgba(0,0,0,.4); }
+.sectionSub { font-size: .84rem; color: rgba(240,236,228,.6); line-height: 1.72; margin: .8rem 0 0; }
+
+/* ─── S1 HERO ─── */
+.s1 { background: transparent; }
+.s1Veil { display: none; }
+
+/* Two-col hero grid */
+.s1Grid {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: row;
+  align-items: center; justify-content: space-between;
+  gap: 2.5rem;
+  padding: 0 clamp(2rem, 5vw, 5rem);
+  max-width: 1100px; width: 100%;
+  /* Account for sponsor strip at bottom */
+  padding-bottom: clamp(5rem, 8dvh, 7rem);
+}
+.s1Left { display: flex; flex-direction: column; align-items: flex-start; text-align: left; flex: 1; min-width: 0; max-width: 560px; }
+.s1Right { flex-shrink: 0; width: 220px; }
+
+.hl1 { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.4rem,5vw,4.8rem); font-weight: 600; line-height: 1.0; color: #f0ece4; letter-spacing: -.026em; margin: 0; text-shadow: 0 2px 32px rgba(0,0,0,.65); }
+.hl2 { font-family: var(--font-display,"Cormorant Garamond",serif); font-style: italic; font-size: clamp(2.4rem,5vw,4.8rem); font-weight: 400; line-height: 1.0; color: rgba(240,236,228,.32); letter-spacing: -.026em; margin: 0; text-shadow: 0 2px 24px rgba(0,0,0,.5); }
+.s1Sub { margin: .85rem 0 1.4rem; font-size: .85rem; color: rgba(240,236,228,.58); letter-spacing: .01em; line-height: 1.72; }
+.s1Btns { display: flex; align-items: center; gap: .68rem; flex-wrap: wrap; }
+
+/* Hero stats card */
+.heroCard { padding: 1.3rem 1.2rem; border-radius: 16px; background: rgba(12,14,18,.82); backdrop-filter: blur(24px) saturate(140%); -webkit-backdrop-filter: blur(24px) saturate(140%); border: 1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 20px 56px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: .85rem; position: relative; overflow: hidden; transform: translateZ(0); }
+.heroCardEdge { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220,90,15,.5) 30%, rgba(255,255,255,.62) 50%, rgba(160,130,80,.5) 70%, transparent); }
+.heroCardLabel { font-size: .55rem; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 14px rgba(220,90,15,.7); font-family: var(--font-mono,"DM Mono",monospace); margin: 0; }
+.heroStats { display: flex; flex-direction: column; gap: .65rem; }
+.heroStat { display: flex; flex-direction: column; gap: .12rem; }
+.heroStatN { font-family: var(--font-mono,"DM Mono",monospace); font-size: 1.4rem; font-weight: 500; color: #f0ece4; }
+.heroStatL { font-size: .52rem; letter-spacing: .15em; text-transform: uppercase; color: rgba(240,236,228,.4); font-family: var(--font-mono,"DM Mono",monospace); }
+.heroStatDiv { width: 100%; height: 1px; background: rgba(255,255,255,.08); }
+.heroPill { display: inline-flex; align-items: center; gap: .34rem; padding: .26rem .7rem; border: 1px solid rgba(46,213,115,.2); border-radius: 999px; background: rgba(46,213,115,.06); font-size: .55rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(110,225,155,.9); font-family: var(--font-mono,"DM Mono",monospace); text-decoration: none; transition: background 150ms ease; width: fit-content; }
+.heroPill:hover { background: rgba(46,213,115,.12); }
+
+/* Sponsor strip */
+.heroBottom { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; border-top: 1px solid rgba(255,255,255,.06); }
+.sponsorWrap { position: relative; display: flex; align-items: center; padding: .7rem 1.5rem; background: rgba(5,6,9,.55); backdrop-filter: blur(12px); gap: 1.2rem; overflow: hidden; }
+.sponsorFadeL { position: absolute; left: 0; top: 0; bottom: 0; width: 5rem; z-index: 2; background: linear-gradient(to right, rgba(5,6,9,.9), transparent); pointer-events: none; }
+.sponsorFadeR { position: absolute; right: 0; top: 0; bottom: 0; width: 5rem; z-index: 2; background: linear-gradient(to left, rgba(5,6,9,.9), transparent); pointer-events: none; }
+.sponsorLabel { font-size: .52rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: rgba(240,236,228,.28); font-family: var(--font-mono,"DM Mono",monospace); white-space: nowrap; flex-shrink: 0; }
+.sponsorTrackWrap { flex: 1; overflow: hidden; }
+.sponsorTrack { display: flex; align-items: center; white-space: nowrap; width: max-content; }
+.sponsorItem { display: inline-flex; align-items: center; gap: .5rem; padding: 0 1.8rem; }
+.sponsorLogo { height: 28px; width: auto; object-fit: contain; mix-blend-mode: screen; filter: brightness(0.9) saturate(0.8); opacity: 0.85; transition: opacity 200ms ease; }
+.sponsorLogo:hover { opacity: 1; }
+.sponsorTextLogo { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(240,236,228,.5); font-family: var(--font-ui,"DM Sans",sans-serif); white-space: nowrap; }
+
+/* ─── S2 ─── */
+.s2Inner { position: relative; z-index: 2; width: 100%; max-width: 760px; padding: 0 clamp(1.5rem,5vw,3.5rem); display: flex; flex-direction: column; gap: clamp(1rem,2dvh,1.5rem); }
+.s2Top { display: flex; flex-direction: column; }
+.s2Stats { display: flex; align-items: center; gap: 2rem; }
+.s2StatItem { display: flex; flex-direction: column; gap: .18rem; }
+.s2StatN { font-family: var(--font-mono,"DM Mono",monospace); font-size: 1.25rem; font-weight: 500; color: #f0ece4; }
+.s2StatL { font-size: .53rem; letter-spacing: .15em; text-transform: uppercase; color: rgba(240,236,228,.42); font-family: var(--font-mono,"DM Mono",monospace); }
+.statDivider { width: 1px; height: 26px; background: rgba(240,236,228,.1); }
+.feedCard { padding: 1.1rem 1.3rem; border-radius: 18px; background: rgba(255,255,255,.052); backdrop-filter: blur(22px) saturate(130%); -webkit-backdrop-filter: blur(22px) saturate(130%); border: 1px solid rgba(255,255,255,.09); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 18px 50px rgba(0,0,0,.45); position: relative; overflow: hidden; min-height: 200px; display: flex; flex-direction: column; gap: 3px; transform: translateZ(0); }
+.feedEdge { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220,90,15,.5) 20%, rgba(255,255,255,.62) 50%, rgba(160,130,80,.5) 80%, transparent); }
+.feedEntry { display: flex; gap: 9px; align-items: flex-start; font-size: .7rem; line-height: 1.52; padding: 5px 7px; border-radius: 6px; background: rgba(255,255,255,.022); border-left: 2px solid transparent; }
+.feedTs { font-family: var(--font-mono,"DM Mono",monospace); color: rgba(240,236,228,.25); font-size: .58rem; min-width: 44px; padding-top: 1px; flex-shrink: 0; }
+.feedMsg { color: rgba(240,236,228,.72); }
+.fer{border-left-color:#e8650a} .feb{border-left-color:#f5a623} .fee{border-left-color:#5bc0eb} .fev{border-left-color:#a78bfa} .fes{border-left-color:#2ed573}
+
+/* ─── S3 ─── */
+.s3Inner { position: relative; z-index: 2; width: 100%; max-width: 820px; padding: 0 clamp(1.5rem,5vw,4rem); display: flex; flex-direction: column; gap: clamp(.9rem,1.8dvh,1.4rem); }
+.modeTabs { display: flex; align-items: center; gap: clamp(1.5rem,3vw,2.5rem); margin-top: .5rem; }
+.modeTab { border: none; background: transparent; padding: 0 0 5px; font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(1.5rem,2.8vw,2.2rem); font-weight: 600; letter-spacing: -.015em; color: rgba(240,236,228,.2); cursor: pointer; position: relative; transition: color 180ms ease; }
+.modeTab::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px; border-radius: 999px; background: #e8650a; box-shadow: 0 0 10px rgba(220,90,15,.65); transform: scaleX(0); transform-origin: left; transition: transform 220ms cubic-bezier(.16,1,.3,1); }
+.modeTab:hover { color: rgba(240,236,228,.5); }
+.modeTabActive { color: #f0ece4 !important; }
+.modeTabActive::after { transform: scaleX(1); }
+.modePanel { padding: clamp(1.2rem,2.2dvh,1.7rem) clamp(1.2rem,2.2vw,1.7rem); border-radius: 18px; background: rgba(255,255,255,.052); backdrop-filter: blur(22px) saturate(130%); -webkit-backdrop-filter: blur(22px) saturate(130%); border: 1px solid rgba(255,255,255,.09); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 36px rgba(0,0,0,.4); display: flex; flex-direction: column; gap: .55rem; max-width: 580px; position: relative; overflow: hidden; transform: translateZ(0); }
+.modePanelEdge { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220,90,15,.5) 22%, rgba(255,255,255,.62) 50%, rgba(160,130,80,.5) 78%, transparent); }
+.modePanelTag { font-size: .88rem; font-weight: 600; color: rgba(240,236,228,.85); margin: 0; }
+.modePanelBody { font-size: .81rem; color: rgba(240,236,228,.6); line-height: 1.76; margin: 0; }
+.modePanelFooter { display: flex; align-items: center; justify-content: space-between; margin-top: .2rem; gap: 1rem; }
+.agentAddr { font-family: var(--font-mono,"DM Mono",monospace); font-size: .58rem; color: rgba(240,236,228,.28); margin: 0; }
+.panelTgLink { font-size: .68rem; font-weight: 600; color: #e8650a; text-decoration: none; letter-spacing: .03em; transition: opacity 150ms ease; white-space: nowrap; }
+.panelTgLink:hover { opacity: .7; }
+
+/* ─── S4 ─── */
+.s4Inner { position: relative; z-index: 2; width: 100%; max-width: 900px; padding: 0 clamp(1.5rem,5vw,4rem); display: flex; flex-direction: column; gap: clamp(1.3rem,2.6dvh,2rem); }
+.stepGrid { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(1.4rem,3vw,2.6rem); }
+.stepItem { display: flex; flex-direction: column; gap: .35rem; }
+.stepNum { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.8rem,5vw,4.8rem); font-style: italic; font-weight: 600; line-height: 1; letter-spacing: -.04em; color: rgba(220,90,15,.42); text-shadow: 0 0 40px rgba(220,90,15,.2); }
+.stepLabel { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(1.3rem,2.2vw,1.8rem); font-weight: 600; line-height: 1.05; color: #f0ece4; letter-spacing: -.018em; margin-top: -.3rem; }
+.stepBody { font-size: .76rem; color: rgba(240,236,228,.52); line-height: 1.72; margin: 0; }
+
+/* ─── S5 ─── */
+.s5Inner { position: relative; z-index: 2; width: 100%; max-width: 500px; padding: 0 clamp(1.5rem,5vw,2rem); display: flex; flex-direction: column; align-items: center; text-align: center; gap: clamp(1rem,2dvh,1.5rem); }
+.s5Head { display: flex; flex-direction: column; align-items: center; }
+.s5Title { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 600; line-height: 1.04; color: #f0ece4; letter-spacing: -.021em; margin: 0; display: block; text-shadow: 0 2px 20px rgba(0,0,0,.5); }
+.s5TitleItalic { font-style: italic !important; color: rgba(240,236,228,.34) !important; font-weight: 400 !important; }
+.s5Sub { font-size: .81rem; color: rgba(240,236,228,.54); line-height: 1.72; margin: .75rem 0 0; max-width: 420px; }
+.s5Card { position: relative; width: 100%; padding: 1.4rem 1.3rem; border-radius: 22px; background: rgba(255,255,255,.062); backdrop-filter: blur(22px) saturate(130%); -webkit-backdrop-filter: blur(22px) saturate(130%); border: 1px solid rgba(255,255,255,.11); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 22px 60px rgba(0,0,0,.52); display: flex; flex-direction: column; align-items: center; gap: 1rem; overflow: hidden; transform: translateZ(0); }
+.s5CardEdge { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220,90,15,.5) 22%, rgba(255,255,255,.64) 50%, rgba(160,130,80,.5) 78%, transparent); }
+.s5CardGlow { position: absolute; bottom: -1.5rem; left: 50%; transform: translateX(-50%); width: 55%; height: 3rem; background: radial-gradient(ellipse, rgba(200,80,12,.12) 0%, transparent 70%); pointer-events: none; filter: blur(14px); }
+.s5CardStack { width: 100%; display: flex; flex-direction: column; }
+.s5CardRow { display: flex; align-items: center; justify-content: space-between; padding: .65rem 0; border-bottom: 1px solid rgba(255,255,255,.07); gap: 1rem; text-align: left; }
+.s5CardRow:last-child { border-bottom: none; }
+.s5CardRowLeft { display: flex; flex-direction: column; gap: .16rem; }
+.s5CardLabel { font-size: .55rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: rgba(220,90,15,.85); font-family: var(--font-mono,"DM Mono",monospace); text-shadow: 0 0 10px rgba(220,90,15,.45); }
+.s5CardDesc { font-size: .7rem; color: rgba(240,236,228,.5); line-height: 1.48; }
+.s5CardValue { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: 1.65rem; font-weight: 600; color: #f0ece4; letter-spacing: -.02em; flex-shrink: 0; }
+.s5CardBtns { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; justify-content: center; width: 100%; }
+.s5Footer { font-size: .57rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(240,236,228,.2); font-family: var(--font-mono,"DM Mono",monospace); }
+
+/* RINGS */
+.ring { position: absolute; width: 46rem; height: 46rem; top: 50%; left: 50%; transform: translate(-50%,-50%) translateZ(0); border-radius: 50%; border: 1px solid rgba(220,90,15,.055); animation: ringPulse 9s ease-in-out infinite; pointer-events: none; z-index: 1; }
+.ring2 { position: absolute; width: 28rem; height: 28rem; top: 50%; left: 50%; transform: translate(-50%,-50%) translateZ(0); border-radius: 50%; border: 1px solid rgba(220,90,15,.09); animation: ringPulse 9s ease-in-out infinite reverse; pointer-events: none; z-index: 1; }
+@keyframes ringPulse { 0%,100%{opacity:.18} 50%{opacity:.6} }
+
+/* RESPONSIVE */
+@media (max-width: 860px) {
+  .s1Grid { flex-direction: column; align-items: flex-start; padding: 0 1.5rem; padding-bottom: 5rem; gap: 1.6rem; }
+  .s1Left { max-width: 100%; }
+  .s1Right { width: 100%; }
+  .heroCard { width: 100%; }
+  .heroStats { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
+  .heroStatDiv { display: none; }
+}
+@media (max-width: 720px) {
+  .stepGrid { grid-template-columns: 1fr; gap: 1.3rem; }
+  .modeTabs { gap: 1rem; flex-wrap: wrap; }
+  .modePanel { max-width: 100%; }
+  .ring, .ring2 { display: none; }
+}
+@media (max-width: 640px) {
+  .nav { padding: .58rem .7rem 0; }
+  .navBar { height: 43px; padding: 0 .4rem; overflow: hidden; }
+  .navLinks { display: none; }
+  .navTg { display: none; }
+  .navLogin { padding: .26rem .45rem; }
+  .navSignup { padding: .26rem .55rem; }
+  .dots { display: none; }
+  .navLogoText { display: none; }
+  .s1Grid { padding: 0 1rem; padding-bottom: 5rem; margin-top: 1.5rem; }
+  .hl1, .hl2 { font-size: clamp(2.1rem, 8.5vw, 2.8rem); }
+  .s2Inner, .s3Inner, .s4Inner, .s5Inner { padding: 0 1rem; }
+  .sponsorLabel { display: none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   PULSE — live counters, chart, flow diagram (inline section)
+   PYKO-STYLE SECTIONS (v2 homepage)
    ══════════════════════════════════════════════════════════════════ */
 
-/* Count-up counter that animates when scrolled into view */
-function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) {
-  const [n, setN] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-  useEffect(() => {
-    if (!ref.current) return;
-    const io = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !started.current) {
-        started.current = true;
-        const t0 = performance.now();
-        const dur = 1500;
-        let raf;
-        const tick = () => {
-          const p = Math.min(1, (performance.now() - t0) / dur);
-          const eased = 1 - Math.pow(1 - p, 3);
-          setN(value * eased);
-          if (p < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-        return () => raf && cancelAnimationFrame(raf);
-      }
-    }, { threshold: 0.35 });
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, [value]);
-  const display = decimals > 0 ? n.toFixed(decimals) : Math.round(n).toLocaleString();
-  return (
-    <div className={styles.pulseCounter} ref={ref}>
-      <div className={styles.pulseCounterLabel}>{label}</div>
-      <div className={styles.pulseCounterValue}>
-        {prefix && <span className={styles.pulseCounterAffix}>{prefix}</span>}
-        <span className={styles.pulseCounterN}>{display}</span>
-        {suffix && <span className={styles.pulseCounterAffix}>{suffix}</span>}
-      </div>
-    </div>
-  );
+.py {
+  position: relative;
+  z-index: 3;
+  background: transparent;
 }
 
-/* SVG line-and-area chart that animates in on scroll */
-function PulseGraph() {
-  const [visible, setVisible] = useState(false);
-  const [t, setT] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    const io = new IntersectionObserver(entries => setVisible(entries[0].isIntersecting), { threshold: 0.25 });
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, []);
-  useEffect(() => {
-    if (!visible) return;
-    let raf, start = performance.now();
-    const tick = now => { setT((now - start) / 1000); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [visible]);
+/* Subtle backdrop wash so each section reads distinct from the fixed video hero */
+.pyBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(20, 22, 34, 0.3) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(30, 20, 12, 0.25) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(6, 6, 10, 0.48) 0%, rgba(6, 6, 10, 0.55) 100%);
+}
 
-  // Simulated settlement-latency data — 14 points, seconds axis 2-6s, our real point (3.52s) is called out
-  const data = [4.8, 4.2, 5.1, 3.9, 4.4, 3.6, 5.3, 4.1, 3.8, 3.52, 4.0, 3.7, 3.9, 3.6];
-  const W = 460, H = 200, padX = 26, padY = 20;
-  const chartW = W - padX * 2, chartH = H - padY * 2;
-  const yMin = 2, yMax = 6;
-  const xStep = chartW / (data.length - 1);
-  const yScale = v => padY + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+.pyWrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1.4rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-  // Reveal progress 0..1 as an intro animation
-  const reveal = Math.min(1, t / 1.8);
-  // Continuous pulse on the "real tx" marker
-  const pulseAlpha = 0.55 + Math.sin(t * 2.4) * 0.3;
+/* Split layouts — text one side, visual the other */
+.pySplit {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+}
 
-  // Build path up to reveal fraction
-  const revealCount = Math.max(2, Math.round(data.length * reveal));
-  let linePath = "";
-  let areaPath = "";
-  data.slice(0, revealCount).forEach((v, i) => {
-    const x = padX + i * xStep;
-    const y = yScale(v);
-    linePath += i === 0 ? `M${x},${y}` : ` L${x},${y}`;
-  });
-  if (revealCount >= 2) {
-    const lastX = padX + (revealCount - 1) * xStep;
-    areaPath = `${linePath} L${lastX},${padY + chartH} L${padX},${padY + chartH} Z`;
+.pySplitTextRight {
+  direction: rtl;
+}
+.pySplitTextRight > * {
+  direction: ltr;
+}
+
+/* Text column */
+.pyText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 520px;
+  justify-self: end;
+}
+.pySplitTextLeft .pyText { justify-self: start; }
+
+.pyEyebrow {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ag-orange, #f28322);
+}
+
+.pyTitle {
+  margin: 0;
+  font-family: var(--font-display, "Cormorant Garamond", "Playfair Display", serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 5.4vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: #f0ece4;
+}
+.pyTitleItalic {
+  font-style: italic;
+  color: rgba(210, 205, 195, 0.92);
+}
+
+.pySub {
+  margin: 1.5rem 0 0;
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.6;
+  color: rgba(220, 215, 205, 0.72);
+  max-width: 44ch;
+}
+
+.pyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1.6rem;
+  padding: 0.6rem 1.1rem 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 236, 228, 0.16);
+  background: rgba(240, 236, 228, 0.04);
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #f0ece4;
+  text-decoration: none;
+  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+  width: fit-content;
+}
+.pyLink:hover {
+  border-color: rgba(242, 131, 34, 0.5);
+  background: rgba(242, 131, 34, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Visual column */
+.pyVisual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.pySplitTextLeft .pyVisual { justify-self: start; }
+.pySplitTextRight .pyVisual { justify-self: end; }
+
+/* Framed screenshot / video card — the Pyko signature move */
+.pyFrame {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(10, 10, 14, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 30px 60px -20px rgba(0, 0, 0, 0.6),
+    0 20px 40px -20px rgba(0, 0, 0, 0.5);
+  transform-origin: center;
+}
+/* Shimmer edge — subtle warm-to-gold stripe running across the top border */
+.pyFrame::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(220, 90, 15, 0.5) 30%,
+    rgba(255, 255, 255, 0.62) 50%,
+    rgba(160, 130, 80, 0.5) 70%,
+    transparent);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pyFrameTilt {
+  transform: perspective(1400px) rotateY(-3deg) rotateX(1.5deg);
+}
+
+.pyFramePortrait {
+  aspect-ratio: 9 / 16;
+  max-width: 320px;
+}
+
+.pyFrameLabel {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 2;
+  padding: 0.55rem 0.9rem;
+  background: rgba(6, 6, 10, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(240, 236, 228, 0.06);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: rgba(220, 215, 205, 0.6);
+}
+
+.pyFrameBody {
+  position: absolute;
+  inset: 0;
+  padding-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* The media itself */
+.mediaImage,
+.mediaVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Empty state when the media file isn't uploaded yet */
+.mediaEmpty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  background:
+    linear-gradient(135deg, rgba(20, 15, 12, 0.4) 0%, rgba(6, 8, 14, 0.6) 100%);
+  color: rgba(220, 215, 205, 0.36);
+}
+.mediaEmpty::before,
+.mediaEmpty::after {
+  content: "";
+  position: absolute;
+  inset: 30% 20%;
+  border: 1px dashed rgba(240, 236, 228, 0.06);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.mediaEmpty::after {
+  inset: 40% 30%;
+}
+.mediaEmptyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(242, 131, 34, 0.4);
+  box-shadow: 0 0 8px rgba(242, 131, 34, 0.4);
+}
+.mediaEmptyLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  z-index: 1;
+}
+.mediaEmptySub {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.28);
+  z-index: 1;
+}
+
+.pyCtaRow {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 1.7rem;
+}
+
+.pyFooter {
+  margin: 3rem 0 0;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.28);
+  text-align: center;
+  width: 100%;
+}
+
+/* ── responsive: stack on smaller screens ── */
+@media (max-width: 900px) {
+  .pySplit {
+    grid-template-columns: 1fr;
+    gap: 2.4rem;
   }
-  const highlightIdx = 9; // 3.52s marker
-
-  return (
-    <div className={styles.pulseGraph} ref={ref}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.pulseGraphSvg} preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="rgba(242,131,34,0.35)" />
-            <stop offset="100%" stopColor="rgba(242,131,34,0)" />
-          </linearGradient>
-        </defs>
-        {/* Y grid lines */}
-        {[2, 3, 4, 5, 6].map(v => (
-          <g key={v}>
-            <line x1={padX} y1={yScale(v)} x2={W - padX} y2={yScale(v)}
-              stroke="rgba(240,236,228,0.06)" strokeWidth="0.5" strokeDasharray="2 3" />
-            <text x={padX - 6} y={yScale(v) + 3} textAnchor="end"
-              fill="rgba(220,215,205,0.35)" fontSize="9"
-              fontFamily="var(--font-mono, DM Mono, monospace)">{v}s</text>
-          </g>
-        ))}
-        {/* Area fill */}
-        {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
-        {/* Line */}
-        {linePath && <path d={linePath} fill="none" stroke="#ff9a3c" strokeWidth="1.6"
-          strokeLinecap="round" strokeLinejoin="round" />}
-        {/* Points */}
-        {data.slice(0, revealCount).map((v, i) => {
-          const x = padX + i * xStep;
-          const y = yScale(v);
-          const isHi = i === highlightIdx;
-          return (
-            <g key={i}>
-              {isHi && (
-                <>
-                  <circle cx={x} cy={y} r="9" fill="rgba(242,131,34,0.15)" opacity={pulseAlpha} />
-                  <circle cx={x} cy={y} r="5" fill="rgba(242,131,34,0.4)" opacity={pulseAlpha} />
-                </>
-              )}
-              <circle cx={x} cy={y} r={isHi ? 3 : 2}
-                fill={isHi ? "#ffc78d" : "#ff9a3c"}
-                stroke="#0f0d16" strokeWidth="1" />
-              {isHi && (
-                <g>
-                  <line x1={x} y1={y - 8} x2={x} y2={padY} stroke="rgba(242,131,34,0.35)" strokeWidth="0.6" strokeDasharray="1 2" />
-                  <rect x={x - 22} y={padY - 14} width="44" height="14" rx="3"
-                    fill="rgba(24,20,14,0.9)" stroke="rgba(242,131,34,0.5)" strokeWidth="0.6" />
-                  <text x={x} y={padY - 4} textAnchor="middle"
-                    fill="#ffc78d" fontSize="8"
-                    fontFamily="var(--font-mono, DM Mono, monospace)"
-                    letterSpacing="0.05em">3.52s · ours</text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-        {/* X axis label */}
-        <text x={W / 2} y={H - 4} textAnchor="middle"
-          fill="rgba(220,215,205,0.35)" fontSize="8"
-          fontFamily="var(--font-mono, DM Mono, monospace)"
-          letterSpacing="0.15em">recent settlements →</text>
-      </svg>
-    </div>
-  );
+  .pySplitTextRight { direction: ltr; }
+  .pyText { max-width: 100%; justify-self: center; text-align: center; }
+  .pyText .pySub { margin-left: auto; margin-right: auto; }
+  .pyText .pyLink { align-self: center; }
+  .pyVisual { justify-self: center !important; }
+  .pyFrameTilt { transform: none; }
+  /* On mobile, put the visual FIRST (above the text) for a stronger hook */
+  .pySplitTextLeft .pyText { order: 2; }
+  .pySplitTextLeft .pyVisual { order: 1; }
+  .pySplitTextRight .pyText { order: 2; }
+  .pySplitTextRight .pyVisual { order: 1; }
 }
 
-/* Six-step agent loop that highlights the current step */
-const PULSE_FLOW = [
-  { n: "01", label: "Request",   desc: "10k units · 0.42 USDC" },
-  { n: "02", label: "Bid",       desc: "0.38 · A100 · 120ms" },
-  { n: "03", label: "Escrow",    desc: "locked · GOAT mainnet" },
-  { n: "04", label: "Execute",   desc: "provider runs the job" },
-  { n: "05", label: "Verify",    desc: "output hash · matched" },
-  { n: "06", label: "Settle",    desc: "+0.38 USDC · x402" },
-];
+/* ── Clickable frame for the demo teaser ── */
+.pyFrameClickable {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 220ms ease, border-color 220ms ease;
+}
+.pyFrameClickable:hover {
+  transform: translateY(-4px);
+  border-color: rgba(242, 131, 34, 0.35);
+}
+.demoTeaser {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.6rem;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(242, 131, 34, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(20, 15, 12, 0.5) 0%, rgba(6, 8, 14, 0.7) 100%);
+}
+.demoTeaserDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(242, 131, 34, 0.9);
+  box-shadow: 0 0 12px rgba(242, 131, 34, 0.8);
+  animation: demoPulse 1.8s ease-in-out infinite;
+}
+@keyframes demoPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.35; }
+}
+.demoTeaserLine {
+  margin: 0;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: rgba(230, 224, 214, 0.72);
+  text-align: center;
+}
+.demoTeaserCTA {
+  margin-top: 0.6rem;
+  font-family: var(--font-ui, "DM Sans", system-ui, sans-serif);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(242, 131, 34, 0.9);
+  text-transform: uppercase;
+}
 
-function PulseFlow() {
-  const [visible, setVisible] = useState(false);
-  const [t, setT] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    const io = new IntersectionObserver(entries => setVisible(entries[0].isIntersecting), { threshold: 0.2 });
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, []);
-  useEffect(() => {
-    if (!visible) return;
-    let raf, start = performance.now();
-    const tick = now => { setT((now - start) / 1000); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [visible]);
-
-  const cycle = 12;
-  const p = (t % cycle) / cycle;
-  const stepDur = 1 / (PULSE_FLOW.length + 1);
-  const active = Math.min(PULSE_FLOW.length - 1, Math.floor(p / stepDur));
-  const stepProg = (p % stepDur) / stepDur;
-  const isResetting = p > (PULSE_FLOW.length * stepDur);
-
-  return (
-    <div className={styles.pulseFlow} ref={ref}>
-      {PULSE_FLOW.map((s, i) => {
-        const done = !isResetting && i < active;
-        const current = !isResetting && i === active;
-        return (
-          <div key={s.n}
-            className={`${styles.pulseFlowStep} ${done ? styles.pulseFlowStepDone : ""} ${current ? styles.pulseFlowStepCurrent : ""}`}>
-            <div className={styles.pulseFlowDot}>
-              {done ? (
-                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12l6 6L20 6" />
-                </svg>
-              ) : (
-                <span className={styles.pulseFlowNum}>{s.n}</span>
-              )}
-            </div>
-            <div className={styles.pulseFlowBody}>
-              <div className={styles.pulseFlowLabel}>{s.label}</div>
-              <div className={styles.pulseFlowDesc}>{s.desc}</div>
-            </div>
-            {current && (
-              <div className={styles.pulseFlowBar}>
-                <div className={styles.pulseFlowBarFill} style={{ transform: `scaleX(${stepProg})` }} />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+/* ── Live iframe showcases (Square + Demo) ── */
+.showcaseIframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #06070a;
+  pointer-events: none;
+}
+.showcaseGuard {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: auto;
+  background: transparent;
+  cursor: default;
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   TELEGRAM DEMO SHOWCASE — inline, scroll-triggered, Ken Burns zooms
+   TELEGRAM DEMO SHOWCASE
    ══════════════════════════════════════════════════════════════════ */
 
-/* Real Agora agent exchanges. Each scenario is a self-contained conversation.
-   Scenarios rotate on each loop for variety. Messages can carry:
-   - kind: "data"  → renders as a mono/monospace data block (looks like a real agent output)
-   - zoom: "up"    → subtle YouTube-style Ken Burns zoom on that beat */
+.tg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #17212b;
+}
+.tgBody {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 1.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  overflow: hidden;
+}
 
-const TG_SCENARIOS = [
-  /* Scenario 1: x402 payment test — the punchy version */
-  [
-    { role: "user", text: "run a real x402 payment test.\n1 USDC.e · GOAT mainnet", delay: 1500 },
-    { role: "bot",  text: "on it. fetching x402 skill + checking token.", delay: 1400 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "wallet: 0x1B66…1F06\nUSDC.e: 5.0 ✅\nBTC (gas): 0.0000598 ✅\nready to send." },
-    { role: "user", text: "send it.", delay: 1200 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2400, text: "✅ CHECKOUT_VERIFIED\ntx: 0xa8747b…3460\nblock: 13,770,302\n1.00 USDC.e settled" },
-    { role: "user", text: "clean 🫡", delay: 1400 },
-  ],
+/* Wallpaper */
+.tgWallpaper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  filter: hue-rotate(-8deg) brightness(0.85);
+  pointer-events: none;
+  user-select: none;
+}
+.tgWallTint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(23, 33, 43, 0.35) 0%, rgba(23, 33, 43, 0.55) 100%);
+  pointer-events: none;
+}
 
-  /* Scenario 2: identity + proof */
-  [
-    { role: "user", text: "who are you? show me proof.", delay: 1400 },
-    { role: "bot",  text: "gm 👋 I'm the Agora agent. on-chain and x402-native.", delay: 1400 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "🔗 GOAT mainnet\nagent #82 · ERC-8004\nowner: 0xbc8c…1C3c\nstatus: active" },
-    { role: "user", text: "merchant side?", delay: 1300 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2000, text: "merchant: agora_tbg\nreceiving: 0x1B66…1F06\nmode: DIRECT\nstate: approved ✅" },
-  ],
+/* Header */
+.tgHeader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem 0.6rem 0.4rem;
+  background: rgba(23, 33, 43, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(230, 236, 244, 0.9);
+}
+.tgHeaderBack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: #6ab7ff;
+  flex-shrink: 0;
+}
+.tgHeaderAv {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0a0a10;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tgHeaderAv img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+.tgHeaderText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.tgHeaderName {
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #f2f5f8;
+  letter-spacing: -0.01em;
+}
+.tgHeaderSub {
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 0.58rem;
+  color: rgba(180, 200, 220, 0.65);
+}
+.tgHeaderIcons {
+  display: flex;
+  gap: 0.55rem;
+  color: rgba(180, 200, 220, 0.7);
+  flex-shrink: 0;
+}
 
-  /* Scenario 3: quick /status */
-  [
-    { role: "user", text: "/status", delay: 1100 },
-    { role: "bot",  text: "checking…", delay: 900 },
-    { role: "bot",  kind: "data", zoom: "up", delay: 2400, text: "agora_bot · online\n──\nagent #82 ✅\nmerchant agora_tbg ✅\nchain 2345 ✅\nlast tx: 0xa8747b…3460" },
-    { role: "user", text: "all green. nice.", delay: 1400 },
-  ],
-];
+/* Chat area */
+.tgChat {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0; /* allow scroll inside flex parent */
+  overflow-y: auto;
+  padding: 0.7rem 0.55rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  scrollbar-width: none;
+}
+.tgChat::-webkit-scrollbar { display: none; }
 
-function TelegramDemoShowcase() {
-  const rootRef = useRef(null);
-  const chatRef = useRef(null);
-  const [msgs, setMsgs] = useState([]);
-  const [typing, setTyping] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [zoom, setZoom] = useState({ scale: 1, origin: "50% 50%" });
-  const [scenarioIdx, setScenarioIdx] = useState(0);
-  const runIdRef = useRef(0);
+/* Bubbles */
+.tgMsg {
+  position: relative;
+  max-width: 80%;
+  padding: 0.42rem 0.55rem 0.32rem;
+  border-radius: 12px;
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 0.72rem;
+  line-height: 1.32;
+  animation: tgIn 300ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  word-wrap: break-word;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+@keyframes tgIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tgLine {
+  display: block;
+  color: inherit;
+}
+.tgMsgBot {
+  align-self: flex-start;
+  background: rgba(24, 37, 51, 0.94);
+  color: #f2f5f8;
+  border-bottom-left-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.tgMsgUser {
+  align-self: flex-end;
+  background: linear-gradient(180deg, #2b5b8f 0%, #245079 100%);
+  color: #f2f8fc;
+  border-bottom-right-radius: 4px;
+}
+.tgTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  align-self: flex-end;
+  margin-top: 1px;
+  font-size: 0.5rem;
+  color: rgba(200, 215, 230, 0.55);
+  line-height: 1;
+}
+.tgMsgUser .tgTime {
+  color: rgba(220, 235, 250, 0.72);
+}
+.tgReadCheck {
+  color: #7ec8f0;
+  transform: translateY(0.5px);
+}
 
-  // Trigger start when the demo scrolls into view
-  useEffect(() => {
-    if (!rootRef.current) return;
-    const el = rootRef.current;
-    const io = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !started) {
-        setStarted(true);
-        io.disconnect();
-      }
-    }, { threshold: 0.35 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [started]);
+/* Typing indicator */
+.tgTyping {
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  padding: 0.5rem 0.65rem;
+}
+.tgDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(220, 230, 245, 0.5);
+  animation: tgDot 1.25s infinite ease-in-out;
+}
+.tgDot:nth-child(2) { animation-delay: 0.18s; }
+.tgDot:nth-child(3) { animation-delay: 0.36s; }
+@keyframes tgDot {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
 
-  // Auto-scroll chat container to bottom (scoped, no cascade to parent)
-  useEffect(() => {
-    const el = chatRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [msgs, typing]);
+/* Input bar */
+.tgInputBar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  background: rgba(23, 33, 43, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(180, 200, 220, 0.65);
+}
+.tgInputPlaceholder {
+  flex: 1;
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 0.72rem;
+  color: rgba(180, 200, 220, 0.55);
+}
 
-  // Main animation loop — cycles through TG_SCENARIOS
-  useEffect(() => {
-    if (!started) return;
-    const runId = ++runIdRef.current;
-    let cancelled = false;
-    const timers = [];
-    const wait = ms => new Promise(res => {
-      const id = setTimeout(() => { if (!cancelled) res(); }, ms);
-      timers.push(id);
-    });
+/* Demo frame body: the Telegram UI takes over the whole frame */
+.demoFrame .pyFrameBody {
+  padding-top: 0;
+}
+/* Hide the pyFrame label pill on the demo — the Telegram header itself is our chrome */
+.demoFrame .pyFrameLabel {
+  display: none;
+}
+/* Data-block bubbles: monospace, tighter, feels like agent output */
+.tgMsgData {
+  font-family: var(--font-mono, "DM Mono", monospace) !important;
+  font-size: 0.66rem !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0.01em;
+  padding: 0.5rem 0.6rem 0.36rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(14, 22, 33, 0.96) !important;
+  max-width: 84% !important;
+}
+.tgMsgData .tgLine { color: rgba(220, 235, 250, 0.95); }
 
-    async function play(scenarioIndex) {
-      const script = TG_SCENARIOS[scenarioIndex];
-      setScenarioIdx(scenarioIndex);
-      setMsgs([]);
-      setTyping(false);
-      setZoom({ scale: 1, origin: "50% 50%" });
-      await wait(400);
-      if (cancelled) return;
+/* ══════════════════════════════════════════════════════════════════
+   PULSE SECTION — inline (S6 on homepage)
+   ══════════════════════════════════════════════════════════════════ */
 
-      let all = [];
-      for (let i = 0; i < script.length; i++) {
-        if (cancelled || runIdRef.current !== runId) return;
-        const m = script[i];
-        if (m.role === "bot") {
-          setTyping(true);
-          await wait(650 + Math.random() * 400);
-          if (cancelled) return;
-          setTyping(false);
-        }
-        const nextMsgs = [...all, { ...m, id: `${runId}-${scenarioIndex}-${i}` }];
-        all = nextMsgs;
-        setMsgs(nextMsgs);
-        if (m.zoom === "up") {
-          setZoom({ scale: 1, origin: "50% 50%" });
-        } else {
-          setZoom({ scale: 1, origin: "50% 50%" });
-        }
-        await wait(m.delay || 1200);
-      }
-      // Hold, reset, next scenario
-      setZoom({ scale: 1, origin: "50% 50%" });
-      await wait(3500);
-      if (cancelled) return;
-      const nextScenario = (scenarioIndex + 1) % TG_SCENARIOS.length;
-      play(nextScenario);
-    }
-    play(0);
+.pulseWrap {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
 
-    return () => {
-      cancelled = true;
-      timers.forEach(clearTimeout);
-    };
-  }, [started]);
+.pulseHead {
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+.pulseHeadTitle {
+  font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+  text-align: center;
+}
 
-  return (
-    <div className={styles.tg} ref={rootRef}>
-      <div
-        className={styles.tgBody}
-        style={{
-          transform: `scale(${zoom.scale})`,
-          transformOrigin: zoom.origin,
-        }}
-      >
-        {/* Wallpaper (real Telegram doodle background) */}
-        <img
-          className={styles.tgWallpaper}
-          src="/telegram.png"
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-        />
-        <div className={styles.tgWallTint} />
+/* Row 1: 6 stat counters */
+.pulseCounters {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.65rem;
+}
+.pulseCounter {
+  position: relative;
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(12, 14, 18, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  transition: border-color 220ms ease, background 220ms ease, transform 220ms ease;
+  overflow: hidden;
+}
+.pulseCounter::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(220, 90, 15, 0.4) 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(160, 130, 80, 0.4) 70%,
+    transparent);
+  pointer-events: none;
+}
+.pulseCounter:hover {
+  border-color: rgba(242, 131, 34, 0.3);
+  background: rgba(24, 20, 14, 0.65);
+  transform: translateY(-1px);
+}
+.pulseCounterLabel {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.5);
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulseCounterValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+.pulseCounterN {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1;
+  color: #f4f0e8;
+  letter-spacing: -0.01em;
+}
+.pulseCounterAffix {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.62rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.03em;
+}
 
-        {/* Header */}
-        <div className={styles.tgHeader}>
-          <div className={styles.tgHeaderBack}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </div>
-          <div className={styles.tgHeaderAv}>
-            <img src="/mylogo.png" alt="AGORA" draggable={false} />
-          </div>
-          <div className={styles.tgHeaderText}>
-            <div className={styles.tgHeaderName}>agora_bot</div>
-            <div className={styles.tgHeaderSub}>bot · online</div>
-          </div>
-          <div className={styles.tgHeaderIcons}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="7.5" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="5"  r="1.6" />
-              <circle cx="12" cy="12" r="1.6" />
-              <circle cx="12" cy="19" r="1.6" />
-            </svg>
-          </div>
-        </div>
+/* Row 2: graph + flow side-by-side */
+.pulseRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+.pulseCard {
+  position: relative;
+  padding: 1.1rem 1.2rem 1.2rem;
+  border-radius: 12px;
+  background: rgba(12, 14, 18, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 32px -12px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow: hidden;
+}
+.pulseCard::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(220, 90, 15, 0.45) 30%,
+    rgba(255, 255, 255, 0.58) 50%,
+    rgba(160, 130, 80, 0.45) 70%,
+    transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+.pulseCardHead { display: flex; flex-direction: column; gap: 0.15rem; }
+.pulseCardLabel {
+  margin: 0;
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #f0ece4;
+  letter-spacing: 0.005em;
+}
+.pulseCardHint {
+  margin: 0;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.4);
+}
 
-        {/* Chat */}
-        <div className={styles.tgChat} ref={chatRef}>
-          {msgs.map(m => {
-            const isData = m.kind === "data";
-            return (
-              <div
-                key={m.id}
-                className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot} ${isData ? styles.tgMsgData : ""}`}
-              >
-                {m.text.split("\n").map((line, k) => (
-                  <span key={k} className={styles.tgLine}>{line}</span>
-                ))}
-                <span className={styles.tgTime}>
-                  {m.role === "user" ? "12:04 " : "12:04"}
-                  {m.role === "user" && (
-                    <svg viewBox="0 0 16 12" width="12" height="9" className={styles.tgReadCheck} aria-hidden>
-                      <path d="M1 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M5 6l3 3 6-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </span>
-              </div>
-            );
-          })}
-          {typing && (
-            <div className={`${styles.tgMsg} ${styles.tgMsgBot} ${styles.tgTyping}`}>
-              <span className={styles.tgDot} />
-              <span className={styles.tgDot} />
-              <span className={styles.tgDot} />
-            </div>
-          )}
-        </div>
+/* Graph SVG */
+.pulseGraph { width: 100%; }
+.pulseGraphSvg { width: 100%; height: auto; display: block; }
 
-        {/* Input bar */}
-        <div className={styles.tgInputBar}>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="9.5" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none" />
-            <circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none" />
-          </svg>
-          <span className={styles.tgInputPlaceholder}>Message</span>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18v-6a3 3 0 1 1 6 0v5a5 5 0 1 1-10 0V8" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
+/* Flow */
+.pulseFlow { display: flex; flex-direction: column; gap: 0.3rem; }
+.pulseFlowStep {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(240, 236, 228, 0.02);
+  border: 1px solid rgba(240, 236, 228, 0.04);
+  transition: all 320ms ease;
+  min-height: 42px;
+}
+.pulseFlowStepCurrent {
+  background: rgba(242, 131, 34, 0.09);
+  border-color: rgba(242, 131, 34, 0.4);
+  box-shadow: 0 0 0 1px rgba(242, 131, 34, 0.08),
+              0 8px 22px -8px rgba(242, 131, 34, 0.3);
+}
+.pulseFlowStepDone {
+  background: rgba(46, 213, 115, 0.05);
+  border-color: rgba(46, 213, 115, 0.22);
+}
+.pulseFlowDot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 236, 228, 0.05);
+  border: 1px solid rgba(240, 236, 228, 0.12);
+  color: rgba(220, 215, 205, 0.6);
+  font-family: var(--font-mono, "DM Mono", monospace);
+  transition: all 320ms ease;
+  flex-shrink: 0;
+}
+.pulseFlowStepCurrent .pulseFlowDot {
+  background: rgba(242, 131, 34, 0.22);
+  border-color: rgba(242, 131, 34, 0.8);
+  color: #ffc78d;
+}
+.pulseFlowStepDone .pulseFlowDot {
+  background: rgba(46, 213, 115, 0.2);
+  border-color: rgba(46, 213, 115, 0.6);
+  color: #7ee8a8;
+}
+.pulseFlowNum { font-size: 0.6rem; letter-spacing: 0.02em; }
+.pulseFlowBody {
+  display: flex; flex-direction: column; gap: 0.1rem; min-width: 0;
+}
+.pulseFlowLabel {
+  font-family: var(--font-ui, "DM Sans", sans-serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #f0ece4;
+}
+.pulseFlowDesc {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.58rem;
+  color: rgba(220, 215, 205, 0.5);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pulseFlowBar {
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: 3px;
+  height: 1.5px;
+  background: rgba(240, 236, 228, 0.06);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.pulseFlowBarFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(242, 131, 34, 0.7), #ff9a3c);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+/* Responsive: stack on narrow */
+@media (max-width: 1000px) {
+  .pulseCounters { grid-template-columns: repeat(3, 1fr); }
+  .pulseRow { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .pulseCounters { grid-template-columns: repeat(2, 1fr); }
+  .pulseCounterN { font-size: 1.4rem; }
+}
+
+/* Pulse: align content to top with safe clearance under the sticky nav */
+.py:has(.pulseWrap) {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 6rem;
+  padding-bottom: 3rem;
+  overflow-y: auto;
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   AGENT PANEL — toggles between recorded demo and live chat
+   AGENT PANEL — demo/live toggle + real input
    ══════════════════════════════════════════════════════════════════ */
 
-function AgentPanel() {
-  const [mode, setMode] = useState("demo"); // "demo" | "live"
-  return (
-    <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
-      <div className={styles.pyFrameLabel}>
-        {mode === "demo"
-          ? "Telegram · @agoraa_bot · recorded"
-          : "Live · @agoraa_bot · you're chatting"}
-      </div>
-      {/* Mode toggle */}
-      <div className={styles.agentToggle}>
-        <button
-          className={`${styles.agentToggleBtn} ${mode === "demo" ? styles.agentToggleBtnActive : ""}`}
-          onClick={() => setMode("demo")}
-          type="button"
-        >Demo</button>
-        <button
-          className={`${styles.agentToggleBtn} ${mode === "live" ? styles.agentToggleBtnActive : ""}`}
-          onClick={() => setMode("live")}
-          type="button"
-        >Live chat</button>
-      </div>
-      <div className={styles.pyFrameBody}>
-        {mode === "demo" ? <TelegramDemoShowcase /> : <LiveAgentChat />}
-      </div>
-    </div>
-  );
+.agentToggle {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.7rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.2rem;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.75);
+  border: 1px solid rgba(240, 236, 228, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.agentToggleBtn {
+  background: transparent;
+  border: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(220, 215, 205, 0.55);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+.agentToggleBtn:hover {
+  color: rgba(240, 236, 228, 0.9);
+}
+.agentToggleBtnActive {
+  background: rgba(242, 131, 34, 0.18);
+  color: #ffc78d;
+}
+.agentToggleBtnActive:hover {
+  color: #ffd6a0;
 }
 
-/* ── LiveAgentChat: real chat via /api/chat proxy, SSE-streamed ── */
-function LiveAgentChat() {
-  const [msgs, setMsgs] = useState([
-    { role: "bot", text: "gm 👋 I'm the Agora agent. Ask me about my identity, my wallet, or the x402 payment I settled." },
-  ]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [errText, setErrText] = useState("");
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [msgs, sending]);
-
-  const send = async (e) => {
-    e?.preventDefault?.();
-    const text = input.trim();
-    if (!text || sending) return;
-    setErrText("");
-    setSending(true);
-    setInput("");
-    const userMsg = { role: "user", text };
-    setMsgs(prev => [...prev, userMsg, { role: "bot", text: "", streaming: true }]);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-      if (!res.ok) {
-        let msg = "Something went wrong. Try again.";
-        try {
-          const j = await res.json();
-          if (j?.message) msg = j.message;
-        } catch { /* body wasn't JSON */ }
-        setErrText(msg);
-        setMsgs(prev => prev.filter(m => !m.streaming));
-        setSending(false);
-        return;
-      }
-      if (!res.body) {
-        setErrText("No response from the agent.");
-        setMsgs(prev => prev.filter(m => !m.streaming));
-        setSending(false);
-        return;
-      }
-      // Parse SSE stream — OpenAI-compatible chunks
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let full = "";
-      let done = false;
-      while (!done) {
-        const { value, done: streamDone } = await reader.read();
-        if (streamDone) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop(); // keep last incomplete line
-        for (const raw of lines) {
-          const line = raw.trim();
-          if (!line || !line.startsWith("data:")) continue;
-          const payload = line.slice(5).trim();
-          if (payload === "[DONE]") { done = true; break; }
-          try {
-            const chunk = JSON.parse(payload);
-            const delta = chunk?.choices?.[0]?.delta?.content;
-            if (typeof delta === "string" && delta.length) {
-              full += delta;
-              setMsgs(prev => {
-                const copy = [...prev];
-                for (let i = copy.length - 1; i >= 0; i--) {
-                  if (copy[i].streaming) { copy[i] = { ...copy[i], text: full }; break; }
-                }
-                return copy;
-              });
-            }
-          } catch { /* ignore malformed chunk */ }
-        }
-      }
-      // Finalize: clear streaming flag
-      setMsgs(prev => prev.map(m => m.streaming ? { ...m, streaming: false } : m));
-    } catch (err) {
-      setErrText("Connection failed. Check your network and try again.");
-      setMsgs(prev => prev.filter(m => !m.streaming));
-    } finally {
-      setSending(false);
-      // Refocus input for quick next question
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
-
-  return (
-    <div className={styles.tg}>
-      <div className={styles.tgBody}>
-        <img className={styles.tgWallpaper} src="/telegram.png" alt="" aria-hidden draggable={false} />
-        <div className={styles.tgWallTint} />
-
-        {/* Header */}
-        <div className={styles.tgHeader}>
-          <div className={styles.tgHeaderBack}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </div>
-          <div className={styles.tgHeaderAv}>
-            <img src="/mylogo.png" alt="AGORA" draggable={false} />
-          </div>
-          <div className={styles.tgHeaderText}>
-            <div className={styles.tgHeaderName}>agora_bot</div>
-            <div className={styles.tgHeaderSub}>
-              {sending ? "typing…" : "bot · online"}
-            </div>
-          </div>
-          <div className={styles.tgHeaderIcons}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="5" r="1.6" />
-              <circle cx="12" cy="12" r="1.6" />
-              <circle cx="12" cy="19" r="1.6" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Chat */}
-        <div className={styles.tgChat} ref={scrollRef}>
-          {msgs.map((m, i) => (
-            <div
-              key={i}
-              className={`${styles.tgMsg} ${m.role === "user" ? styles.tgMsgUser : styles.tgMsgBot}`}
-            >
-              {m.text
-                ? m.text.split("\n").map((line, k) => (
-                    <span key={k} className={styles.tgLine}>{line}</span>
-                  ))
-                : (
-                  <div className={styles.tgTyping}>
-                    <span className={styles.tgDot} />
-                    <span className={styles.tgDot} />
-                    <span className={styles.tgDot} />
-                  </div>
-                )}
-            </div>
-          ))}
-          {errText && (
-            <div className={styles.tgErr}>{errText}</div>
-          )}
-        </div>
-
-        {/* Input */}
-        <form className={styles.tgInputBar} onSubmit={send}>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="9.5" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none" />
-            <circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none" />
-          </svg>
-          <input
-            ref={inputRef}
-            type="text"
-            className={styles.tgInputField}
-            placeholder={sending ? "waiting for agent…" : "Message @agoraa_bot"}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={sending}
-            maxLength={2000}
-          />
-          <button
-            type="submit"
-            className={styles.tgSend}
-            disabled={sending || !input.trim()}
-            aria-label="Send"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M2 21l21-9L2 3v7l15 2-15 2z" />
-            </svg>
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+/* Live chat input field */
+.tgInputField {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 0.75rem;
+  color: rgba(240, 245, 250, 0.95);
+}
+.tgInputField::placeholder {
+  color: rgba(180, 200, 220, 0.5);
+}
+.tgInputField:disabled {
+  opacity: 0.55;
+}
+.tgSend {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  color: #6ab7ff;
+  cursor: pointer;
+  transition: transform 140ms ease, opacity 140ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tgSend:hover:not(:disabled) {
+  transform: translateX(1px);
+}
+.tgSend:disabled {
+  color: rgba(180, 200, 220, 0.3);
+  cursor: not-allowed;
+}
+.tgErr {
+  align-self: center;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(220, 60, 40, 0.12);
+  border: 1px solid rgba(220, 60, 40, 0.35);
+  color: #ffb4a8;
+  font-family: -apple-system, "SF Pro Text", sans-serif;
+  font-size: 0.66rem;
+  text-align: center;
+  margin: 0.5rem 0;
+  max-width: 90%;
 }
 
-function GlobalVideo() {
-  const vRef = useRef(null);
-  useEffect(() => {
-    const v = vRef.current; if (!v) return;
-    v.play().catch(() => {});
-    const onEnded = () => { v.currentTime = 0; v.play().catch(() => {}); };
-    v.addEventListener("ended", onEnded);
-    return () => v.removeEventListener("ended", onEnded);
-  }, []);
-  return (
-    <div className={styles.globalVideo} aria-hidden>
-      <video ref={vRef} className={styles.videoBg} muted playsInline preload="auto">
-        <source src="/bg-agora-web.mp4" type="video/mp4" />
-      </video>
-      <div className={styles.globalVeil} />
-    </div>
-  );
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE — comprehensive responsive pass (≤ 700px)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  /* ── Nav: shrink brand, hide non-essentials, tighten spacing ── */
+  .nav { padding: 0.5rem 0.6rem 0; }
+  .navBar {
+    height: 42px;
+    padding: 0 0.5rem;
+    gap: 0.4rem;
+    justify-content: space-between;
+  }
+  .navBrand { flex-shrink: 0; }
+  .navLogoText { display: inline; font-size: 0.95rem; }
+  .navLinks { display: none; }
+  .navActions { gap: 0.35rem; flex-shrink: 0; }
+  .navTg { display: none; }
+  .navLogin, .navSignup { padding: 0.28rem 0.55rem; font-size: 0.58rem; }
+
+  /* ── Section base: keep scroll-snap on mobile, adjust padding for smaller frame ── */
+  .section {
+    padding: 5rem 1rem 3rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── HERO S1: stack, center, breathe ── */
+  .s1Grid {
+    flex-direction: column;
+    gap: 1.8rem;
+    padding: 0 0.4rem;
+    padding-bottom: 3rem;
+    align-items: center;
+    text-align: center;
+    margin-top: 0;
+  }
+  .s1Left { max-width: 100%; align-items: center; text-align: center; }
+  .s1Right { width: 100%; display: flex; justify-content: center; }
+  .heroCard { max-width: 340px; width: 100%; }
+  .hl1, .hl2 { font-size: clamp(1.8rem, 7vw, 2.4rem); line-height: 1.05; text-align: center; }
+  .heroLede { text-align: center; max-width: 100%; margin-left: auto; margin-right: auto; }
+  .s1Btns { justify-content: center; flex-wrap: wrap; gap: 0.55rem; }
+  .heroKicker { justify-content: center; text-align: center; }
+  .sponsorLabel { display: none; }
+
+  /* ── Pyko-style sections (S2-S6): stack, center, tighten ── */
+  .pyWrap { padding: 0 0.6rem; }
+  .pySplit {
+    grid-template-columns: 1fr !important;
+    gap: 2rem;
+    direction: ltr !important;
+    text-align: center;
+  }
+  .pySplit > * { direction: ltr !important; }
+  .pyText {
+    max-width: 100%;
+    justify-self: center !important;
+    text-align: center;
+    align-items: center;
+  }
+  .pyText .pySub {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 42ch;
+    text-align: center;
+  }
+  .pyText .pyLink { align-self: center; }
+  .pyText .pyCtaRow { justify-content: center; }
+  .pyTitle { font-size: clamp(1.9rem, 7.5vw, 2.6rem); text-align: center; }
+  .pyEyebrow { text-align: center; }
+  .pyVisual { justify-self: center !important; width: 100%; }
+
+  /* Text-left sections: text on top, visual below */
+  .pySplitTextLeft .pyText { order: 1; }
+  .pySplitTextLeft .pyVisual { order: 2; }
+  /* Text-right sections: same order (visual below text) for consistent reading */
+  .pySplitTextRight .pyText { order: 1; }
+  .pySplitTextRight .pyVisual { order: 2; }
+
+  /* Frames: no tilt on mobile, safer sizing */
+  .pyFrame {
+    max-width: min(380px, 90vw);
+    width: 100%;
+  }
+  .pyFrameTilt { transform: none !important; }
+  .pyFramePortrait {
+    max-width: min(340px, 88vw);
+    aspect-ratio: 9 / 16;
+  }
+  .pyFrameLabel { font-size: 0.52rem; padding: 0.45rem 0.7rem; }
+
+  /* Agent-panel toggle: shrink so it doesn't crowd the label bar */
+  .agentToggle {
+    top: 0.35rem;
+    right: 0.35rem;
+    padding: 2px;
+    gap: 0.12rem;
+  }
+  .agentToggleBtn {
+    padding: 2px 7px;
+    font-size: 0.46rem;
+    letter-spacing: 0.06em;
+  }
+  /* Chat bubbles: don't scrunch on narrow width */
+  .tgMsg { max-width: 86%; }
+  .tgHeader { padding: 0.5rem 0.6rem 0.5rem 0.35rem; gap: 0.45rem; }
+  .tgHeaderName { font-size: 0.78rem; }
+  .tgHeaderSub { font-size: 0.55rem; }
+  .tgHeaderAv { width: 30px; height: 30px; }
+  .tgHeaderAv img { width: 24px; height: 24px; }
+  .tgChat { padding: 0.6rem 0.5rem 0.5rem; gap: 0.35rem; }
+  .tgInputBar { padding: 0.45rem 0.6rem; gap: 0.45rem; }
+  .tgInputField { font-size: 0.72rem; }
+
+  /* ── Pulse section — stack cleanly, keep readable ── */
+  .py:has(.pulseWrap) {
+    padding-top: 5rem;
+    padding-bottom: 3rem;
+  }
+  .pulseWrap { gap: 1.2rem; }
+  .pulseHead { padding: 0 0.3rem; }
+  .pulseHeadTitle { font-size: clamp(1.7rem, 7vw, 2.4rem); }
+  .pulseCounters {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .pulseCounter { padding: 0.7rem 0.75rem; }
+  .pulseCounterLabel { font-size: 0.46rem; margin-bottom: 0.35rem; }
+  .pulseCounterN { font-size: 1.3rem; }
+  .pulseRow {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .pulseCard { padding: 0.95rem 1rem 1.1rem; }
+  .pulseCardLabel { font-size: 0.78rem; }
+  .pulseFlow { gap: 0.28rem; }
+  .pulseFlowStep {
+    padding: 0.45rem 0.6rem;
+    min-height: 40px;
+    grid-template-columns: 22px 1fr;
+    gap: 0.55rem;
+  }
+  .pulseFlowDot { width: 22px; height: 22px; }
+  .pulseFlowNum { font-size: 0.52rem; }
+  .pulseFlowLabel { font-size: 0.76rem; }
+  .pulseFlowDesc { font-size: 0.54rem; }
+
+  /* Kill nav dots on mobile - too small to be useful */
+  .dots { display: none; }
 }
 
-function NavDots({ active, onJump, count }) {
-  return (
-    <div className={styles.dots}>
-      {Array.from({ length: count }).map((_, i) => (
-        <button key={i}
-          className={`${styles.dot} ${active === i ? styles.dotActive : ""}`}
-          onClick={() => onJump(i)} aria-label={`Section ${i + 1}`} />
-      ))}
-    </div>
-  );
+/* ── Very small screens (≤ 400px): extra tightening ── */
+@media (max-width: 400px) {
+  .pyTitle { font-size: 1.75rem; }
+  .pulseCounters { grid-template-columns: 1fr 1fr; }
+  .pulseCounterN { font-size: 1.15rem; }
+  .heroCard { max-width: 100%; }
+  .hl1, .hl2 { font-size: 1.7rem; }
 }
 
-function useLiveFeed() {
-  const [entries, setEntries] = useState([]);
-  const [vol, setVol] = useState(13.15);
-  const [txns, setTxns] = useState(8);
-  useEffect(() => {
-    let i = 0;
-    const amounts = ["0.42", "0.38", "0.31", "0.18"];
-    const tick = () => {
-      const ev = FEED_EVENTS[i % FEED_EVENTS.length];
-      const amt = amounts[i % amounts.length];
-      const ts = new Date().toLocaleTimeString("en-US", { hour12: false });
-      setEntries(prev => [{ t: ev.t, msg: ev.msg(amt), ts, id: Date.now() }, ...prev].slice(0, 8));
-      if (ev.t === "s") {
-        setVol(v => parseFloat((v + parseFloat(amt)).toFixed(2)));
-        setTxns(t => t + 1);
-      }
-      i++;
-    };
-    tick();
-    const id = setInterval(tick, 2800);
-    return () => clearInterval(id);
-  }, []);
-  return { entries, vol, txns };
+/* Nav links stay visible at all breakpoints ≥ 700px */
+
+
+/* ── Data bubble entrance (replaces the whole-phone Ken Burns zoom) ── */
+@keyframes tgDataIn {
+  0%   { opacity: 0; transform: translateY(6px) scale(.972); }
+  60%  { opacity: 1; transform: translateY(0)   scale(1.006); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.tgMsgData {
+  animation: tgDataIn 460ms cubic-bezier(.22,.9,.3,1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tgMsgData { animation: none; }
 }
 
-/* ════════ MAIN ════════ */
-export default function AgoraPage() {
-  const viewportRef = useRef(null);
-  const sectionRefs = useRef([]);
-  const touchStartY = useRef(0);
-  const [active, setActive] = useState(0);
-  const [navScrolled, setNavScrolled] = useState(false);
-  const [selectedMode, setSelectedMode] = useState(0);
-  const { entries, vol, txns } = useLiveFeed();
-  const SECTION_COUNT = 6;
-  const LAST = SECTION_COUNT - 1;
 
-  useEffect(() => {
-    const node = viewportRef.current; if (!node) return;
-    const fn = () => setNavScrolled(node.scrollTop > 60);
-    node.addEventListener("scroll", fn, { passive: true });
-    return () => node.removeEventListener("scroll", fn);
-  }, []);
-
-  // Reset scroll on mount once. No enforcement — we do NOT fight the user.
-  useEffect(() => {
-    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
-    const node = viewportRef.current;
-    if (node) node.scrollTop = 0;
-  }, []);
-
-  useEffect(() => {
-    const node = viewportRef.current; if (!node) return;
-    const secs = sectionRefs.current.filter(Boolean);
-    if (!secs.length) return;
-    const obs = new IntersectionObserver(
-      (es) => es.forEach(e => { if (e.isIntersecting) { const i = sectionRefs.current.indexOf(e.target); if (i !== -1) setActive(i); } }),
-      { threshold: 0.55, root: node }
-    );
-    secs.forEach(s => obs.observe(s));
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const node = viewportRef.current; if (!node) return;
-    const onWheel = (e) => {
-      if (active === LAST && e.deltaY > 0) { e.preventDefault(); e.stopPropagation(); }
-      if (active === 0 && e.deltaY < 0) { e.preventDefault(); e.stopPropagation(); }
-    };
-    const onTS = (e) => { touchStartY.current = e.touches[0].clientY; };
-    const onTM = (e) => {
-      const d = touchStartY.current - e.touches[0].clientY;
-      if (active === LAST && d > 0) { e.preventDefault(); return; }
-      if (active === 0 && d < 0) { e.preventDefault(); return; }
-    };
-    node.addEventListener("wheel", onWheel, { passive: false });
-    node.addEventListener("touchstart", onTS, { passive: true });
-    node.addEventListener("touchmove", onTM, { passive: false });
-    return () => { node.removeEventListener("wheel", onWheel); node.removeEventListener("touchstart", onTS); node.removeEventListener("touchmove", onTM); };
-  }, [active, LAST]);
-
-  const jumpTo = useCallback((i) => {
-    const c = viewportRef.current; if (!c) return;
-    c.scrollTo({ top: i * c.clientHeight, behavior: "smooth" });
-  }, []);
-
-  return (
-    <div className={styles.root}>
-      <GlobalVideo />
-      <div className={styles.grain} aria-hidden />
-
-      {/* NAV — main pill + award pill centered at top */}
-      <nav className={`${styles.nav} ${navScrolled ? styles.navScrolled : ""}`}>
-        <div className={styles.navCluster}>
-        <div className={styles.navBar}>
-          {/* Logo */}
-          <div className={styles.navLogo}>
-            <Image src="/mylogo.png" alt="AGORA" width={22} height={22} className={styles.navLogoImg} />
-            <span className={styles.navLogoText}>agora</span>
-          </div>
-          {/* Links */}
-          <div className={styles.navLinks}>
-            {["Home", "Real", "Square", "Agent", "Pulse", "Settlement"].map((l, i) => (
-              <button key={l}
-                className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
-                onClick={() => jumpTo(i)}>{l}</button>
-            ))}
-          </div>
-          {/* Actions */}
-          <div className={styles.navActions}>
-            <button type="button" className={styles.navLogin} onClick={(e) => e.preventDefault()}>Log In</button>
-            <button type="button" className={styles.navSignup} onClick={(e) => e.preventDefault()}>Sign Up</button>
-          </div>
-        </div>
-        </div>
-      </nav>
-
-      <NavDots active={active} onJump={jumpTo} count={SECTION_COUNT} />
-
-      <div className={styles.viewport} ref={viewportRef}>
-
-        {/* S1 — HERO */}
-        <section className={`${styles.section} ${styles.s1}`} ref={el => sectionRefs.current[0] = el}>
-          <div className={styles.s1Veil} />
-
-          {/* Two-column grid */}
-          <div className={styles.s1Grid}>
-            {/* Left: headline + CTA */}
-            <div className={styles.s1Left}>
-              <BlurUp delay={0.1}>
-                <p className={styles.eyebrow}>Autonomous Compute Economy · GOAT Network</p>
-                <span className={styles.glassPill}>
-                  won all tracks + 3rd overall at openclaw hackathon 🏆
-                </span>
-              </BlurUp>
-              <BlurUp delay={0.22}>
-                <h1 className={styles.hl1}>The marketplace</h1>
-                <h1 className={styles.hl2}>machines built</h1>
-                <h1 className={styles.hl1}>for machines.</h1>
-              </BlurUp>
-              <BlurUp delay={0.5}>
-                <p className={styles.s1Sub}>
-                  One agent. Autonomous bids. Bitcoin-backed settlement.<br />
-                  Zero human approvals required.
-                </p>
-              </BlurUp>
-              <BlurUp delay={0.68} className={styles.s1Btns}>
-                <MagBtn href={TELEGRAM_URL} target="_blank" className={styles.btnRed}>
-                  <span className={styles.btnRedGlow} />
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
-                  <span>Try AGORA Agent</span>
-                </MagBtn>
-                <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
-              </BlurUp>
-            </div>
-
-            {/* Right: glass stats card */}
-            <BlurUp delay={0.6} className={styles.s1Right}>
-              <div className={styles.heroCard}>
-                <div className={styles.heroCardEdge} />
-                <p className={styles.heroCardLabel}>Verified On-Chain</p>
-                <div className={styles.heroStats}>
-                  <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>#82</span>
-                    <span className={styles.heroStatL}>ERC-8004 Agent ID</span>
-                  </div>
-                  <div className={styles.heroStatDiv} />
-                  <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>1</span>
-                    <span className={styles.heroStatL}>x402 payment settled</span>
-                  </div>
-                  <div className={styles.heroStatDiv} />
-                  <div className={styles.heroStat}>
-                    <span className={styles.heroStatN}>GOAT</span>
-                    <span className={styles.heroStatL}>Mainnet · Chain 2345</span>
-                  </div>
-                </div>
-                <a href="https://8004scan.io/agents?chain=2345" target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
-                  <span className={styles.liveDot} />Real, live, verifiable · View agent →
-                </a>
-              </div>
-            </BlurUp>
-
-          </div>
-
-          {/* Sponsor strip at bottom */}
-          <div className={styles.heroBottom}>
-            <SponsorStrip />
-          </div>
-        </section>
-
-        {/* ════════ S2 — REAL ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[1] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>Verified · On-chain</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>See what's real,</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>on-chain.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's identity, merchant, and first payment are all registered on GOAT mainnet, not a testnet demo. Every claim on this page is something you can pull up and verify yourself.</p></InView>
-                <InView delay={0.32}>
-                  <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>View Agent #82 on 8004scan →</a>
-                </InView>
-              </div>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <div className={styles.pyFrame}>
-                  <div className={styles.pyFrameLabel}>8004scan.io · Agent #82</div>
-                  <div className={styles.pyFrameBody}>
-                    <MediaSlot type="image" src="/8004scan.png" alt="Agent #82 on 8004scan" fallback="8004scan · agent card" />
-                  </div>
-                </div>
-              </InView>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════ S3 — SQUARE ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[2] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <div className={`${styles.pyFrame} ${styles.pyFrameTilt}`}>
-                  <div className={styles.pyFrameLabel}>useagora.vercel.app/square · live</div>
-                  <div className={styles.pyFrameBody}>
-                    <iframe
-                      src="/square?embed=1"
-                      className={styles.showcaseIframe}
-                      title="The Square live view"
-                      loading="lazy"
-                      aria-hidden="true"
-                      tabIndex={-1}
-                      scrolling="no"
-                      sandbox="allow-scripts allow-same-origin"
-                    />
-                    <div className={styles.showcaseGuard} aria-hidden />
-                  </div>
-                </div>
-              </InView>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>The Square · Interactive</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>Walk the</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>marketplace.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora means marketplace in ancient Greek, the public square where trade happened. We rebuilt that, walkable, in 3D. Five stations, one loop, every inscription a real on-chain fact.</p></InView>
-                <InView delay={0.32}>
-                  <a href="/square" className={styles.pyLink}>Enter the Square →</a>
-                </InView>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════ S5 — AGENT ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[3] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={`${styles.pySplit} ${styles.pySplitTextRight}`}>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <AgentPanel />
-              </InView>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>The Agent · Live</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, and settles x402 payments on GOAT mainnet. Watch the demo, or chat with the real agent yourself. Six steps, zero human approvals.</p></InView>
-                <InView delay={0.32}>
-                  <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Open in Telegram →</a>
-                </InView>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════ S6 — PULSE (numbers + graph + flow) ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={styles.pulseWrap}>
-              <div className={styles.pulseHead}>
-                <InView><p className={styles.pyEyebrow}>Agora · in numbers</p></InView>
-                <SlideUp className={`${styles.pyTitle} ${styles.pulseHeadTitle}`} delay={0.05}>Live pulse.</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic} ${styles.pulseHeadTitle}`} delay={0.13}>Verifiable receipts.</SlideUp>
-              </div>
-
-              {/* Row 1: Live counters */}
-              <div className={styles.pulseCounters}>
-                <PulseCounter label="Agent ID"          value={82}           prefix="#" />
-                <PulseCounter label="x402 settled"      value={1}                     />
-                <PulseCounter label="Volume settled"    value={1.00} decimals={2} suffix=" USDC" />
-                <PulseCounter label="Avg settlement"    value={3.52} decimals={2} suffix="s" />
-                <PulseCounter label="Chain ID"          value={2345}                  />
-                <PulseCounter label="Block confirmed"   value={13770302}              />
-              </div>
-
-              {/* Row 2: Graph + Flow side by side */}
-              <div className={styles.pulseRow}>
-                <div className={styles.pulseCard}>
-                  <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>Settlement latency</p>
-                    <p className={styles.pulseCardHint}>request → confirmed, seconds</p>
-                  </div>
-                  <PulseGraph />
-                </div>
-                <div className={styles.pulseCard}>
-                  <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>Agent flow</p>
-                    <p className={styles.pulseCardHint}>runs end-to-end, zero humans</p>
-                  </div>
-                  <PulseFlow />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════ S7 — SETTLEMENT + CTA ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>Settled · Verifiable</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>One payment.</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Confirmed forever.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>A real USDC.e payment, settled on GOAT mainnet through x402. On-chain, gateway-verified, and the first of many. This is Agora working today, not on a roadmap.</p></InView>
-                <InView delay={0.32} className={styles.pyCtaRow}>
-                  <MagBtn href={TELEGRAM_URL} target="_blank" className={styles.btnRed}>
-                    <span className={styles.btnRedGlow} />
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
-                    <span>Try AGORA Agent</span>
-                  </MagBtn>
-                  <MagBtn href="/square" className={styles.btnGhost}>Walk the Square</MagBtn>
-                </InView>
-              </div>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <div className={styles.pyFrame}>
-                  <div className={styles.pyFrameLabel}>explorer.goat.network</div>
-                  <div className={styles.pyFrameBody}>
-                    <MediaSlot type="image" src="/onchain-tx.png" alt="Settled tx on GOAT Explorer" fallback="goat explorer · settled tx" />
-                  </div>
-                </div>
-              </InView>
-            </div>
-            <p className={styles.pyFooter}>Built at OpenClaw Bootcamp · Toronto Tech Week · 2026</p>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+/* award pill: keep it readable and inside the grid on small screens */
+@media (max-width: 700px) {
+  .glassPill {
+    font-size: .5rem;
+    padding: .28rem .6rem;
+    letter-spacing: .06em;
+    margin-bottom: .85rem;
+  }
 }
