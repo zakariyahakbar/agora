@@ -1011,12 +1011,11 @@ export default function AgoraPage() {
             <div className={styles.s1Left}>
               <BlurUp delay={0.1}>
                 <p className={styles.eyebrow}>
-                  <span>Autonomous Compute Economy</span>
+                  Autonomous Compute Economy
                   <span className={styles.eyebrowDot}>·</span>
-                  <span>GOAT Network</span>
-                  <span className={styles.eyebrowDot}>·</span>
-                  <span className={styles.eyebrowWin}>Won all tracks · OpenClaw Hackathon</span>
+                  GOAT Network
                 </p>
+                <p className={styles.eyebrowWin}>Won all tracks · OpenClaw Hackathon</p>
               </BlurUp>
               <BlurUp delay={0.22}>
                 <h1 className={styles.hl1}>The marketplace</h1>
