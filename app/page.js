@@ -994,9 +994,6 @@ export default function AgoraPage() {
             <button type="button" className={styles.navSignup} onClick={(e) => e.preventDefault()}>Sign Up</button>
           </div>
         </div>
-        <span className={styles.glassPill}>
-          won all tracks + 3rd overall at openclaw hackathon 🏆
-        </span>
         </div>
       </nav>
 
@@ -1014,6 +1011,9 @@ export default function AgoraPage() {
             <div className={styles.s1Left}>
               <BlurUp delay={0.1}>
                 <p className={styles.eyebrow}>Autonomous Compute Economy · GOAT Network</p>
+                <span className={styles.glassPill}>
+                  won all tracks + 3rd overall at openclaw hackathon 🏆
+                </span>
               </BlurUp>
               <BlurUp delay={0.22}>
                 <h1 className={styles.hl1}>The marketplace</h1>
