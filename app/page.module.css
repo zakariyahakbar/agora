@@ -115,15 +115,18 @@
 
 /* ─── TYPE ─── */
 .eyebrow {
-  display: flex; align-items: center; flex-wrap: wrap;
-  gap: .1rem .5rem;
   font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase;
   color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75);
-  margin: 0 0 1rem; line-height: 1.9;
+  margin: 0 0 .38rem;
   font-family: var(--font-mono,"DM Mono",monospace);
 }
-.eyebrowDot { color: rgba(232,101,10,.42); text-shadow: none; letter-spacing: 0; }
-.eyebrowWin { color: #e6c89b; text-shadow: 0 0 18px rgba(230,200,155,.35); }
+.eyebrowDot { color: rgba(232,101,10,.42); text-shadow: none; margin: 0 .55em; }
+.eyebrowWin {
+  font-size: .5rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(230,200,155,.82); text-shadow: 0 0 16px rgba(230,200,155,.25);
+  margin: 0 0 1.15rem;
+  font-family: var(--font-mono,"DM Mono",monospace);
+}
 .glassPill {
   display: inline-flex; align-items: center; gap: .34rem;
   margin: 0 0 1rem; max-width: 100%; flex-wrap: wrap; line-height: 1.35;
@@ -159,7 +162,7 @@
 .s1Right { flex-shrink: 0; width: 220px; }
 
 .hl1 { font-family: var(--font-display,"Cormorant Garamond",serif); font-size: clamp(2.4rem,5vw,4.8rem); font-weight: 600; line-height: 1.0; color: #f0ece4; letter-spacing: -.026em; margin: 0; text-shadow: 0 2px 32px rgba(0,0,0,.65); }
-.hl2 { font-family: var(--font-display,"Cormorant Garamond",serif); font-style: italic; font-size: clamp(2.4rem,5vw,4.8rem); font-weight: 400; line-height: 1.0; color: rgba(240,236,228,.32); letter-spacing: -.026em; margin: 0; text-shadow: 0 2px 24px rgba(0,0,0,.5); }
+.hl2 { font-family: var(--font-display,"Cormorant Garamond",serif); font-style: italic; font-size: clamp(2.4rem,5vw,4.8rem); font-weight: 400; line-height: 1.0; color: rgba(240,236,228,.60); letter-spacing: -.026em; margin: 0; text-shadow: 0 2px 24px rgba(0,0,0,.5); }
 .s1Sub { margin: .85rem 0 1.4rem; font-size: .85rem; color: rgba(240,236,228,.58); letter-spacing: .01em; line-height: 1.72; }
 .s1Btns { display: flex; align-items: center; gap: .68rem; flex-wrap: wrap; }
 
@@ -1425,4 +1428,10 @@
   .eyebrow { gap: .1rem .35rem; }
   .eyebrow .eyebrowDot:last-of-type { display: none; }
   .eyebrowWin { flex-basis: 100%; }
+}
+
+
+@media (max-width: 700px) {
+  .eyebrow    { font-size: .5rem; letter-spacing: .2em; }
+  .eyebrowWin { font-size: .46rem; letter-spacing: .16em; }
 }
