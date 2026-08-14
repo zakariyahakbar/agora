@@ -512,7 +512,7 @@ function TelegramDemoShowcase() {
         all = nextMsgs;
         setMsgs(nextMsgs);
         if (m.zoom === "up") {
-          setZoom({ scale: 1.05, origin: "50% 50%" });
+          setZoom({ scale: 1, origin: "50% 50%" });
         } else {
           setZoom({ scale: 1, origin: "50% 50%" });
         }
