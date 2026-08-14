@@ -1015,7 +1015,6 @@ export default function AgoraPage() {
                   <span className={styles.eyebrowDot}>·</span>
                   GOAT Network
                 </p>
-                <p className={styles.eyebrowWin}>Won all tracks · OpenClaw Hackathon</p>
               </BlurUp>
               <BlurUp delay={0.22}>
                 <h1 className={styles.hl1}>The marketplace</h1>
@@ -1058,6 +1057,10 @@ export default function AgoraPage() {
                     <span className={styles.heroStatN}>GOAT</span>
                     <span className={styles.heroStatL}>Mainnet · Chain 2345</span>
                   </div>
+                </div>
+                <div className={styles.heroAward}>
+                  <span className={styles.heroAwardIcon}>🏆</span>
+                  <span>Won all tracks · 3rd overall · OpenClaw Hackathon</span>
                 </div>
                 <a href="https://8004scan.io/agents?chain=2345" target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
                   <span className={styles.liveDot} />Real, live, verifiable · View agent →
