@@ -7,6 +7,11 @@ import styles from "./page.module.css";
 
 const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
 
+/* Waitlist — posts to a Google Form via a hidden iframe sink (no backend, no env vars). */
+const WAITLIST_ACTION =
+  "https://docs.google.com/forms/d/e/1FAIpQLSc4OnXZ-nWS5nRsDakmMJZlYohbAmxKIi-IMVWuB-aj2Mvpfw/formResponse";
+const WAITLIST_EMAIL_FIELD = "entry.1066540444";
+
 const SPONSORS = [
   { name: "GOAT Network", img: "/goat.png"   },
   { name: "CryptoChicks", img: "/chicks.png"  },
@@ -903,6 +908,117 @@ function useLiveFeed() {
   return { entries, vol, txns };
 }
 
+/* ════════ WAITLIST MODAL ════════ */
+function WaitlistModal({ mode, onClose }) {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState("");
+  const inputRef = useRef(null);
+  const open = mode !== null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    const t = setTimeout(() => inputRef.current?.focus(), 80);
+    return () => { window.removeEventListener("keydown", onKey); clearTimeout(t); };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) { setEmail(""); setSent(false); setErr(""); }
+  }, [open]);
+
+  const submit = (e) => {
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+    if (!ok) { e.preventDefault(); setErr("That email doesn't look right."); return; }
+    setErr("");
+    setTimeout(() => setSent(true), 320);
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className={styles.wlWrap}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          role="dialog" aria-modal="true" aria-label="Join the Agora waitlist"
+        >
+          <iframe
+            name="agora_waitlist_sink" title="waitlist sink" tabIndex={-1} aria-hidden="true"
+            style={{ position: "absolute", width: 1, height: 1, border: 0, opacity: 0, pointerEvents: "none" }}
+          />
+          <motion.div
+            className={styles.wlPanel}
+            initial={{ opacity: 0, y: 18, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <button className={styles.wlClose} onClick={onClose} aria-label="Close">✕</button>
+
+            {sent ? (
+              <div className={styles.wlDone}>
+                <p className={styles.wlDoneMark}>✓</p>
+                <h3 className={styles.wlDoneTitle}>You&apos;re on the list.</h3>
+                <p className={styles.wlDoneBody}>
+                  We&apos;ll email you when accounts open. In the meantime the agent is live on Telegram
+                  and the square is open to walk through.
+                </p>
+                <div className={styles.wlDoneRow}>
+                  <a className={styles.wlGhost} href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+                    Talk to the agent
+                  </a>
+                  <button className={styles.wlGhost} onClick={onClose}>Back to the site</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className={styles.wlEyebrow}>
+                  {mode === "login" ? "Accounts aren't open yet" : "Early access"}
+                </p>
+                <h3 className={styles.wlTitle}>Join the waitlist</h3>
+                <p className={styles.wlBody}>
+                  {mode === "login"
+                    ? "Agora doesn't have accounts open yet. Leave your email and you'll be first in when it does."
+                    : "Agora is live on GOAT mainnet and onboarding in batches. Leave your email and you'll be first in."}
+                </p>
+
+                <form
+                  className={styles.wlForm}
+                  action={WAITLIST_ACTION}
+                  method="POST"
+                  target="agora_waitlist_sink"
+                  onSubmit={submit}
+                >
+                  <label className={styles.wlLabel} htmlFor="wl-email">Email</label>
+                  <input
+                    id="wl-email"
+                    ref={inputRef}
+                    className={styles.wlInput}
+                    name={WAITLIST_EMAIL_FIELD}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="you@domain.com"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); if (err) setErr(""); }}
+                    required
+                  />
+                  {err && <p className={styles.wlErr}>{err}</p>}
+                  <button type="submit" className={styles.wlSubmit}>Join the waitlist</button>
+                  <p className={styles.wlFine}>No spam. One email when accounts open.</p>
+                </form>
+              </>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ════════ MAIN ════════ */
 export default function AgoraPage() {
   const viewportRef = useRef(null);
@@ -910,6 +1026,8 @@ export default function AgoraPage() {
   const touchStartY = useRef(0);
   const [active, setActive] = useState(0);
   const [navScrolled, setNavScrolled] = useState(false);
+  const [waitlist, setWaitlist] = useState(null); // null | "signup" | "login"
+  const closeWaitlist = useCallback(() => setWaitlist(null), []);
   const [selectedMode, setSelectedMode] = useState(0);
   const { entries, vol, txns } = useLiveFeed();
   const SECTION_COUNT = 6;
@@ -990,8 +1108,8 @@ export default function AgoraPage() {
           </div>
           {/* Actions */}
           <div className={styles.navActions}>
-            <button type="button" className={styles.navLogin} onClick={(e) => e.preventDefault()}>Log In</button>
-            <button type="button" className={styles.navSignup} onClick={(e) => e.preventDefault()}>Sign Up</button>
+            <button type="button" className={styles.navLogin} onClick={() => setWaitlist("login")}>Log In</button>
+            <button type="button" className={styles.navSignup} onClick={() => setWaitlist("signup")}>Sign Up</button>
           </div>
         </div>
         </div>
@@ -1235,6 +1353,8 @@ export default function AgoraPage() {
           </div>
         </section>
       </div>
+
+      <WaitlistModal mode={waitlist} onClose={closeWaitlist} />
     </div>
   );
 }
