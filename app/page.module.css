@@ -114,9 +114,19 @@
 .section { position: relative; width: 100%; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; scroll-snap-align: start; padding-top: 4.5rem; }
 
 /* ─── TYPE ─── */
-.eyebrow { font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75); margin: 0 0 1rem; font-family: var(--font-mono,"DM Mono",monospace); }
+.eyebrow {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: .1rem .5rem;
+  font-size: .57rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase;
+  color: #e8650a; text-shadow: 0 0 20px rgba(220,90,15,.75);
+  margin: 0 0 1rem; line-height: 1.9;
+  font-family: var(--font-mono,"DM Mono",monospace);
+}
+.eyebrowDot { color: rgba(232,101,10,.42); text-shadow: none; letter-spacing: 0; }
+.eyebrowWin { color: #e6c89b; text-shadow: 0 0 18px rgba(230,200,155,.35); }
 .glassPill {
   display: inline-flex; align-items: center; gap: .34rem;
+  margin: 0 0 1rem; max-width: 100%; flex-wrap: wrap; line-height: 1.35;
   padding: .3rem .85rem; border-radius: 999px; width: fit-content;
   background: rgba(255,255,255,.06);
   backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%);
@@ -1393,4 +1403,26 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .tgMsgData { animation: none; }
+}
+
+
+/* award pill: keep it readable and inside the grid on small screens */
+@media (max-width: 700px) {
+  .glassPill {
+    font-size: .5rem;
+    padding: .28rem .6rem;
+    letter-spacing: .06em;
+    margin-bottom: .85rem;
+  }
+}
+
+
+/* eyebrow: drop the third segment onto its own line before it crowds the headline */
+@media (max-width: 900px) {
+  .eyebrow { font-size: .5rem; letter-spacing: .2em; gap: .05rem .4rem; }
+}
+@media (max-width: 620px) {
+  .eyebrow { gap: .1rem .35rem; }
+  .eyebrow .eyebrowDot:last-of-type { display: none; }
+  .eyebrowWin { flex-basis: 100%; }
 }
