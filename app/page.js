@@ -3,14 +3,13 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import Link from "next/link";
 import styles from "./page.module.css";
+import { WAITLIST_ACTION, WAITLIST_EMAIL_FIELD, EMAIL_RE, useWaitlistUnlock } from "./lib/waitlist";
 
 const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
 
-/* Waitlist — posts to a Google Form via a hidden iframe sink (no backend, no env vars). */
-const WAITLIST_ACTION =
-  "https://docs.google.com/forms/d/e/1FAIpQLSc4OnXZ-nWS5nRsDakmMJZlYohbAmxKIi-IMVWuB-aj2Mvpfw/formResponse";
-const WAITLIST_EMAIL_FIELD = "entry.1066540444";
+
 
 const SPONSORS = [
   { name: "GOAT Network", img: "/goat.png"   },
@@ -640,29 +639,15 @@ function TelegramDemoShowcase() {
    ══════════════════════════════════════════════════════════════════ */
 
 function AgentPanel() {
-  const [mode, setMode] = useState("demo"); // "demo" | "live"
   return (
     <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
-      <div className={styles.pyFrameLabel}>
-        {mode === "demo"
-          ? "Telegram · @agoraa_bot · recorded"
-          : "Live · @agoraa_bot · you're chatting"}
-      </div>
-      {/* Mode toggle */}
+      <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot · recorded</div>
       <div className={styles.agentToggle}>
-        <button
-          className={`${styles.agentToggleBtn} ${mode === "demo" ? styles.agentToggleBtnActive : ""}`}
-          onClick={() => setMode("demo")}
-          type="button"
-        >Demo</button>
-        <button
-          className={`${styles.agentToggleBtn} ${mode === "live" ? styles.agentToggleBtnActive : ""}`}
-          onClick={() => setMode("live")}
-          type="button"
-        >Live chat</button>
+        <button className={`${styles.agentToggleBtn} ${styles.agentToggleBtnActive}`} type="button">Demo</button>
+        <Link href="/agent" className={styles.agentToggleBtn}>Live chat →</Link>
       </div>
       <div className={styles.pyFrameBody}>
-        {mode === "demo" ? <TelegramDemoShowcase /> : <LiveAgentChat />}
+        <TelegramDemoShowcase />
       </div>
     </div>
   );
@@ -909,7 +894,7 @@ function useLiveFeed() {
 }
 
 /* ════════ WAITLIST MODAL ════════ */
-function WaitlistModal({ mode, onClose }) {
+function WaitlistModal({ mode, onClose, onDone }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState("");
@@ -929,10 +914,10 @@ function WaitlistModal({ mode, onClose }) {
   }, [open]);
 
   const submit = (e) => {
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+    const ok = EMAIL_RE.test(email.trim());
     if (!ok) { e.preventDefault(); setErr("That email doesn't look right."); return; }
     setErr("");
-    setTimeout(() => setSent(true), 320);
+    setTimeout(() => { setSent(true); onDone?.(); }, 320);
   };
 
   return (
