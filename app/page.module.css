@@ -121,12 +121,16 @@
   font-family: var(--font-mono,"DM Mono",monospace);
 }
 .eyebrowDot { color: rgba(232,101,10,.42); text-shadow: none; margin: 0 .55em; }
-.eyebrowWin {
-  font-size: .5rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
-  color: rgba(230,200,155,.82); text-shadow: 0 0 16px rgba(230,200,155,.25);
-  margin: 0 0 1.15rem;
+.heroAward {
+  display: flex; align-items: center; gap: .5rem;
+  margin: .9rem 0 0; padding-top: .85rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: .5rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(240,236,228,.72);
   font-family: var(--font-mono,"DM Mono",monospace);
+  line-height: 1.5;
 }
+.heroAwardIcon { font-size: .82rem; letter-spacing: 0; filter: saturate(.85); }
 .glassPill {
   display: inline-flex; align-items: center; gap: .34rem;
   margin: 0 0 1rem; max-width: 100%; flex-wrap: wrap; line-height: 1.35;
@@ -1422,16 +1426,13 @@
 
 /* eyebrow: drop the third segment onto its own line before it crowds the headline */
 @media (max-width: 900px) {
-  .eyebrow { font-size: .5rem; letter-spacing: .2em; gap: .05rem .4rem; }
+  .eyebrow { margin-bottom: 1.15rem; font-size: .5rem; letter-spacing: .2em; gap: .05rem .4rem; }
 }
 @media (max-width: 620px) {
   .eyebrow { gap: .1rem .35rem; }
-  .eyebrow .eyebrowDot:last-of-type { display: none; }
-  .eyebrowWin { flex-basis: 100%; }
 }
 
 
 @media (max-width: 700px) {
   .eyebrow    { font-size: .5rem; letter-spacing: .2em; }
-  .eyebrowWin { font-size: .46rem; letter-spacing: .16em; }
 }
