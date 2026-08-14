@@ -1060,7 +1060,9 @@ export default function AgoraPage() {
                 </div>
                 <div className={styles.heroAward}>
                   <span className={styles.heroAwardIcon}>🏆</span>
-                  <span>Won all tracks · 3rd overall · OpenClaw Hackathon</span>
+                  <span>OpenClaw Hackathon<br />
+                    <span className={styles.heroAwardSub}>All tracks · 3rd overall</span>
+                  </span>
                 </div>
                 <a href="https://8004scan.io/agents?chain=2345" target="_blank" rel="noopener noreferrer" className={styles.heroPill}>
                   <span className={styles.liveDot} />Real, live, verifiable · View agent →
