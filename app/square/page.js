@@ -236,13 +236,13 @@ export default function SquarePage() {
       setWebglFail(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.25 : 1.5));
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.18;
     if (!coarse) {
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
     }
     wrap.appendChild(renderer.domElement);
     renderer.domElement.style.touchAction = "none";
@@ -270,7 +270,7 @@ export default function SquarePage() {
     moonLight.position.set(-30, 42, -22);
     if (!coarse) {
       moonLight.castShadow = true;
-      moonLight.shadow.mapSize.set(2048, 2048);
+      moonLight.shadow.mapSize.set(1024, 1024);
       const c = moonLight.shadow.camera;
       c.left = -34; c.right = 34; c.top = 34; c.bottom = -34; c.far = 120;
       moonLight.shadow.bias = -0.0004;
@@ -741,7 +741,7 @@ export default function SquarePage() {
     colliders.push({ x: 0, z: 0, r: 1.8 });
 
     /* embers */
-    const emberCount = coarse ? 70 : 140;
+    const emberCount = coarse ? 50 : 90;
     const emberGeo = new THREE.BufferGeometry();
     const emberPos = new Float32Array(emberCount * 3);
     const emberSeed = new Float32Array(emberCount * 2);
