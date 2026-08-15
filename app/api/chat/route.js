@@ -11,27 +11,21 @@
 
 export const runtime = "edge"; // Vercel edge = fast + supports streaming natively
 
-/* Spend protection.
+/* Abuse protection.
  *
- * Every message costs ClawUp credits, so the ceiling that matters is the
- * DAILY one, not the per-minute one. A 10/min limit still allows ~14,000
- * messages a day from a single IP, which would drain a small balance.
+ * ClawUp bills this agent by TIME, not by message ($0.0278/hr compute), so
+ * traffic volume does not affect the bill. These limits exist to stop someone
+ * flooding the agent's transcript with junk, not to protect spend.
  *
- * Three layers, cheapest check first:
- *   BURST  - stops someone holding down enter
- *   DAILY  - stops one person grinding all day
- *   GLOBAL - hard ceiling across everyone, so total spend is bounded
- *
- * All of it is in-memory, and edge functions run per-region instances, so the
- * real numbers are somewhat higher than these. It is a spend brake, not a
- * security boundary. The actual hard cap on losses is the ClawUp balance:
- * keep it small and leave the low-balance alert on.
+ * They are deliberately generous: a judge or a demo audience hitting a cap
+ * would cost us far more than the traffic ever could. In-memory and
+ * per-region, so effective numbers run higher than these.
  */
-const BURST_LIMIT = 5;
+const BURST_LIMIT = 8;
 const BURST_WINDOW_MS = 30_000;
 
-const DAILY_LIMIT_PER_IP = 40;
-const GLOBAL_DAILY_LIMIT = 500;
+const DAILY_LIMIT_PER_IP = 200;
+const GLOBAL_DAILY_LIMIT = 4000;
 
 const DAY_MS = 86_400_000;
 
@@ -87,6 +81,63 @@ function checkLimits(ip) {
 
   globalDay.count += 1;
   return { ok: true };
+}
+
+
+/* ── Health check ────────────────────────────────────────────────────
+ * GET /api/chat            -> is the server configured?
+ * GET /api/chat?probe=1    -> also calls ClawUp for real and reports back
+ *
+ * Never returns the API key itself, only whether one is present.
+ */
+export async function GET(req) {
+  const apiKey = process.env.CLAWUP_API_KEY;
+  const agentId = process.env.CLAWUP_AGENT_ID;
+
+  const out = {
+    route: "ok",
+    apiKeySet: Boolean(apiKey),
+    agentIdSet: Boolean(agentId),
+    agentId: agentId || null,
+  };
+
+  if (!apiKey || !agentId) {
+    out.diagnosis = "Missing env vars. In Vercel, set CLAWUP_API_KEY and CLAWUP_AGENT_ID and tick Production, then redeploy.";
+    return new Response(JSON.stringify(out, null, 2), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (new URL(req.url).searchParams.get("probe") !== "1") {
+    out.diagnosis = "Env vars are set. Add ?probe=1 to this URL to test ClawUp itself.";
+    return new Response(JSON.stringify(out, null, 2), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const upstream = await fetch(`https://api.clawup.org/api/v1/agents/${agentId}/chat`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openclaw", messages: [{ role: "user", content: "ping" }], stream: false }),
+    });
+    out.clawupStatus = upstream.status;
+    out.clawupOk = upstream.ok;
+    if (!upstream.ok) {
+      out.clawupBody = (await upstream.text().catch(() => "")).slice(0, 400);
+      out.diagnosis = "Your site is fine. ClawUp is rejecting the request. Read clawupBody.";
+    } else {
+      out.diagnosis = "ClawUp answered. Everything is working.";
+    }
+  } catch (e) {
+    out.clawupOk = false;
+    out.clawupError = String(e).slice(0, 300);
+    out.diagnosis = "Could not reach ClawUp at all.";
+  }
+
+  return new Response(JSON.stringify(out, null, 2), {
+    status: 200, headers: { "Content-Type": "application/json" },
+  });
 }
 
 export async function POST(req) {
