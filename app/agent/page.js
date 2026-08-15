@@ -90,7 +90,7 @@ function Gate({ onUnlock }) {
         exit={{ y: -10, scale: 0.99 }}
         transition={{ duration: 0.55, ease: EASE }}
       >
-        <img className={styles.gateMark} src="/mylogo.png" alt="" draggable={false} />
+        <img className={styles.gateMark} src="/logo-mark.png" alt="" draggable={false} />
         <h1 className={styles.gateTitle}>Talk to the agent</h1>
         <p className={styles.gateBody}>Leave your email and the chat opens.</p>
 
@@ -327,7 +327,7 @@ function Chat({ resetKey }) {
               transition={{ duration: 0.4, ease: EASE }}
             >
               {m.role === "bot" && (
-                <img className={styles.avatar} src="/mylogo.png" alt="" draggable={false} />
+                <img className={styles.avatar} src="/logo-mark.png" alt="" draggable={false} />
               )}
               {m.role === "bot" ? (
                 <div className={styles.bot}>
@@ -398,7 +398,7 @@ function Chat({ resetKey }) {
             onKeyDown={onKeyDown}
             placeholder={listening ? "Listening" : "Message Agora"}
             rows={1}
-            maxLength={2000}
+            maxLength={1000}
             disabled={sending}
             aria-label="Message"
           />
@@ -452,7 +452,7 @@ export default function AgentPage() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </Link>
-          <img className={styles.barAv} src="/mylogo.png" alt="" draggable={false} />
+          <img className={styles.barAv} src="/logo-mark.png" alt="" draggable={false} />
           <p className={styles.barTitle}>Agora</p>
           {unlocked && (
             <button
