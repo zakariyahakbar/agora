@@ -18,13 +18,15 @@
 }
 .bgVideo {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: center 45%; transform: translateZ(0);
+  object-fit: cover; object-position: center 45%;
+  transform: scale(1.06) translateZ(0);
+  filter: blur(7px) brightness(.5) saturate(1.05);
 }
 .bgVeil {
   position: absolute; inset: 0;
   background:
-    radial-gradient(70% 55% at 50% 42%, rgba(5,6,10,.14) 0%, rgba(5,6,10,.5) 100%),
-    linear-gradient(180deg, rgba(5,6,10,.72) 0%, rgba(5,6,10,.34) 34%, rgba(5,6,10,.42) 62%, rgba(5,6,10,.8) 100%);
+    radial-gradient(80% 65% at 50% 42%, rgba(5,6,10,.06) 0%, rgba(5,6,10,.5) 100%),
+    linear-gradient(180deg, rgba(5,6,10,.42) 0%, rgba(5,6,10,.16) 28%, rgba(5,6,10,.2) 62%, rgba(5,6,10,.5) 100%);
 }
 
 /* Full-bleed glass over the video — this is the whole surface */
@@ -32,9 +34,7 @@
   position: relative; z-index: 1;
   height: 100%;
   display: flex; flex-direction: column;
-  background: rgba(8,9,13,.42);
-  backdrop-filter: blur(20px) saturate(125%);
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  background: transparent;
 }
 
 /* ── TOP BAR ── */
@@ -42,8 +42,10 @@
   flex: 0 0 auto;
   display: flex; align-items: center; gap: .75rem;
   padding: 1rem clamp(1rem, 4vw, 2rem);
-  border-bottom: 1px solid rgba(255,255,255,.07);
-  background: rgba(8,9,13,.3);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: rgba(8,9,13,.52);
+  backdrop-filter: blur(26px) saturate(140%);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
 }
 .back {
   display: inline-flex; align-items: center; justify-content: center;
@@ -111,9 +113,11 @@
 .chat { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
 .scroll {
+  position: relative;
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column;
+
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.13) transparent;
 }
 .scroll::-webkit-scrollbar { width: 8px; }
@@ -124,6 +128,17 @@
   width: 100%; max-width: 46rem; margin: auto auto 0;
   padding: 2.2rem clamp(1.1rem, 4vw, 1.5rem) 1.7rem;
   display: flex; flex-direction: column; gap: .75rem;
+}
+
+.dayRow { display: flex; justify-content: center; margin-bottom: .35rem; }
+.dayChip {
+  padding: .25rem .7rem; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(14,16,21,.66);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(239,234,226,.36);
+  font-family: var(--font-mono, "DM Mono", monospace);
 }
 
 .row { display: flex; align-items: flex-end; gap: .6rem; }
@@ -141,11 +156,12 @@
   max-width: 78%;
   padding: .72rem 1.05rem;
   border-radius: 18px 18px 18px 6px;
-  border: 1px solid rgba(255,255,255,.09);
-  background: rgba(255,255,255,.075);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(16,18,24,.74);
+  backdrop-filter: blur(22px) saturate(130%); -webkit-backdrop-filter: blur(22px) saturate(130%);
+  box-shadow: 0 6px 22px rgba(0,0,0,.3);
   font-size: .915rem; line-height: 1.62;
-  color: rgba(243,239,232,.94);
+  color: rgba(245,241,234,.95);
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 
@@ -154,8 +170,9 @@
   max-width: 78%;
   padding: .72rem 1.05rem;
   border-radius: 18px 18px 6px 18px;
-  border: 1px solid rgba(255,168,88,.24);
-  background: linear-gradient(135deg, rgba(233,110,32,.9) 0%, rgba(178,74,10,.9) 100%);
+  border: 1px solid rgba(255,168,88,.26);
+  background: linear-gradient(135deg, #e96e20 0%, #b24a0a 100%);
+  box-shadow: 0 6px 22px rgba(120,45,0,.3);
   font-size: .915rem; line-height: 1.62;
   color: #fff;
   white-space: pre-wrap; overflow-wrap: anywhere;
@@ -180,8 +197,9 @@
 .notice {
   margin: 0; padding: .8rem 1rem;
   border-radius: 13px;
-  border: 1px solid rgba(255,143,116,.18);
-  background: rgba(255,143,116,.05);
+  border: 1px solid rgba(255,143,116,.22);
+  background: rgba(38,20,16,.76);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
   color: rgba(255,175,152,.92);
   font-size: .83rem; line-height: 1.6;
 }
@@ -189,7 +207,11 @@
 /* ── COMPOSER ── */
 .composerWrap {
   flex: 0 0 auto;
-  padding: .5rem clamp(1.1rem, 4vw, 1.5rem) clamp(1rem, 3vw, 1.6rem);
+  padding: .8rem clamp(1.1rem, 4vw, 1.5rem) clamp(1rem, 3vw, 1.4rem);
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: rgba(8,9,13,.52);
+  backdrop-filter: blur(26px) saturate(140%);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
 }
 .composer {
   position: relative;
@@ -197,10 +219,9 @@
   display: flex; align-items: flex-end; gap: .3rem;
   padding: .34rem .4rem .34rem .34rem;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.11);
-  background: rgba(255,255,255,.05);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 10px 34px rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
   transition: border-color 190ms ease, background 190ms ease;
 }
 .composer:focus-within { border-color: rgba(242,131,34,.42); background: rgba(255,255,255,.07); }
@@ -251,9 +272,8 @@
   padding: .5rem;
   border-radius: 17px;
   border: 1px solid rgba(255,255,255,.12);
-  background: rgba(16,17,22,.9);
-  backdrop-filter: blur(26px) saturate(150%);
-  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  background: #14151a;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,0) 60%);
   box-shadow: 0 20px 50px rgba(0,0,0,.55);
 }
 .emojiBtn {
