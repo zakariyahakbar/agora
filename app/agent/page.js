@@ -410,6 +410,7 @@ export default function AgentPage() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </Link>
+          <img className={styles.barAv} src="/mylogo.png" alt="" draggable={false} />
           <p className={styles.barTitle}>Agora</p>
         </header>
 
