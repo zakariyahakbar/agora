@@ -3,6 +3,7 @@
    ══════════════════════════════════════════════════════════════════ */
 
 .page {
+  --gutter: clamp(1.1rem, 4vw, 1.5rem);
   position: relative;
   height: 100dvh;
   background: #05060a;
@@ -41,7 +42,7 @@
 .bar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: .75rem;
-  padding: 1rem clamp(1rem, 4vw, 2rem);
+  padding: .8rem var(--gutter);
   border-bottom: 1px solid rgba(255,255,255,.08);
   background: rgba(8,9,13,.52);
   backdrop-filter: blur(26px) saturate(140%);
@@ -49,8 +50,8 @@
 }
 .back {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 1.85rem; height: 1.85rem; flex: 0 0 auto;
-  border-radius: 9px; color: rgba(239,234,226,.5); text-decoration: none;
+  width: 2.5rem; height: 2.5rem; margin-left: -.55rem; flex: 0 0 auto;
+  border-radius: 11px; color: rgba(239,234,226,.5); text-decoration: none;
   transition: color 170ms ease, background 170ms ease;
 }
 .back:hover { color: #fff; background: rgba(255,255,255,.06); }
@@ -60,6 +61,17 @@
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.05);
 }
+.barAction {
+  margin-left: auto; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.35rem; height: 2.35rem;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 11px;
+  background: rgba(255,255,255,.035);
+  color: rgba(239,234,226,.5); cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+.barAction:hover { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); }
+
 .barTitle {
   margin: 0;
   font-family: var(--font-display, "Cormorant Garamond", serif);
@@ -73,7 +85,7 @@
 /* ── GATE ── */
 .gateWrap {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 1.5rem;
+  padding: var(--gutter);
 }
 .gate {
   width: 100%; max-width: 24rem; text-align: center;
@@ -110,14 +122,14 @@
 .gateErr { margin: .75rem 0 0; font-size: .76rem; color: #ff8f74; }
 
 /* ── CHAT ── */
-.chat { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chat { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
 .scroll {
   position: relative;
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column;
-
+  padding: 0 var(--gutter);
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.13) transparent;
 }
 .scroll::-webkit-scrollbar { width: 8px; }
@@ -126,7 +138,7 @@
 
 .stream {
   width: 100%; max-width: 46rem; margin: auto auto 0;
-  padding: 2.2rem clamp(1.1rem, 4vw, 1.5rem) 1.7rem;
+  padding: 2.2rem 0 1.7rem;
   display: flex; flex-direction: column; gap: .75rem;
 }
 
@@ -205,9 +217,26 @@
 }
 
 /* ── COMPOSER ── */
+.jump {
+  position: absolute; left: 50%; bottom: .75rem;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .42rem .85rem .42rem .7rem;
+  border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(16,18,24,.86);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 26px rgba(0,0,0,.42);
+  color: rgba(239,234,226,.8);
+  font-size: .66rem; font-weight: 600; font-family: inherit;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.jump:hover { color: #fff; border-color: rgba(255,255,255,.26); }
+
 .composerWrap {
   flex: 0 0 auto;
-  padding: .8rem clamp(1.1rem, 4vw, 1.5rem) clamp(1rem, 3vw, 1.4rem);
+  padding: .8rem var(--gutter) clamp(1rem, 3vw, 1.4rem);
   border-top: 1px solid rgba(255,255,255,.08);
   background: rgba(8,9,13,.52);
   backdrop-filter: blur(26px) saturate(140%);
@@ -288,8 +317,10 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 640px) {
   .bar { padding: .85rem 1rem; }
-  .stream { padding-top: 1.6rem; gap: 1.4rem; }
-  .bot, .user { max-width: 84%; font-size: .885rem; }
+  .stream { padding-top: 1.4rem; }
+  .bot, .user { max-width: 85%; font-size: .885rem; }
+  .barTitle { font-size: 1.02rem; }
+  .avatar { width: 1.4rem; height: 1.4rem; }
   .emojiPop { grid-template-columns: repeat(7, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
