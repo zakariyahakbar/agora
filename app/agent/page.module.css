@@ -14,17 +14,17 @@
 
 /* ── BACKGROUND ── */
 .bg {
-  position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px;
-  z-index: 0; overflow: hidden; pointer-events: none; transform: translateZ(0);
+  position: absolute; top: -80px; right: -80px; bottom: -80px; left: -80px;
+  z-index: 0; overflow: hidden; pointer-events: none;
 }
 .bgVideo {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; object-position: center 45%;
-  transform: scale(1.06) translateZ(0);
+  transform: scale(1.14) translateZ(0);
   filter: blur(7px) brightness(.5) saturate(1.05);
 }
 .bgVeil {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; pointer-events: none;
   background:
     radial-gradient(80% 65% at 50% 42%, rgba(5,6,10,.06) 0%, rgba(5,6,10,.5) 100%),
     linear-gradient(180deg, rgba(5,6,10,.42) 0%, rgba(5,6,10,.16) 28%, rgba(5,6,10,.2) 62%, rgba(5,6,10,.5) 100%);
