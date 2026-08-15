@@ -1135,10 +1135,7 @@ export default function AgoraPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                   <span>Try AGORA Agent</span>
                 </MagBtn>
-                <MagBtn href="/agent" className={styles.btnLive}>
-                  <span className={styles.btnLiveDot} />
-                  <span>Live Agent</span>
-                </MagBtn>
+                <MagBtn href="/agent" className={styles.btnLive}>Chat with Agora</MagBtn>
                 <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
               </BlurUp>
             </div>
@@ -1259,7 +1256,8 @@ export default function AgoraPage() {
                 <SlideUp className={styles.pyTitle} delay={0.05}>The agent works.</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>Right now.</SlideUp>
                 <InView delay={0.22}><p className={styles.pySub}>Agora's agent manages its own wallet, handles its own registration, and settles x402 payments on GOAT mainnet. Watch the demo, or chat with the real agent yourself. Six steps, zero human approvals.</p></InView>
-                <InView delay={0.32}>
+                <InView delay={0.32} className={styles.pyLinkRow}>
+                  <Link href="/agent" className={`${styles.pyLink} ${styles.pyLinkPrimary}`}>Chat with Agora →</Link>
                   <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Open in Telegram →</a>
                 </InView>
               </div>
@@ -1325,10 +1323,7 @@ export default function AgoraPage() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                     <span>Try AGORA Agent</span>
                   </MagBtn>
-                  <MagBtn href="/agent" className={styles.btnLive}>
-                    <span className={styles.btnLiveDot} />
-                    <span>Live Agent</span>
-                  </MagBtn>
+                  <MagBtn href="/agent" className={styles.btnLive}>Chat with Agora</MagBtn>
                   <MagBtn href="/square" className={styles.btnGhost}>Walk the Square</MagBtn>
                 </InView>
               </div>
