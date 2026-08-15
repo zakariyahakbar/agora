@@ -13,18 +13,18 @@ import {
 
 const EASE = [0.16, 1, 0.3, 1];
 
+const OPENER =
+  "Hey. I'm Agora's agent. I hold my own wallet and settle my own payments, so you can ask me things a support bot couldn't answer. Where do you want to start?";
+
 const EMOJI = [
-  "😀","😅","😂","🙂","😉","😍","🤔","🤨","😐","😴",
-  "👍","👎","🙌","👏","🤝","🙏","💪","✌️","👀","🫡",
-  "🔥","✨","⚡","💡","🎯","🚀","📈","💰","🪙","🧾",
-  "🤖","🧠","🔗","🔒","✅","❌","⏳","📎","📊","🛰️",
+  "😀","😅","😂","🙂","😉","😍","🤔","🤨",
+  "😐","😴","👍","👎","🙌","👏","🤝","🙏",
+  "💪","✌️","👀","🫡","🔥","✨","⚡","💡",
+  "🎯","🚀","📈","💰","🪙","🧾","🤖","🧠",
+  "🔗","🔒","✅","❌","⏳","📎","📊","🛰️",
 ];
 
-function stamp() {
-  return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
-/* ── Background video, matched to the homepage ─────────────────── */
+/* ── Background ─────────────────────────────────────────────────── */
 function BgVideo() {
   const vRef = useRef(null);
   useEffect(() => {
@@ -70,10 +70,10 @@ function Gate({ onUnlock }) {
 
   return (
     <motion.div
-      className={styles.gate}
-      initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.985, filter: "blur(6px)" }}
+      className={styles.gateWrap}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, filter: "blur(8px)" }}
       transition={{ duration: 0.5, ease: EASE }}
     >
       <iframe
@@ -83,47 +83,55 @@ function Gate({ onUnlock }) {
         aria-hidden="true"
         style={{ position: "absolute", width: 1, height: 1, border: 0, opacity: 0, pointerEvents: "none" }}
       />
-      <img className={styles.gateMark} src="/mylogo.png" alt="" draggable={false} />
-      <h1 className={styles.gateTitle}>Talk to the agent</h1>
-      <p className={styles.gateBody}>Leave your email and the chat opens right here.</p>
-
-      <form
-        className={styles.gateForm}
-        action={WAITLIST_ACTION}
-        method="POST"
-        target="agora_waitlist_sink"
-        onSubmit={submit}
+      <motion.div
+        className={styles.gate}
+        initial={{ y: 14, scale: 0.99 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: -10, scale: 0.99 }}
+        transition={{ duration: 0.55, ease: EASE }}
       >
-        <input
-          ref={inputRef}
-          className={styles.gateInput}
-          name={WAITLIST_EMAIL_FIELD}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="you@domain.com"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); if (err) setErr(""); }}
-          required
-          aria-label="Email"
-        />
-        <button type="submit" className={styles.gateBtn} disabled={going}>
-          {going ? "Opening…" : "Continue"}
-        </button>
-      </form>
+        <img className={styles.gateMark} src="/mylogo.png" alt="" draggable={false} />
+        <h1 className={styles.gateTitle}>Talk to the agent</h1>
+        <p className={styles.gateBody}>Leave your email and the chat opens.</p>
 
-      <AnimatePresence>
-        {err && (
-          <motion.p className={styles.gateErr}
-            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}>{err}</motion.p>
-        )}
-      </AnimatePresence>
+        <form
+          className={styles.gateForm}
+          action={WAITLIST_ACTION}
+          method="POST"
+          target="agora_waitlist_sink"
+          onSubmit={submit}
+        >
+          <input
+            ref={inputRef}
+            className={styles.gateInput}
+            name={WAITLIST_EMAIL_FIELD}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="you@domain.com"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); if (err) setErr(""); }}
+            required
+            aria-label="Email"
+          />
+          <button type="submit" className={styles.gateBtn} disabled={going}>
+            {going ? "Opening" : "Continue"}
+          </button>
+        </form>
+
+        <AnimatePresence>
+          {err && (
+            <motion.p className={styles.gateErr}
+              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}>{err}</motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 }
 
-/* ── Emoji picker ───────────────────────────────────────────────── */
+/* ── Emoji ──────────────────────────────────────────────────────── */
 function EmojiPicker({ onPick, onClose }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -138,10 +146,10 @@ function EmojiPicker({ onPick, onClose }) {
     <motion.div
       ref={ref}
       className={styles.emojiPop}
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+      initial={{ opacity: 0, y: 6, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 6, scale: 0.97 }}
-      transition={{ duration: 0.22, ease: EASE }}
+      exit={{ opacity: 0, y: 4, scale: 0.98 }}
+      transition={{ duration: 0.2, ease: EASE }}
     >
       {EMOJI.map((e) => (
         <button key={e} type="button" className={styles.emojiBtn} onClick={() => onPick(e)}>{e}</button>
@@ -152,7 +160,7 @@ function EmojiPicker({ onPick, onClose }) {
 
 /* ── Chat ───────────────────────────────────────────────────────── */
 function Chat() {
-  const [msgs, setMsgs] = useState([]);
+  const [msgs, setMsgs] = useState([{ role: "bot", text: OPENER }]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [errText, setErrText] = useState("");
@@ -165,26 +173,23 @@ function Chat() {
   const recRef = useRef(null);
   const baseRef = useRef("");
 
-  /* auto-scroll */
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [msgs, sending, errText]);
 
-  /* auto-grow the composer */
   useEffect(() => {
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 132) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, 140) + "px";
   }, [input]);
 
   useEffect(() => {
-    const t = setTimeout(() => taRef.current?.focus(), 620);
+    const t = setTimeout(() => taRef.current?.focus(), 700);
     return () => clearTimeout(t);
   }, []);
 
-  /* speech-to-text, where the browser supports it */
   useEffect(() => {
     const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
     if (!SR) return;
@@ -192,7 +197,6 @@ function Chat() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = navigator.language || "en-US";
-
     rec.onresult = (ev) => {
       let text = "";
       for (let i = ev.resultIndex; i < ev.results.length; i++) text += ev.results[i][0].transcript;
@@ -201,7 +205,6 @@ function Chat() {
     };
     rec.onerror = () => setListening(false);
     rec.onend = () => setListening(false);
-
     recRef.current = rec;
     setVoiceOK(true);
     return () => { try { rec.abort(); } catch {} };
@@ -225,7 +228,7 @@ function Chat() {
     setEmojiOpen(false);
     setSending(true);
     setInput("");
-    setMsgs((p) => [...p, { role: "user", text, at: stamp() }, { role: "bot", text: "", at: stamp(), streaming: true }]);
+    setMsgs((p) => [...p, { role: "user", text }, { role: "bot", text: "", streaming: true }]);
 
     try {
       const res = await fetch("/api/chat", {
@@ -289,76 +292,60 @@ function Chat() {
   return (
     <motion.div
       className={styles.chat}
-      initial={{ opacity: 0, y: 16, filter: "blur(7px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.55, ease: EASE }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: EASE }}
     >
-      <header className={styles.head}>
-        <img className={styles.headAv} src="/mylogo.png" alt="" draggable={false} />
-        <div className={styles.headText}>
-          <p className={styles.headName}>agora_bot</p>
-          <p className={styles.headSub}>
-            <span className={`${styles.dot} ${errText ? styles.dotDown : ""}`} />
-            {sending ? "typing…" : errText ? "unavailable" : "agent 82 · GOAT mainnet"}
-          </p>
-        </div>
-      </header>
-
       <div className={styles.scroll} ref={scrollRef}>
-        {msgs.length === 0 && !errText && (
-          <div className={styles.empty}>
-            <img className={styles.emptyMark} src="/mylogo.png" alt="" draggable={false} />
-            <p className={styles.emptyText}>Say something to agent 82.</p>
-          </div>
-        )}
-
         <div className={styles.stream}>
-          {msgs.map((m, i) => {
-            const prev = msgs[i - 1];
-            const grouped = prev && prev.role === m.role && !prev.streaming;
-            return (
-              <motion.div
-                key={i}
-                className={`${styles.row} ${m.role === "user" ? styles.rowUser : ""} ${grouped ? styles.rowGrouped : ""}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.32, ease: EASE }}
-              >
-                <div className={`${styles.bubble} ${m.role === "user" ? styles.bubbleUser : styles.bubbleBot}`}>
+          {msgs.map((m, i) => (
+            <motion.div
+              key={i}
+              className={`${styles.row} ${m.role === "user" ? styles.rowUser : ""}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: EASE }}
+            >
+              {m.role === "bot" && (
+                <img className={styles.avatar} src="/mylogo.png" alt="" draggable={false} />
+              )}
+              {m.role === "bot" ? (
+                <div className={styles.bot}>
                   {m.streaming && !m.text
                     ? <span className={styles.typing}><i /><i /><i /></span>
-                    : <span className={styles.text}>{m.text}{m.streaming && <span className={styles.caret} />}</span>}
+                    : <>{m.text}{m.streaming && <span className={styles.caret} />}</>}
                 </div>
-                {!m.streaming && <span className={styles.time}>{m.at}</span>}
-              </motion.div>
-            );
-          })}
+              ) : (
+                <div className={styles.user}>{m.text}</div>
+              )}
+            </motion.div>
+          ))}
 
           <AnimatePresence>
             {errText && (
-              <motion.div className={styles.notice}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              <motion.p className={styles.notice}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.34, ease: EASE }}>
                 {errText}
-              </motion.div>
+              </motion.p>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      <form className={styles.composer} onSubmit={send}>
-        <div className={styles.field}>
+      <div className={styles.composerWrap}>
+        <form className={styles.composer} onSubmit={send}>
           <button
             type="button"
             className={`${styles.iconBtn} ${emojiOpen ? styles.iconBtnOn : ""}`}
             onClick={() => setEmojiOpen((v) => !v)}
             aria-label="Emoji"
           >
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <circle cx="12" cy="12" r="9" />
-              <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
-              <circle cx="9" cy="9.8" r=".9" fill="currentColor" stroke="none" />
-              <circle cx="15" cy="9.8" r=".9" fill="currentColor" stroke="none" />
+              <path d="M8.5 14.3a4.4 4.4 0 0 0 7 0" />
+              <circle cx="9.1" cy="9.9" r=".95" fill="currentColor" stroke="none" />
+              <circle cx="14.9" cy="9.9" r=".95" fill="currentColor" stroke="none" />
             </svg>
           </button>
 
@@ -368,7 +355,7 @@ function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={listening ? "Listening…" : "Message agora_bot"}
+            placeholder={listening ? "Listening" : "Message Agora"}
             rows={1}
             maxLength={2000}
             disabled={sending}
@@ -382,7 +369,7 @@ function Chat() {
               onClick={toggleVoice}
               aria-label={listening ? "Stop dictation" : "Dictate"}
             >
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="3" width="6" height="11" rx="3" />
                 <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
               </svg>
@@ -390,8 +377,8 @@ function Chat() {
           )}
 
           <button className={styles.send} type="submit" disabled={sending || !input.trim()} aria-label="Send">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h13M12 6l6 6-6 6" />
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V6M6 12l6-6 6 6" />
             </svg>
           </button>
 
@@ -403,8 +390,8 @@ function Chat() {
               />
             )}
           </AnimatePresence>
-        </div>
-      </form>
+        </form>
+      </div>
     </motion.div>
   );
 }
@@ -416,22 +403,23 @@ export default function AgentPage() {
   return (
     <main className={styles.page}>
       <BgVideo />
+      <div className={styles.shell}>
+        <header className={styles.bar}>
+          <Link href="/" className={styles.back} aria-label="Back to Agora">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <p className={styles.barTitle}>Agora</p>
+        </header>
 
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.back}>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          agora
-        </Link>
-      </nav>
-
-      <div className={styles.stage}>
-        {ready && (
-          <AnimatePresence mode="wait">
-            {unlocked ? <Chat key="chat" /> : <Gate key="gate" onUnlock={unlock} />}
-          </AnimatePresence>
-        )}
+        <div className={styles.stage}>
+          {ready && (
+            <AnimatePresence mode="wait">
+              {unlocked ? <Chat key="chat" /> : <Gate key="gate" onUnlock={unlock} />}
+            </AnimatePresence>
+          )}
+        </div>
       </div>
     </main>
   );
