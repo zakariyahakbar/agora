@@ -123,12 +123,13 @@ function MagBtn({ children, className, href, target, onClick }) {
     y.set((e.clientY - (r.top + r.height / 2)) * 0.28);
   };
   const onLeave = () => { x.set(0); y.set(0); };
-  const Tag = href ? "a" : "button";
+  const internal = href && href.startsWith("/");
+  const Tag = internal ? Link : href ? "a" : "button";
   return (
     <motion.div style={{ x: sx, y: sy, display: "inline-flex" }}
       onMouseMove={onMove} onMouseLeave={onLeave} ref={ref}>
-      <Tag href={href} target={target}
-        rel={target === "_blank" ? "noopener noreferrer" : undefined}
+      <Tag href={href} target={internal ? undefined : target}
+        rel={target === "_blank" && !internal ? "noopener noreferrer" : undefined}
         className={className} onClick={onClick}>{children}</Tag>
     </motion.div>
   );
@@ -642,10 +643,6 @@ function AgentPanel() {
   return (
     <div className={`${styles.pyFrame} ${styles.pyFramePortrait} ${styles.demoFrame}`}>
       <div className={styles.pyFrameLabel}>Telegram · @agoraa_bot · recorded</div>
-      <div className={styles.agentToggle}>
-        <button className={`${styles.agentToggleBtn} ${styles.agentToggleBtnActive}`} type="button">Demo</button>
-        <Link href="/agent" className={styles.agentToggleBtn}>Live chat →</Link>
-      </div>
       <div className={styles.pyFrameBody}>
         <TelegramDemoShowcase />
       </div>
@@ -1136,6 +1133,10 @@ export default function AgoraPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                   <span>Try AGORA Agent</span>
                 </MagBtn>
+                <MagBtn href="/agent" className={styles.btnLive}>
+                  <span className={styles.btnLiveDot} />
+                  <span>Live Agent</span>
+                </MagBtn>
                 <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
               </BlurUp>
             </div>
@@ -1321,6 +1322,10 @@ export default function AgoraPage() {
                     <span className={styles.btnRedGlow} />
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ position: "relative", zIndex: 1 }}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.24 13.617l-2.94-.92c-.64-.203-.654-.64.135-.953l11.566-4.461c.537-.194 1.006.131.893.938z"/></svg>
                     <span>Try AGORA Agent</span>
+                  </MagBtn>
+                  <MagBtn href="/agent" className={styles.btnLive}>
+                    <span className={styles.btnLiveDot} />
+                    <span>Live Agent</span>
                   </MagBtn>
                   <MagBtn href="/square" className={styles.btnGhost}>Walk the Square</MagBtn>
                 </InView>
