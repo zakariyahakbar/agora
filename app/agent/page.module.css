@@ -52,10 +52,16 @@
   transition: color 170ms ease, background 170ms ease;
 }
 .back:hover { color: #fff; background: rgba(255,255,255,.06); }
+.barAv {
+  width: 1.75rem; height: 1.75rem; flex: 0 0 auto;
+  border-radius: 999px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+}
 .barTitle {
   margin: 0;
   font-family: var(--font-display, "Cormorant Garamond", serif);
-  font-size: 1.22rem; font-weight: 600; letter-spacing: -.01em;
+  font-size: 1.12rem; font-weight: 600; letter-spacing: -.008em;
   color: rgba(239,234,226,.9);
 }
 
@@ -117,37 +123,41 @@
 .stream {
   width: 100%; max-width: 46rem; margin: auto auto 0;
   padding: 2.2rem clamp(1.1rem, 4vw, 1.5rem) 1.7rem;
-  display: flex; flex-direction: column; gap: 1.65rem;
+  display: flex; flex-direction: column; gap: .75rem;
 }
 
-.row { display: flex; align-items: flex-start; gap: .85rem; }
+.row { display: flex; align-items: flex-end; gap: .6rem; }
 .rowUser { justify-content: flex-end; }
 
 .avatar {
-  flex: 0 0 auto; width: 1.55rem; height: 1.55rem;
-  object-fit: contain; margin-top: .12rem; opacity: .78;
+  flex: 0 0 auto; width: 1.6rem; height: 1.6rem;
+  border-radius: 999px; object-fit: cover; align-self: flex-end;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
 }
 
-/* agent speaks as plain text — no bubble, no label, no badge */
+/* agent bubble */
 .bot {
-  flex: 1; min-width: 0;
-  font-size: .935rem; line-height: 1.75;
+  max-width: 78%;
+  padding: .72rem 1.05rem;
+  border-radius: 18px 18px 18px 6px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.075);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  font-size: .915rem; line-height: 1.62;
   color: rgba(243,239,232,.94);
-  text-shadow: 0 1px 12px rgba(0,0,0,.45);
-  letter-spacing: .002em;
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 
-/* the person gets a quiet glass pill so the two sides read apart */
+/* the person's bubble */
 .user {
-  max-width: 80%;
-  padding: .68rem 1rem;
-  border-radius: 17px 17px 5px 17px;
-  border: 1px solid rgba(255,255,255,.09);
-  background: rgba(255,255,255,.08);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  font-size: .905rem; line-height: 1.62;
-  color: rgba(239,234,226,.94);
+  max-width: 78%;
+  padding: .72rem 1.05rem;
+  border-radius: 18px 18px 6px 18px;
+  border: 1px solid rgba(255,168,88,.24);
+  background: linear-gradient(135deg, rgba(233,110,32,.9) 0%, rgba(178,74,10,.9) 100%);
+  font-size: .915rem; line-height: 1.62;
+  color: #fff;
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 
@@ -259,8 +269,7 @@
 @media (max-width: 640px) {
   .bar { padding: .85rem 1rem; }
   .stream { padding-top: 1.6rem; gap: 1.4rem; }
-  .bot { font-size: .9rem; }
-  .user { max-width: 86%; font-size: .88rem; }
+  .bot, .user { max-width: 84%; font-size: .885rem; }
   .emojiPop { grid-template-columns: repeat(7, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
