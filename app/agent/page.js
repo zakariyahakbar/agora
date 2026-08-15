@@ -327,7 +327,7 @@ function Chat({ resetKey }) {
               transition={{ duration: 0.4, ease: EASE }}
             >
               {m.role === "bot" && (
-                <img className={styles.avatar} src="/mylogo.png" alt="" draggable={false} />
+                <img className={styles.avatar} src="/agora-avatar.png" alt="" draggable={false} />
               )}
               {m.role === "bot" ? (
                 <div className={styles.bot}>
@@ -452,7 +452,7 @@ export default function AgentPage() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </Link>
-          <img className={styles.barAv} src="/mylogo.png" alt="" draggable={false} />
+          <img className={styles.barAv} src="/agora-avatar.png" alt="" draggable={false} />
           <p className={styles.barTitle}>Agora</p>
           {unlocked && (
             <button
