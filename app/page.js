@@ -117,10 +117,12 @@ function MagBtn({ children, className, href, target, onClick }) {
   const x = useMotionValue(0); const y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 300, damping: 24 });
   const sy = useSpring(y, { stiffness: 300, damping: 24 });
+  /* Magnetic pull disabled — the buttons now stay put on hover. */
+  const PULL = 0;
   const onMove = (e) => {
     const r = ref.current.getBoundingClientRect();
-    x.set((e.clientX - (r.left + r.width / 2)) * 0.28);
-    y.set((e.clientY - (r.top + r.height / 2)) * 0.28);
+    x.set((e.clientX - (r.left + r.width / 2)) * PULL);
+    y.set((e.clientY - (r.top + r.height / 2)) * PULL);
   };
   const onLeave = () => { x.set(0); y.set(0); };
   const internal = href && href.startsWith("/");
