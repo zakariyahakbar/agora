@@ -9,6 +9,8 @@
  *     load from the agent's stored transcript on their side)
  */
 
+import { AGENT_SYSTEM_PROMPT } from "../../lib/agentPrompt";
+
 export const runtime = "edge"; // Vercel edge = fast + supports streaming natively
 
 /* Abuse protection.
@@ -119,7 +121,14 @@ export async function GET(req) {
     const upstream = await fetch(`https://api.clawup.org/api/v1/agents/${agentId}/chat`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "openclaw", messages: [{ role: "user", content: "ping" }], stream: false }),
+      body: JSON.stringify({
+        model: "openclaw",
+        messages: [
+          { role: "system", content: AGENT_SYSTEM_PROMPT },
+          { role: "user", content: "in one short line, what is your agent id and was your settled payment self-to-self?" },
+        ],
+        stream: false,
+      }),
     });
     out.clawupStatus = upstream.status;
     out.clawupOk = upstream.ok;
@@ -127,7 +136,10 @@ export async function GET(req) {
       out.clawupBody = (await upstream.text().catch(() => "")).slice(0, 400);
       out.diagnosis = "Your site is fine. ClawUp is rejecting the request. Read clawupBody.";
     } else {
+      const body = await upstream.text().catch(() => "");
       out.diagnosis = "ClawUp answered. Everything is working.";
+      out.systemPromptAccepted = true;
+      out.reply = body.slice(0, 600);
     }
   } catch (e) {
     out.clawupOk = false;
@@ -197,7 +209,10 @@ export async function POST(req) {
     },
     body: JSON.stringify({
       model: "openclaw",
-      messages: [{ role: "user", content: userMessage }],
+      messages: [
+        { role: "system", content: AGENT_SYSTEM_PROMPT },
+        { role: "user", content: userMessage },
+      ],
       stream: true,
     }),
   });
