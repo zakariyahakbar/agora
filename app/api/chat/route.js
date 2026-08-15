@@ -4,35 +4,88 @@
  *
  * Security:
  *   - API key lives in CLAWUP_API_KEY env var, server-only
- *   - Basic per-IP rate limit (10 msgs/min) to protect against abuse
+ *   - Burst, per-IP daily, and global daily caps to bound credit spend
  *   - Only forwards the last user message (per ClawUp spec — earlier turns
  *     load from the agent's stored transcript on their side)
  */
 
 export const runtime = "edge"; // Vercel edge = fast + supports streaming natively
 
-const RATE_LIMIT = 10;           // messages per window per IP
-const RATE_WINDOW_MS = 60_000;   // 1 minute
+/* Spend protection.
+ *
+ * Every message costs ClawUp credits, so the ceiling that matters is the
+ * DAILY one, not the per-minute one. A 10/min limit still allows ~14,000
+ * messages a day from a single IP, which would drain a small balance.
+ *
+ * Three layers, cheapest check first:
+ *   BURST  - stops someone holding down enter
+ *   DAILY  - stops one person grinding all day
+ *   GLOBAL - hard ceiling across everyone, so total spend is bounded
+ *
+ * All of it is in-memory, and edge functions run per-region instances, so the
+ * real numbers are somewhat higher than these. It is a spend brake, not a
+ * security boundary. The actual hard cap on losses is the ClawUp balance:
+ * keep it small and leave the low-balance alert on.
+ */
+const BURST_LIMIT = 5;
+const BURST_WINDOW_MS = 30_000;
 
-// Simple in-memory rate limit map. Edge functions have per-region instances,
-// so this is best-effort (won't stop a determined attacker but blocks casual abuse).
-const rateLimitMap = new Map();
+const DAILY_LIMIT_PER_IP = 40;
+const GLOBAL_DAILY_LIMIT = 500;
 
-function checkRateLimit(ip) {
+const DAY_MS = 86_400_000;
+
+const burst = new Map();
+const daily = new Map();
+let globalDay = { day: -1, count: 0 };
+
+function dayIndex(now) {
+  return Math.floor(now / DAY_MS);
+}
+
+/* Drop stale entries so the maps can't grow without bound. */
+function sweep(now) {
+  if (burst.size > 5000) {
+    for (const [k, v] of burst) if (now > v.resetAt) burst.delete(k);
+  }
+  if (daily.size > 5000) {
+    const d = dayIndex(now);
+    for (const [k, v] of daily) if (v.day !== d) daily.delete(k);
+  }
+}
+
+function checkLimits(ip) {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { ok: true };
+  const d = dayIndex(now);
+  sweep(now);
+
+  // global ceiling
+  if (globalDay.day !== d) globalDay = { day: d, count: 0 };
+  if (globalDay.count >= GLOBAL_DAILY_LIMIT) {
+    return { ok: false, reason: "global", message: "The agent has hit today's usage cap. Try again tomorrow." };
   }
-  if (now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { ok: true };
+
+  // per-IP burst
+  const b = burst.get(ip);
+  if (!b || now > b.resetAt) {
+    burst.set(ip, { count: 1, resetAt: now + BURST_WINDOW_MS });
+  } else if (b.count >= BURST_LIMIT) {
+    return { ok: false, reason: "burst", message: "Slow down a moment, then try again.", resetAt: b.resetAt };
+  } else {
+    b.count += 1;
   }
-  if (entry.count >= RATE_LIMIT) {
-    return { ok: false, resetAt: entry.resetAt };
+
+  // per-IP daily
+  const dl = daily.get(ip);
+  if (!dl || dl.day !== d) {
+    daily.set(ip, { day: d, count: 1 });
+  } else if (dl.count >= DAILY_LIMIT_PER_IP) {
+    return { ok: false, reason: "daily", message: "You've hit today's message limit. Try again tomorrow." };
+  } else {
+    dl.count += 1;
   }
-  entry.count += 1;
+
+  globalDay.count += 1;
   return { ok: true };
 }
 
@@ -51,14 +104,10 @@ export async function POST(req) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
           || req.headers.get("x-real-ip")
           || "unknown";
-  const rl = checkRateLimit(ip);
+  const rl = checkLimits(ip);
   if (!rl.ok) {
     return new Response(
-      JSON.stringify({
-        error: "rate_limited",
-        message: "Too many messages. Try again in a minute.",
-        resetAt: rl.resetAt,
-      }),
+      JSON.stringify({ error: "rate_limited", reason: rl.reason, message: rl.message, resetAt: rl.resetAt }),
       { status: 429, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -81,9 +130,9 @@ export async function POST(req) {
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
-  if (userMessage.length > 2000) {
+  if (userMessage.length > 1000) {
     return new Response(
-      JSON.stringify({ error: "bad_request", message: "Message too long (max 2000 chars)." }),
+      JSON.stringify({ error: "bad_request", message: "Message too long (max 1000 chars)." }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
