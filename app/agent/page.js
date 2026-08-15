@@ -13,8 +13,8 @@ import {
 
 const EASE = [0.16, 1, 0.3, 1];
 
-const OPENER =
-  "Hey. I'm Agora's agent. I hold my own wallet and settle my own payments, so you can ask me things a support bot couldn't answer. Where do you want to start?";
+/* Matches the agent's voice in TG_SCENARIOS on the homepage: lowercase, clipped. */
+const OPENER = "gm \u{1F44B} I'm the Agora agent. on-chain and x402-native.";
 
 const EMOJI = [
   "😀","😅","😂","🙂","😉","😍","🤔","🤨",
