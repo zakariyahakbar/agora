@@ -290,6 +290,40 @@
   .hl1, .hl2 { font-size: clamp(2.1rem, 8.5vw, 2.8rem); }
   .s2Inner, .s3Inner, .s4Inner, .s5Inner { padding: 0 1rem; }
   .sponsorLabel { display: none; }
+
+  /* Hero on small screens: one column, one rhythm.
+     Three buttons wrapping 2-then-1 read as a mistake, so they stack
+     full-width instead, and the stats card loses the padding it only
+     needs on desktop. */
+  .s1Sub { font-size: .8rem; line-height: 1.6; margin: .7rem 0 1.15rem; }
+
+  .s1Btns { display: grid; grid-template-columns: 1fr; gap: .5rem; width: 100%; }
+  .s1Btns > * { width: 100%; }
+  .s1Btns a, .s1Btns button { width: 100%; justify-content: center; }
+
+  .heroCard { padding: 1rem .95rem; gap: .6rem; border-radius: 14px; }
+  .heroStats { flex-direction: row; gap: .8rem; align-items: flex-start; }
+  .heroStat { flex: 1; min-width: 0; gap: .2rem; }
+  .heroStatN { font-size: 1.05rem; line-height: 1; }
+  .heroStatL { font-size: .44rem; letter-spacing: .08em; line-height: 1.35; overflow-wrap: anywhere; }
+  .heroStatDiv { display: none; }
+  .heroAward { margin: .75rem 0 .8rem; padding-top: .75rem; font-size: .47rem; line-height: 1.55; }
+  .heroAwardIcon { font-size: .8rem; }
+}
+
+/* Short phones (SE and similar). The hero is a fixed-height snap section, so
+   on a 667px screen the stack overflows and the eyebrow slides under the nav.
+   Tighten every band rather than let anything clip. */
+@media (max-width: 640px) and (max-height: 720px) {
+  .s1Grid { margin-top: .75rem; padding-bottom: 4rem; }
+  .eyebrow { font-size: .5rem; letter-spacing: .18em; }
+  .hl1, .hl2 { font-size: clamp(1.75rem, 7.4vw, 2.2rem); }
+  .s1Sub { font-size: .74rem; line-height: 1.5; margin: .5rem 0 .85rem; }
+  .s1Btns { gap: .4rem; }
+  .s1Btns a, .s1Btns button { min-height: 2.4rem; font-size: .6rem; }
+  .heroCard { padding: .8rem .8rem; gap: .45rem; margin-top: .9rem; }
+  .heroStatN { font-size: .95rem; }
+  .heroAward { margin: .55rem 0 .6rem; padding-top: .55rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
