@@ -135,7 +135,10 @@ function Gate({ onUnlock }) {
 function EmojiPicker({ onPick, onClose }) {
   const ref = useRef(null);
   useEffect(() => {
-    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    const onDown = (e) => {
+      if (e.target.closest?.("[data-emoji-trigger]")) return; // let the button toggle itself
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
@@ -298,6 +301,7 @@ function Chat() {
     >
       <div className={styles.scroll} ref={scrollRef}>
         <div className={styles.stream}>
+          <div className={styles.dayRow}><span className={styles.dayChip}>Today</span></div>
           {msgs.map((m, i) => (
             <motion.div
               key={i}
@@ -339,6 +343,8 @@ function Chat() {
             type="button"
             className={`${styles.iconBtn} ${emojiOpen ? styles.iconBtnOn : ""}`}
             onClick={() => setEmojiOpen((v) => !v)}
+            data-emoji-trigger
+            aria-expanded={emojiOpen}
             aria-label="Emoji"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
