@@ -13,6 +13,23 @@ import {
 
 const EASE = [0.16, 1, 0.3, 1];
 
+/* The agent emits control tokens like NO_REPLY to signal "send nothing", and
+   the upstream occasionally returns its own error text as message content.
+   Neither should ever reach the transcript. */
+const CONTROL_TOKENS = /\s*\[?(NO_REPLY|NO_RESPONSE|NOREPLY|SILENT)\]?\s*/gi;
+const UPSTREAM_NOISE = [
+  "no response from openclaw",
+  "llm request failed",
+  "request timed out before a response was generated",
+];
+
+function cleanReply(text) {
+  const stripped = (text || "").replace(CONTROL_TOKENS, " ").replace(/\s+/g, " ").trim();
+  if (!stripped) return "";
+  if (UPSTREAM_NOISE.some((n) => stripped.toLowerCase().includes(n))) return "";
+  return stripped;
+}
+
 /* Matches the agent's voice in TG_SCENARIOS on the homepage: lowercase, clipped. */
 const OPENER = "gm \u{1F44B} I'm the Agora agent. on-chain and x402-native.";
 
@@ -243,6 +260,7 @@ function Chat({ resetKey }) {
     if (!text || sending) return;
 
     if (listening) { try { recRef.current?.stop(); } catch {} setListening(false); }
+    const wasCommand = text.startsWith("/");
     setErrText("");
     setEmojiOpen(false);
     setSending(true);
@@ -283,10 +301,11 @@ function Chat({ resetKey }) {
             const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content;
             if (typeof delta === "string" && delta.length) {
               full += delta;
+              const shown = cleanReply(full);
               setMsgs((p) => {
                 const c = [...p];
                 for (let i = c.length - 1; i >= 0; i--) {
-                  if (c[i].streaming) { c[i] = { ...c[i], text: full }; break; }
+                  if (c[i].streaming) { c[i] = { ...c[i], text: shown }; break; }
                 }
                 return c;
               });
@@ -294,7 +313,17 @@ function Chat({ resetKey }) {
           } catch {}
         }
       }
-      setMsgs((p) => p.map((m) => (m.streaming ? { ...m, streaming: false } : m)));
+      const finalText = cleanReply(full);
+      if (!finalText) {
+        setMsgs((p) => p.filter((m) => !m.streaming));
+        setErrText(
+          wasCommand
+            ? "Slash commands only work on Telegram. Ask me in plain words here."
+            : "The agent didn't return anything that time. Try rephrasing."
+        );
+      } else {
+        setMsgs((p) => p.map((m) => (m.streaming ? { ...m, text: finalText, streaming: false } : m)));
+      }
     } catch {
       setErrText("Connection failed. Check your network and try again.");
       setMsgs((p) => p.filter((m) => !m.streaming));
