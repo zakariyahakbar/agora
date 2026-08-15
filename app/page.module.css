@@ -104,6 +104,8 @@
 .btnRed:hover { transform: translateY(-1px); }
 .btnRedGlow { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: linear-gradient(135deg, #f07020 0%, #b84d08 100%); box-shadow: 0 4px 20px rgba(220,90,15,.55), inset 0 1px 0 rgba(255,160,80,.2); transition: filter 180ms ease; }
 .btnRed > * { position: relative; z-index: 1; }
+/* the glow must stay absolute — the rule above would otherwise flatten it */
+.btnRed > .btnRedGlow { position: absolute; inset: 0; z-index: 0; }
 .btnRed:hover .btnRedGlow { filter: brightness(1.12); }
 .btnGhost { display: inline-flex; align-items: center; padding: 0 1.3rem; min-height: 2.5rem; background: transparent; border: 1px solid rgba(240,236,228,.18); border-radius: 999px; color: rgba(240,236,228,.62); font-size: .65rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; text-decoration: none; font-family: var(--font-ui,"DM Sans",sans-serif); transition: all 180ms ease; }
 .btnGhost:hover { border-color: rgba(240,236,228,.4); color: rgba(240,236,228,.92); }
@@ -1582,4 +1584,31 @@
 @media (max-width: 640px) {
   .wlPanel { padding: 1.85rem 1.4rem 1.5rem; border-radius: 17px; }
   .wlBody { font-size: .78rem; margin-bottom: 1.3rem; }
+}
+
+/* Live Agent button — sits beside the Telegram CTA */
+.btnLive {
+  position: relative; display: inline-flex; align-items: center; gap: .48rem;
+  min-height: 2.5rem; padding: 0 1.3rem;
+  border: 1px solid rgba(242,131,34,.34); border-radius: 999px;
+  background: rgba(242,131,34,.09);
+  backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+  color: rgba(255,196,140,.96);
+  font-size: .65rem; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; text-decoration: none; cursor: pointer;
+  font-family: var(--font-ui,"DM Sans",sans-serif);
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 220ms cubic-bezier(.34,1.2,.64,1);
+}
+.btnLive:hover {
+  background: rgba(242,131,34,.17); border-color: rgba(242,131,34,.58);
+  color: #fff; transform: translateY(-1px);
+}
+.btnLiveDot {
+  width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto;
+  background: #2ed573; box-shadow: 0 0 8px rgba(46,213,115,.9);
+  animation: btnLivePulse 2.4s ease-in-out infinite;
+}
+@keyframes btnLivePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .55; transform: scale(.82); }
 }
