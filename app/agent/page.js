@@ -162,7 +162,7 @@ function EmojiPicker({ onPick, onClose }) {
 }
 
 /* ── Chat ───────────────────────────────────────────────────────── */
-function Chat() {
+function Chat({ resetKey }) {
   const [msgs, setMsgs] = useState([{ role: "bot", text: OPENER }]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -170,6 +170,7 @@ function Chat() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceOK, setVoiceOK] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
 
   const scrollRef = useRef(null);
   const taRef = useRef(null);
@@ -178,8 +179,23 @@ function Chat() {
 
   useEffect(() => {
     const el = scrollRef.current;
+    if (el && atBottom) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [msgs, sending, errText, atBottom]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 90);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const jumpDown = () => {
+    const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [msgs, sending, errText]);
+  };
 
   useEffect(() => {
     const ta = taRef.current;
@@ -337,6 +353,25 @@ function Chat() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {!atBottom && (
+          <motion.button
+            type="button"
+            className={styles.jump}
+            onClick={jumpDown}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.22, ease: EASE }}
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M6 13l6 6 6-6" />
+            </svg>
+            Latest
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <div className={styles.composerWrap}>
         <form className={styles.composer} onSubmit={send}>
           <button
@@ -405,6 +440,7 @@ function Chat() {
 /* ── Page ───────────────────────────────────────────────────────── */
 export default function AgentPage() {
   const { unlocked, unlock, ready } = useWaitlistUnlock();
+  const [resetKey, setResetKey] = useState(0);
 
   return (
     <main className={styles.page}>
@@ -418,12 +454,27 @@ export default function AgentPage() {
           </Link>
           <img className={styles.barAv} src="/mylogo.png" alt="" draggable={false} />
           <p className={styles.barTitle}>Agora</p>
+          {unlocked && (
+            <button
+              type="button"
+              className={styles.barAction}
+              onClick={() => setResetKey((k) => k + 1)}
+              aria-label="Start a new conversation"
+              title="New conversation"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          )}
         </header>
 
         <div className={styles.stage}>
           {ready && (
             <AnimatePresence mode="wait">
-              {unlocked ? <Chat key="chat" /> : <Gate key="gate" onUnlock={unlock} />}
+              {unlocked
+                ? <Chat key={`chat-${resetKey}`} resetKey={resetKey} />
+                : <Gate key="gate" onUnlock={unlock} />}
             </AnimatePresence>
           )}
         </div>
