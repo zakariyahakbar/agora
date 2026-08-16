@@ -17,7 +17,10 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import styles from "./page.module.css";
 
-const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
+/* t.me is the universal link: opens the native Telegram app on mobile and
+   desktop, and falls back to the web client only if neither is installed.
+   web.telegram.org forced everyone into the browser version. */
+const TELEGRAM_URL = "https://t.me/agoraa_bot";
 const X_URL = "https://x.com/usingagora";
 const SCAN_URL = "https://8004scan.io/agents/goat/82";
 const REFERRAL_URL = "https://clawup.org/?ref=f0af754b9e";
