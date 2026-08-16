@@ -91,14 +91,22 @@ function InView({ children, className, delay = 0, style }) {
   );
 }
 
-/* ── Clip-up ── */
+/* ── Clip-up ──
+   This used to start the text translated 108% down at opacity 0 and wait for
+   whileInView on that displaced element. Inside the snap-scroll container the
+   observer fired unreliably, so several section headlines stayed invisible.
+
+   InView is already proven reliable on this page, so SlideUp now uses the same
+   mechanism, and the baseline is VISIBLE rather than hidden. If the observer
+   never fires the headline still reads; the motion is decoration on top. */
 function SlideUp({ children, className, delay = 0 }) {
   return (
     <div style={{ overflow: "hidden" }}>
       <motion.div className={className}
         initial={{ y: "108%", opacity: 0 }}
         whileInView={{ y: "0%", opacity: 1 }}
-        viewport={{ once: true, amount: 0.1 }}
+        animate={{ y: "0%", opacity: 1 }}
+        viewport={{ once: true, amount: 0 }}
         transition={{ delay, duration: 0.78, ease: [0.16, 1, 0.3, 1] }}>
         {children}
       </motion.div>
@@ -863,6 +871,34 @@ function NavDots({ active, onJump, count }) {
 }
 
 
+
+/* ── Two wallets, side by side. The agent's balance is the ceiling. ── */
+function WalletSplit() {
+  const rows = [
+    { label: "Agent wallet", addr: "0x1B6602f2F3dFd75E7Cbe2508Cd4b7f02Dc131F06",
+      note: "Funded by you. This balance is the ceiling.", can: true },
+    { label: "Your wallet", addr: "0xbc8cE96C583cF081f4f4062956CdaBDFB14D1C3c",
+      note: "The agent has never held a key to this.", can: false },
+  ];
+  return (
+    <div className={styles.wsWrap}>
+      {rows.map((r) => (
+        <div key={r.label} className={`${styles.wsCard} ${r.can ? styles.wsCardAgent : ""}`}>
+          <div className={styles.wsHead}>
+            <span className={styles.wsLabel}>{r.label}</span>
+            <span className={r.can ? styles.wsCan : styles.wsCannot}>
+              {r.can ? "can spend" : "cannot touch"}
+            </span>
+          </div>
+          <p className={styles.wsAddr}>{r.addr}</p>
+          <p className={styles.wsNote}>{r.note}</p>
+        </div>
+      ))}
+      <p className={styles.wsFoot}>Two separate keys. Not a setting, a boundary.</p>
+    </div>
+  );
+}
+
 /* ════════ WAITLIST MODAL ════════ */
 function WaitlistModal({ mode, onClose, onDone }) {
   const [email, setEmail] = useState("");
@@ -984,7 +1020,7 @@ export default function AgoraPage() {
   const [waitlist, setWaitlist] = useState(null); // null | "signup" | "login"
   const closeWaitlist = useCallback(() => setWaitlist(null), []);
   const [selectedMode, setSelectedMode] = useState(0);
-  const SECTION_COUNT = 6;
+  const SECTION_COUNT = 7;
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
@@ -1054,7 +1090,7 @@ export default function AgoraPage() {
           </div>
           {/* Links */}
           <div className={styles.navLinks}>
-            {["Home", "Real", "Square", "Agent", "Pulse", "Settlement"].map((l, i) => (
+            {["Home", "Real", "Square", "Agent", "Control", "Pulse", "Settlement"].map((l, i) => (
               <button key={l}
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
@@ -1232,11 +1268,36 @@ export default function AgoraPage() {
                 </InView>
               </div>
             </div>
+          </div>        </section>
+
+        {/* ════════ S5 — CONTROL (what stops it spending your money) ════════ */}
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
+          <div className={styles.pyBg} />
+          <div className={styles.pyWrap}>
+            <div className={styles.pySplit}>
+              <div className={styles.pyText}>
+                <InView><p className={styles.pyEyebrow}>Control · Two wallets</p></InView>
+                <SlideUp className={styles.pyTitle} delay={0.05}>It spends its own</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>money. Not yours.</SlideUp>
+                <InView delay={0.22}><p className={styles.pySub}>
+                  We asked 13 developers whether they&apos;d let an agent pay for compute with no human approving each step. Most said yes, but only with a spending limit. That is the right instinct, and it is how Agora already works.
+                </p></InView>
+                <InView delay={0.3}><p className={styles.pySub}>
+                  The agent holds a wallet of its own, separate from yours. You fund it, and that balance is the ceiling. It cannot reach your personal wallet, your bank, or a card, because it has never had access to any of them. No approval prompt on every job, no way to overspend past what you put in.
+                </p></InView>
+                <InView delay={0.38} className={styles.pyLinkRow}>
+                  <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Verify both wallets on-chain →</a>
+                </InView>
+              </div>
+              <InView delay={0.2} className={styles.pyVisual}>
+                <WalletSplit />
+              </InView>
+            </div>
           </div>
         </section>
 
         {/* ════════ S6 — PULSE (numbers + graph + flow) ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[6] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={styles.pulseWrap}>
