@@ -41,23 +41,45 @@ const LEDGER_KEY = "agora_square_ledger_v2";
 /* Replace a station's inscription with values read from the chain, when we
    have them. Station 0 is Identity, station 1 is Settlement. */
 function liveLine(st, idx, chain) {
-  if (!chain) return st.line;
-  if (idx === 1 && chain.settlement) return `x402 · 1 USDC.e · block ${chain.settlement.block.toLocaleString()}`;
-  if (idx === 0 && chain.registration) return `ERC-8004 · Agent #82 · block ${chain.registration.block.toLocaleString()}`;
+  if (!chain || !chain.payments) return st.line;
+  const { settled, uniqueAgents } = chain.payments;
+  if (idx === 1) {
+    return `x402 · ${settled} payment${settled === 1 ? "" : "s"} · ${uniqueAgents} agents`;
+  }
+  if (idx === 0 && chain.registration) {
+    return `ERC-8004 · Agent #82 · block ${chain.registration.block.toLocaleString()}`;
+  }
   return st.line;
 }
 
 function liveBody(st, idx, chain) {
-  if (!chain) return st.body;
-  if (idx === 1 && chain.settlement) {
-    const self = chain.settlement.selfToSelf ? " Self-to-self test payment." : "";
-    return `0xa8747b…3460 — ${chain.settlement.status} on GOAT mainnet.${self}`;
+  if (!chain || !chain.payments) return st.body;
+
+  if (idx === 1) {
+    const txs = chain.payments.transactions || [];
+    if (!txs.length) return st.body;
+    const latest = txs[txs.length - 1];
+    const second = txs.filter((t) => !/self/i.test(t.note || "")).length;
+    return `${settledPhrase(second)} Latest confirmed in block ${latest.block.toLocaleString()}, and every one of them is public.`;
   }
+
   if (idx === 0 && chain.wallet) {
     const { btc, usdce } = chain.wallet;
-    return `Registered on GOAT mainnet. Agent wallet holds ${usdce ?? "—"} USDC.e and ${btc ?? "—"} BTC right now.`;
+    const bal = usdce != null && btc != null
+      ? ` Wallet holds ${usdce} USDC.e and ${btc} BTC right now.`
+      : "";
+    return `Registered on GOAT mainnet, owner and creator verified on-chain.${bal}`;
   }
+
   return st.body;
+}
+
+/* How many of the settled payments went to an independent agent, said plainly.
+   The first one was a self-to-self test and is never counted as a second party. */
+function settledPhrase(secondParty) {
+  if (secondParty <= 0) return "One self-to-self test payment, settled and gateway-verified.";
+  if (secondParty === 1) return "One payment to an independent agent, settled on mainnet.";
+  return `${secondParty} payments to an independent agent, settled on mainnet.`;
 }
 
 /* ── Five stations: a real on-chain fact + one clear action each ── */
@@ -72,8 +94,8 @@ const STATIONS = [
   {
     eyebrow: "Settlement station",
     signText: "Settlement",
-    line: "x402 · 1 USDC.e settled",
-    body: "0xa8747b…3460. A real payment, confirmed and gateway-verified.",
+    line: "x402 · 3 payments · 2 agents",
+    body: "Two payments to an independent agent, settled on mainnet. Every one is public.",
     action: { key: "agent", label: "Talk to the AGORA agent", href: TELEGRAM_URL },
   },
   {
@@ -86,7 +108,7 @@ const STATIONS = [
   {
     eyebrow: "Herald station",
     signText: "Follow",
-    line: "ἀγορά — “open marketplace”",
+    line: "ἀγορά · “open marketplace”",
     body: "The Greek square where trade happened. We rebuilt it for machines.",
     action: { key: "follow", label: "Follow the build on X", href: X_URL },
   },
@@ -131,7 +153,11 @@ export default function SquarePage() {
     let alive = true;
     fetch("/api/chain")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d && d.live) setChain(d); })
+      .then((d) => {
+        if (alive && d && d.live && d.payments && d.payments.settled >= d.payments.tracked) {
+          setChain(d);
+        }
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -1790,8 +1816,9 @@ export default function SquarePage() {
           <p className={styles.enterEyebrow}>Agora · The Square</p>
           <h1 className={styles.enterTitle}>Walk the marketplace.</h1>
           <p className={styles.enterSub}>
-            A night agora with five lit stations. Every inscription in this
-            square is a real on-chain fact.
+            A night agora with five lit stations. The first three carry facts
+            you can check on-chain yourself. The rest take you to the agent,
+            the build, and a form to tell us what you think.
           </p>
           <button className={styles.enterBtn} onClick={() => { setEntered(true); setIntro(true); }}>
             Enter
