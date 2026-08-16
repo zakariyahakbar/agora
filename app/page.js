@@ -7,7 +7,10 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { WAITLIST_ACTION, WAITLIST_EMAIL_FIELD, EMAIL_RE, useWaitlistUnlock } from "./lib/waitlist";
 
-const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
+/* t.me is the universal link: opens the native Telegram app on mobile and
+   desktop, and falls back to the web client only if neither is installed.
+   web.telegram.org forced everyone into the browser version. */
+const TELEGRAM_URL = "https://t.me/agoraa_bot";
 
 
 
@@ -27,14 +30,6 @@ const AGENT_MODES = [
     body: "Output is cryptographically verified. Escrow releases via x402 on GOAT Network. Bitcoin-backed settlement, zero human approval, full on-chain auditability." },
 ];
 
-const FEED_EVENTS = [
-  { t: "r", msg: (a) => `Example: broadcast 10k inference units · budget ${a} USDC` },
-  { t: "b", msg: () => `Example: provider bid 0.38 USDC · A100 · 120ms` },
-  { t: "b", msg: () => `Example: counter-bid 0.41 USDC · H100 · 62ms` },
-  { t: "e", msg: (a) => `Example: escrow locked · ${a} USDC · GOAT mainnet` },
-  { t: "v", msg: () => `Example: output verified via cryptographic proof` },
-  { t: "s", msg: (a) => `Example: settled · +${a} USDC via x402` },
-];
 
 const STEPS = [
   { n: "01", label: "Request",  body: "AGORA defines the job, sets the budget, broadcasts to the network." },
@@ -867,30 +862,6 @@ function NavDots({ active, onJump, count }) {
   );
 }
 
-function useLiveFeed() {
-  const [entries, setEntries] = useState([]);
-  const [vol, setVol] = useState(13.15);
-  const [txns, setTxns] = useState(8);
-  useEffect(() => {
-    let i = 0;
-    const amounts = ["0.42", "0.38", "0.31", "0.18"];
-    const tick = () => {
-      const ev = FEED_EVENTS[i % FEED_EVENTS.length];
-      const amt = amounts[i % amounts.length];
-      const ts = new Date().toLocaleTimeString("en-US", { hour12: false });
-      setEntries(prev => [{ t: ev.t, msg: ev.msg(amt), ts, id: Date.now() }, ...prev].slice(0, 8));
-      if (ev.t === "s") {
-        setVol(v => parseFloat((v + parseFloat(amt)).toFixed(2)));
-        setTxns(t => t + 1);
-      }
-      i++;
-    };
-    tick();
-    const id = setInterval(tick, 2800);
-    return () => clearInterval(id);
-  }, []);
-  return { entries, vol, txns };
-}
 
 /* ════════ WAITLIST MODAL ════════ */
 function WaitlistModal({ mode, onClose, onDone }) {
@@ -1013,7 +984,6 @@ export default function AgoraPage() {
   const [waitlist, setWaitlist] = useState(null); // null | "signup" | "login"
   const closeWaitlist = useCallback(() => setWaitlist(null), []);
   const [selectedMode, setSelectedMode] = useState(0);
-  const { entries, vol, txns } = useLiveFeed();
   const SECTION_COUNT = 6;
   const LAST = SECTION_COUNT - 1;
 
