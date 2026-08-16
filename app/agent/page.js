@@ -23,8 +23,29 @@ const UPSTREAM_NOISE = [
   "request timed out before a response was generated",
 ];
 
+/* The agent replies in markdown. Rendering it as raw text showed literal
+   asterisks, so bold is parsed out and everything else stays plain. */
+function renderRich(text) {
+  const out = [];
+  const re = /\*\*([^*]+)\*\*/g;
+  let last = 0, m, k = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(<strong key={`b${k++}`}>{m[1]}</strong>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out.length ? out : text;
+}
+
 function cleanReply(text) {
-  const stripped = (text || "").replace(CONTROL_TOKENS, " ").replace(/\s+/g, " ").trim();
+  let stripped = (text || "")
+    .replace(CONTROL_TOKENS, " ")
+    /* the model sometimes runs a narration line straight into the answer */
+    .replace(/\blet me (check|be exact|verify)[^.]*\.\s*/gi, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   if (!stripped) return "";
   if (UPSTREAM_NOISE.some((n) => stripped.toLowerCase().includes(n))) return "";
   return stripped;
@@ -399,7 +420,7 @@ function Chat({ resetKey }) {
                 <div className={styles.bot}>
                   {m.streaming && !m.text
                     ? <span className={styles.typing}><i /><i /><i /></span>
-                    : <>{m.text}{m.streaming && <span className={styles.caret} />}</>}
+                    : <>{renderRich(m.text)}{m.streaming && <span className={styles.caret} />}</>}
                 </div>
               ) : (
                 <div className={styles.user}>{m.text}</div>
