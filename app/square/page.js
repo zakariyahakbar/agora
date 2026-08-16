@@ -38,6 +38,28 @@ const FORM_FIELDS = {
 
 const LEDGER_KEY = "agora_square_ledger_v2";
 
+/* Replace a station's inscription with values read from the chain, when we
+   have them. Station 0 is Identity, station 1 is Settlement. */
+function liveLine(st, idx, chain) {
+  if (!chain) return st.line;
+  if (idx === 1 && chain.settlement) return `x402 · 1 USDC.e · block ${chain.settlement.block.toLocaleString()}`;
+  if (idx === 0 && chain.registration) return `ERC-8004 · Agent #82 · block ${chain.registration.block.toLocaleString()}`;
+  return st.line;
+}
+
+function liveBody(st, idx, chain) {
+  if (!chain) return st.body;
+  if (idx === 1 && chain.settlement) {
+    const self = chain.settlement.selfToSelf ? " Self-to-self test payment." : "";
+    return `0xa8747b…3460 — ${chain.settlement.status} on GOAT mainnet.${self}`;
+  }
+  if (idx === 0 && chain.wallet) {
+    const { btc, usdce } = chain.wallet;
+    return `Registered on GOAT mainnet. Agent wallet holds ${usdce ?? "—"} USDC.e and ${btc ?? "—"} BTC right now.`;
+  }
+  return st.body;
+}
+
 /* ── Five stations: a real on-chain fact + one clear action each ── */
 const STATIONS = [
   {
@@ -100,6 +122,20 @@ export default function SquarePage() {
       setEntered(true); enteredRef.current = true;
     }
   }, []);
+  /* Live chain read. The Settlement and Identity stations claim you can check
+     the receipt yourself; this fetches those numbers from GOAT mainnet so the
+     inscription is reading the chain, not a constant in this file. Falls back
+     silently to the recorded values, which are the same numbers. */
+  const [chain, setChain] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/chain")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d && d.live) setChain(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const [station, setStation] = useState(-1);
   const stationRef = useRef(-1);
   const [actionsDone, setActionsDone] = useState({});
@@ -1509,8 +1545,14 @@ export default function SquarePage() {
         {st && (
           <>
             <p className={styles.cardEyebrow}>{st.eyebrow}</p>
-            <p className={styles.cardLine}>{st.line}</p>
-            <p className={styles.cardBody}>{st.body}</p>
+            <p className={styles.cardLine}>{liveLine(st, station, chain)}</p>
+            <p className={styles.cardBody}>{liveBody(st, station, chain)}</p>
+            {chain && (station === 0 || station === 1) && (
+              <p className={styles.cardLive}>
+                <span className={styles.cardLiveDot} />
+                read live from chain {chain.chainId}
+              </p>
+            )}
             <div className={styles.cardFoot}>
               <button
                 className={`${styles.cardBtn} ${stDone ? styles.cardBtnDone : ""}`}
