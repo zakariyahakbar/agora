@@ -1307,12 +1307,9 @@ export default function AgoraPage() {
                 <SlideUp className={styles.pyTitle} delay={0.05}>It spends its own</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>money. Not yours.</SlideUp>
                 <InView delay={0.22}><p className={styles.pySub}>
-                  We asked 13 developers whether they&apos;d let an agent pay for compute with no human approving each step. Most said yes, but only with a spending limit. That is the right instinct, and it is how Agora already works.
+                  You fund the agent&apos;s wallet. That balance is the ceiling. It has never held a key to yours.
                 </p></InView>
-                <InView delay={0.3}><p className={styles.pySub}>
-                  The agent holds a wallet of its own, separate from yours. You fund it, and that balance is the ceiling. It cannot reach your personal wallet, your bank, or a card, because it has never had access to any of them. No approval prompt on every job, no way to overspend past what you put in.
-                </p></InView>
-                <InView delay={0.38} className={styles.pyLinkRow}>
+                <InView delay={0.32} className={styles.pyLinkRow}>
                   <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Verify both wallets on-chain →</a>
                 </InView>
               </div>
