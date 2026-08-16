@@ -1691,3 +1691,16 @@
   .wsAddr { font-size: .53rem; }
   .wsNote { font-size: .7rem; }
 }
+
+/* live-from-chain marker under the hero stats */
+.heroLive {
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  margin: .7rem 0 0;
+  font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(120,220,160,.72);
+  font-family: var(--font-mono,"DM Mono",monospace);
+}
+.heroLiveDot {
+  width: 4px; height: 4px; border-radius: 999px; flex: 0 0 auto;
+  background: #2ed573; box-shadow: 0 0 6px rgba(46,213,115,.9);
+}
