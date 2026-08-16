@@ -89,21 +89,38 @@ export async function GET(req) {
   );
 
   const confirmed = [];
+  const paymentStatus = [];
   paymentChecks.forEach((r, i) => {
-    if (r.status === "fulfilled" && r.value && r.value.status === "0x1") {
-      confirmed.push({
-        tx: PAYMENTS[i].tx,
-        note: PAYMENTS[i].note,
-        block: hexToInt(r.value.blockNumber),
-        to: r.value.to,
-        counterparty: (r.value.logs || [])
-          .map((l) => l.topics && l.topics[2])
-          .filter(Boolean)
-          .map((t) => "0x" + t.slice(26))[0] || null,
-      });
-    } else if (r.status === "rejected") {
-      out.errors.push(`payment ${i + 1}: ${String(r.reason?.message || r.reason).slice(0, 120)}`);
+    const short = PAYMENTS[i].tx.slice(0, 10);
+    if (r.status === "rejected") {
+      paymentStatus.push({ tx: short, state: "rpc_error",
+        detail: String(r.reason?.message || r.reason).slice(0, 120) });
+      out.errors.push(`payment ${i + 1} (${short}): ${String(r.reason?.message || r.reason).slice(0, 120)}`);
+      return;
     }
+    if (!r.value) {
+      /* Receipt came back null. The transaction is real but this RPC node
+         does not have it, usually a pruned or lagging node. */
+      paymentStatus.push({ tx: short, state: "not_found_on_this_rpc" });
+      out.errors.push(`payment ${i + 1} (${short}): receipt null, this RPC node does not have the transaction`);
+      return;
+    }
+    if (r.value.status !== "0x1") {
+      paymentStatus.push({ tx: short, state: "reverted" });
+      out.errors.push(`payment ${i + 1} (${short}): transaction reverted on-chain`);
+      return;
+    }
+    paymentStatus.push({ tx: short, state: "confirmed", block: hexToInt(r.value.blockNumber) });
+    confirmed.push({
+      tx: PAYMENTS[i].tx,
+      note: PAYMENTS[i].note,
+      block: hexToInt(r.value.blockNumber),
+      to: r.value.to,
+      counterparty: (r.value.logs || [])
+        .map((l) => l.topics && l.topics[2])
+        .filter(Boolean)
+        .map((t) => "0x" + t.slice(26))[0] || null,
+    });
   });
 
   const counterparties = new Set(
@@ -116,6 +133,7 @@ export async function GET(req) {
     uniqueAgents: counterparties.size + 1,             // ourselves plus each distinct counterparty
     volumeUsdce: confirmed.length,                      // every payment so far is 1.00 USDC.e
     transactions: confirmed,
+    checks: paymentStatus,
   };
 
   const results = await Promise.allSettled([
