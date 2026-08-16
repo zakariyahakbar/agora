@@ -33,6 +33,17 @@ function cleanReply(text) {
 /* Matches the agent's voice in TG_SCENARIOS on the homepage: lowercase, clipped. */
 const OPENER = "gm \u{1F44B} I'm the Agora agent. on-chain and x402-native.";
 
+/* Slash shortcuts. The agent has no command handler — these expand into plain
+   questions before sending, so the menu is pure UI sugar over normal chat. */
+const COMMANDS = [
+  { cmd: "/status",  hint: "Full on-chain status report",   send: "give me a full status report" },
+  { cmd: "/wallet",  hint: "Which wallet it holds",          send: "which wallet do you hold, and what's in it?" },
+  { cmd: "/agent",   hint: "Identity and where to verify",   send: "what's your agent id and where can i verify it myself?" },
+  { cmd: "/payment", hint: "The settled x402 payment",       send: "walk me through the x402 payment you settled" },
+  { cmd: "/square",  hint: "What the Square actually is",    send: "what is the square?" },
+  { cmd: "/help",    hint: "What you can ask",               send: "what can you tell me about?" },
+];
+
 const EMOJI = [
   "😀","😅","😂","🙂","😉","😍","🤔","🤨",
   "😐","😴","👍","👎","🙌","👏","🤝","🙏",
@@ -188,6 +199,7 @@ function Chat({ resetKey }) {
   const [listening, setListening] = useState(false);
   const [voiceOK, setVoiceOK] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
+  const [slashIdx, setSlashIdx] = useState(0);
 
   const scrollRef = useRef(null);
   const taRef = useRef(null);
@@ -256,7 +268,12 @@ function Chat({ resetKey }) {
 
   const send = async (e) => {
     e?.preventDefault?.();
-    const text = input.trim();
+    if (slashOpen) { runCommand(slashMatches[slashIdx]); return; }
+    await sendText(input);
+  };
+
+  const sendText = async (raw) => {
+    const text = (raw || "").trim();
     if (!text || sending) return;
 
     if (listening) { try { recRef.current?.stop(); } catch {} setListening(false); }
@@ -334,7 +351,27 @@ function Chat({ resetKey }) {
   };
 
   const onKeyDown = (e) => {
+    if (slashOpen) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setSlashIdx((i) => (i + 1) % slashMatches.length); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setSlashIdx((i) => (i - 1 + slashMatches.length) % slashMatches.length); return; }
+      if (e.key === "Tab")       { e.preventDefault(); setInput(slashMatches[slashIdx].cmd); return; }
+      if (e.key === "Escape")    { e.preventDefault(); setInput(""); return; }
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runCommand(slashMatches[slashIdx]); return; }
+    }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(e); }
+  };
+
+  /* The menu opens on a leading slash and narrows as you type. */
+  const slashQuery = input.startsWith("/") && !input.includes(" ") ? input.toLowerCase() : null;
+  const slashMatches = slashQuery ? COMMANDS.filter((c) => c.cmd.startsWith(slashQuery)) : [];
+  const slashOpen = slashMatches.length > 0;
+
+  useEffect(() => { setSlashIdx(0); }, [input]);
+
+  /* Commands are UI sugar: they expand into a plain question before sending. */
+  const runCommand = (c) => {
+    setInput("");
+    setTimeout(() => sendText(c.send), 0);
   };
 
   return (
@@ -402,6 +439,32 @@ function Chat({ resetKey }) {
       </AnimatePresence>
 
       <div className={styles.composerWrap}>
+        <AnimatePresence>
+          {slashOpen && (
+            <motion.div
+              className={styles.slashMenu}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.16, ease: EASE }}
+            >
+              <p className={styles.slashHead}>Commands</p>
+              {slashMatches.map((c, i) => (
+                <button
+                  key={c.cmd}
+                  type="button"
+                  className={`${styles.slashItem} ${i === slashIdx ? styles.slashItemOn : ""}`}
+                  onMouseEnter={() => setSlashIdx(i)}
+                  onClick={() => runCommand(c)}
+                >
+                  <span className={styles.slashCmd}>{c.cmd}</span>
+                  <span className={styles.slashHint}>{c.hint}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <form className={styles.composer} onSubmit={send}>
           <button
             type="button"
