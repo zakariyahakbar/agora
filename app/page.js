@@ -1025,7 +1025,13 @@ export default function AgoraPage() {
     let alive = true;
     fetch("/api/chain")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d && d.live && d.payments) setChain(d); })
+      .then((d) => {
+        /* Only trust a complete read. A partial one would undercount and show
+           fewer payments than we can prove, which is worse than the fallback. */
+        if (alive && d && d.live && d.payments && d.payments.settled >= d.payments.tracked) {
+          setChain(d);
+        }
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
