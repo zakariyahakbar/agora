@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./page.module.css";
 
-const TELEGRAM_URL = "https://web.telegram.org/k/#@agoraa_bot";
+/* t.me is the universal link: opens the native Telegram app on mobile and
+   desktop, and falls back to the web client only if neither is installed.
+   web.telegram.org forced everyone into the browser version. */
+const TELEGRAM_URL = "https://t.me/agoraa_bot";
 
 // Mirrors the real bot conversation
 const SCRIPT = [
