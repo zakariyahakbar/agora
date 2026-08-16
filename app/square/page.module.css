@@ -751,3 +751,16 @@
 /* Kill the click-to-look hint - not needed with auto-lock */
 .lookHint { display: none !important; }
 .embed .crosshair { display: none !important; }
+
+/* live-from-chain marker on the station card */
+.cardLive {
+  display: flex; align-items: center; gap: .4rem;
+  margin: .5rem 0 0;
+  font-size: .6rem; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(120, 220, 160, .8);
+  font-family: var(--font-mono, "DM Mono", monospace);
+}
+.cardLiveDot {
+  width: 5px; height: 5px; border-radius: 999px; flex: 0 0 auto;
+  background: #2ed573; box-shadow: 0 0 7px rgba(46,213,115,.9);
+}
