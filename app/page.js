@@ -11,6 +11,7 @@ import { WAITLIST_ACTION, WAITLIST_EMAIL_FIELD, EMAIL_RE, useWaitlistUnlock } fr
    desktop, and falls back to the web client only if neither is installed.
    web.telegram.org forced everyone into the browser version. */
 const TELEGRAM_URL = "https://t.me/agoraa_bot";
+const AGENT_WALLET = "0x1B6602f2F3dFd75E7Cbe2508Cd4b7f02Dc131F06";
 
 
 
@@ -872,28 +873,38 @@ function NavDots({ active, onJump, count }) {
 
 
 
-/* ── Two wallets, side by side. The agent's balance is the ceiling. ── */
+/* ── Two wallets, side by side. The agent's balance is the ceiling. ──
+   The agent wallet links to the explorer, because that one is the product and
+   should be checkable. The personal wallet is shown truncated and is not
+   linked: the point is that the two are separate, which does not require
+   publishing a full personal address next to a real name. */
 function WalletSplit() {
-  const rows = [
-    { label: "Agent wallet", addr: "0x1B6602f2F3dFd75E7Cbe2508Cd4b7f02Dc131F06",
-      note: "Funded by you. This balance is the ceiling.", can: true },
-    { label: "Your wallet", addr: "0xbc8cE96C583cF081f4f4062956CdaBDFB14D1C3c",
-      note: "The agent has never held a key to this.", can: false },
-  ];
   return (
     <div className={styles.wsWrap}>
-      {rows.map((r) => (
-        <div key={r.label} className={`${styles.wsCard} ${r.can ? styles.wsCardAgent : ""}`}>
-          <div className={styles.wsHead}>
-            <span className={styles.wsLabel}>{r.label}</span>
-            <span className={r.can ? styles.wsCan : styles.wsCannot}>
-              {r.can ? "can spend" : "cannot touch"}
-            </span>
-          </div>
-          <p className={styles.wsAddr}>{r.addr}</p>
-          <p className={styles.wsNote}>{r.note}</p>
+      <a
+        className={`${styles.wsCard} ${styles.wsCardAgent}`}
+        href={`https://explorer.goat.network/address/${AGENT_WALLET}`}
+        target="_blank" rel="noopener noreferrer"
+      >
+        <div className={styles.wsHead}>
+          <span className={styles.wsLabel}>Agent wallet</span>
+          <span className={styles.wsCan}>can spend</span>
         </div>
-      ))}
+        <p className={styles.wsAddr}>{AGENT_WALLET}</p>
+        <p className={styles.wsNote}>
+          Funded by you. This balance is the ceiling. Check it on the explorer →
+        </p>
+      </a>
+
+      <div className={styles.wsCard}>
+        <div className={styles.wsHead}>
+          <span className={styles.wsLabel}>Your wallet</span>
+          <span className={styles.wsCannot}>cannot touch</span>
+        </div>
+        <p className={styles.wsAddr}>0xbc8c…1C3c</p>
+        <p className={styles.wsNote}>A different key entirely. The agent has never held it.</p>
+      </div>
+
       <p className={styles.wsFoot}>Two separate keys. Not a setting, a boundary.</p>
     </div>
   );
@@ -1309,9 +1320,6 @@ export default function AgoraPage() {
                 <InView delay={0.22}><p className={styles.pySub}>
                   You fund the agent&apos;s wallet. That balance is the ceiling. It has never held a key to yours.
                 </p></InView>
-                <InView delay={0.32} className={styles.pyLinkRow}>
-                  <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>Verify both wallets on-chain →</a>
-                </InView>
               </div>
               <InView delay={0.2} className={styles.pyVisual}>
                 <WalletSplit />
