@@ -873,43 +873,6 @@ function NavDots({ active, onJump, count }) {
 
 
 
-/* ── Two wallets, side by side. The agent's balance is the ceiling. ──
-   The agent wallet links to the explorer, because that one is the product and
-   should be checkable. The personal wallet is shown truncated and is not
-   linked: the point is that the two are separate, which does not require
-   publishing a full personal address next to a real name. */
-function WalletSplit() {
-  return (
-    <div className={styles.wsWrap}>
-      <a
-        className={`${styles.wsCard} ${styles.wsCardAgent}`}
-        href={`https://explorer.goat.network/address/${AGENT_WALLET}`}
-        target="_blank" rel="noopener noreferrer"
-      >
-        <div className={styles.wsHead}>
-          <span className={styles.wsLabel}>Agent wallet</span>
-          <span className={styles.wsCan}>can spend</span>
-        </div>
-        <p className={styles.wsAddr}>{AGENT_WALLET}</p>
-        <p className={styles.wsNote}>
-          Funded by you. This balance is the ceiling. Check it on the explorer →
-        </p>
-      </a>
-
-      <div className={styles.wsCard}>
-        <div className={styles.wsHead}>
-          <span className={styles.wsLabel}>Your wallet</span>
-          <span className={styles.wsCannot}>cannot touch</span>
-        </div>
-        <p className={styles.wsAddr}>0xbc8c…1C3c</p>
-        <p className={styles.wsNote}>A different key entirely. The agent has never held it.</p>
-      </div>
-
-      <p className={styles.wsFoot}>Two separate keys. Not a setting, a boundary.</p>
-    </div>
-  );
-}
-
 /* ════════ WAITLIST MODAL ════════ */
 function WaitlistModal({ mode, onClose, onDone }) {
   const [email, setEmail] = useState("");
@@ -1050,7 +1013,7 @@ export default function AgoraPage() {
   const [waitlist, setWaitlist] = useState(null); // null | "signup" | "login"
   const closeWaitlist = useCallback(() => setWaitlist(null), []);
   const [selectedMode, setSelectedMode] = useState(0);
-  const SECTION_COUNT = 7;
+  const SECTION_COUNT = 6;
   const LAST = SECTION_COUNT - 1;
 
   useEffect(() => {
@@ -1120,7 +1083,7 @@ export default function AgoraPage() {
           </div>
           {/* Links */}
           <div className={styles.navLinks}>
-            {["Home", "Real", "Square", "Agent", "Control", "Pulse", "Settlement"].map((l, i) => (
+            {["Home", "Real", "Square", "Agent", "Pulse", "Settlement"].map((l, i) => (
               <button key={l}
                 className={`${styles.navLink} ${active === i ? styles.navLinkActive : ""}`}
                 onClick={() => jumpTo(i)}>{l}</button>
@@ -1234,9 +1197,11 @@ export default function AgoraPage() {
                 <InView><p className={styles.pyEyebrow}>Verified · On-chain</p></InView>
                 <SlideUp className={styles.pyTitle} delay={0.05}>See what's real,</SlideUp>
                 <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>on-chain.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>Agora's identity, merchant, and first payment are all registered on GOAT mainnet, not a testnet demo. Every claim on this page is something you can pull up and verify yourself.</p></InView>
-                <InView delay={0.32}>
+                <InView delay={0.22}><p className={styles.pySub}>Agora's identity, merchant, and every payment are registered on GOAT mainnet, not a testnet demo. Every claim on this page is something you can pull up and verify yourself.</p></InView>
+                <InView delay={0.28}><p className={styles.pySub}>The agent holds its own wallet, separate from yours. You fund it and that balance is the ceiling. It has never held a key to your personal wallet.</p></InView>
+                <InView delay={0.34} className={styles.pyLinkRow}>
                   <a href="https://8004scan.io/agents/goat/82" target="_blank" rel="noopener noreferrer" className={styles.pyLink}>View Agent #82 on 8004scan →</a>
+                  <a href={`https://explorer.goat.network/address/${AGENT_WALLET}`} target="_blank" rel="noopener noreferrer" className={styles.pyLink}>See the agent wallet →</a>
                 </InView>
               </div>
               <InView delay={0.2} className={styles.pyVisual}>
@@ -1308,28 +1273,8 @@ export default function AgoraPage() {
             </div>
           </div>        </section>
 
-        {/* ════════ S5 — CONTROL (what stops it spending your money) ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
-          <div className={styles.pyBg} />
-          <div className={styles.pyWrap}>
-            <div className={styles.pySplit}>
-              <div className={styles.pyText}>
-                <InView><p className={styles.pyEyebrow}>Control · Two wallets</p></InView>
-                <SlideUp className={styles.pyTitle} delay={0.05}>It spends its own</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic}`} delay={0.13}>money. Not yours.</SlideUp>
-                <InView delay={0.22}><p className={styles.pySub}>
-                  You fund the agent&apos;s wallet. That balance is the ceiling. It has never held a key to yours.
-                </p></InView>
-              </div>
-              <InView delay={0.2} className={styles.pyVisual}>
-                <WalletSplit />
-              </InView>
-            </div>
-          </div>
-        </section>
-
         {/* ════════ S6 — PULSE (numbers + graph + flow) ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[6] = el}>
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={styles.pulseWrap}>
@@ -1371,7 +1316,7 @@ export default function AgoraPage() {
         </section>
 
         {/* ════════ S7 — SETTLEMENT + CTA ════════ */}
-        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[5] = el}>
+        <section className={`${styles.section} ${styles.py}`} ref={el => sectionRefs.current[4] = el}>
           <div className={styles.pyBg} />
           <div className={styles.pyWrap}>
             <div className={`${styles.pySplit} ${styles.pySplitTextLeft}`}>
