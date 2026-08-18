@@ -242,125 +242,57 @@ function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) 
   );
 }
 
-/* SVG line-and-area chart that animates in on scroll */
-function PulseGraph() {
-  const [visible, setVisible] = useState(false);
-  const [t, setT] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    const io = new IntersectionObserver(entries => setVisible(entries[0].isIntersecting), { threshold: 0.25 });
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, []);
-  useEffect(() => {
-    if (!visible) return;
-    let raf, start = performance.now();
-    const tick = now => { setT((now - start) / 1000); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [visible]);
-
-  // Simulated settlement-latency data — 14 points, seconds axis 2-6s, our real point (3.52s) is called out
-  const data = [4.8, 4.2, 5.1, 3.9, 4.4, 3.6, 5.3, 4.1, 3.8, 3.52, 4.0, 3.7, 3.9, 3.6];
-  const W = 460, H = 200, padX = 26, padY = 20;
-  const chartW = W - padX * 2, chartH = H - padY * 2;
-  const yMin = 2, yMax = 6;
-  const xStep = chartW / (data.length - 1);
-  const yScale = v => padY + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
-
-  // Reveal progress 0..1 as an intro animation
-  const reveal = Math.min(1, t / 1.8);
-  // Continuous pulse on the "real tx" marker
-  const pulseAlpha = 0.55 + Math.sin(t * 2.4) * 0.3;
-
-  // Build path up to reveal fraction
-  const revealCount = Math.max(2, Math.round(data.length * reveal));
-  let linePath = "";
-  let areaPath = "";
-  data.slice(0, revealCount).forEach((v, i) => {
-    const x = padX + i * xStep;
-    const y = yScale(v);
-    linePath += i === 0 ? `M${x},${y}` : ` L${x},${y}`;
-  });
-  if (revealCount >= 2) {
-    const lastX = padX + (revealCount - 1) * xStep;
-    areaPath = `${linePath} L${lastX},${padY + chartH} L${padX},${padY + chartH} Z`;
-  }
-  const highlightIdx = 9; // 3.52s marker
+/* Every settled payment, read from the chain rather than typed in here.
+   This replaced a hand-written latency chart: inventing a graph of
+   settlements we had not made was the one thing this page cannot do. */
+function Receipts({ chain }) {
+  const FALLBACK = [
+    { block: 13770302, note: "self-to-self test", amount: "1.00" },
+    { block: 14620758, note: "to Aitch",          amount: "1.00" },
+    { block: 14620856, note: "to Aitch",          amount: "1.00" },
+  ];
+  const rows = chain && chain.payments.transactions.length
+    ? chain.payments.transactions.map((t) => ({
+        block: t.block,
+        note: /self/i.test(t.note || "") ? "self-to-self test" : "to Aitch",
+        amount: "1.00",
+        tx: t.tx,
+      }))
+    : FALLBACK;
 
   return (
-    <div className={styles.pulseGraph} ref={ref}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.pulseGraphSvg} preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="rgba(242,131,34,0.35)" />
-            <stop offset="100%" stopColor="rgba(242,131,34,0)" />
-          </linearGradient>
-        </defs>
-        {/* Y grid lines */}
-        {[2, 3, 4, 5, 6].map(v => (
-          <g key={v}>
-            <line x1={padX} y1={yScale(v)} x2={W - padX} y2={yScale(v)}
-              stroke="rgba(240,236,228,0.06)" strokeWidth="0.5" strokeDasharray="2 3" />
-            <text x={padX - 6} y={yScale(v) + 3} textAnchor="end"
-              fill="rgba(220,215,205,0.35)" fontSize="9"
-              fontFamily="var(--font-mono, DM Mono, monospace)">{v}s</text>
-          </g>
-        ))}
-        {/* Area fill */}
-        {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
-        {/* Line */}
-        {linePath && <path d={linePath} fill="none" stroke="#ff9a3c" strokeWidth="1.6"
-          strokeLinecap="round" strokeLinejoin="round" />}
-        {/* Points */}
-        {data.slice(0, revealCount).map((v, i) => {
-          const x = padX + i * xStep;
-          const y = yScale(v);
-          const isHi = i === highlightIdx;
-          return (
-            <g key={i}>
-              {isHi && (
-                <>
-                  <circle cx={x} cy={y} r="9" fill="rgba(242,131,34,0.15)" opacity={pulseAlpha} />
-                  <circle cx={x} cy={y} r="5" fill="rgba(242,131,34,0.4)" opacity={pulseAlpha} />
-                </>
-              )}
-              <circle cx={x} cy={y} r={isHi ? 3 : 2}
-                fill={isHi ? "#ffc78d" : "#ff9a3c"}
-                stroke="#0f0d16" strokeWidth="1" />
-              {isHi && (
-                <g>
-                  <line x1={x} y1={y - 8} x2={x} y2={padY} stroke="rgba(242,131,34,0.35)" strokeWidth="0.6" strokeDasharray="1 2" />
-                  <rect x={x - 22} y={padY - 14} width="44" height="14" rx="3"
-                    fill="rgba(24,20,14,0.9)" stroke="rgba(242,131,34,0.5)" strokeWidth="0.6" />
-                  <text x={x} y={padY - 4} textAnchor="middle"
-                    fill="#ffc78d" fontSize="8"
-                    fontFamily="var(--font-mono, DM Mono, monospace)"
-                    letterSpacing="0.05em">3.52s · ours</text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-        {/* X axis label */}
-        <text x={W / 2} y={H - 4} textAnchor="middle"
-          fill="rgba(220,215,205,0.35)" fontSize="8"
-          fontFamily="var(--font-mono, DM Mono, monospace)"
-          letterSpacing="0.15em">recent settlements →</text>
-      </svg>
+    <div className={styles.rcWrap}>
+      {rows.map((r, i) => (
+        <a
+          key={r.block}
+          className={styles.rcRow}
+          href={r.tx ? `https://explorer.goat.network/tx/${r.tx}` : "https://8004scan.io/agents/goat/82"}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span className={styles.rcIdx}>{String(i + 1).padStart(2, "0")}</span>
+          <span className={styles.rcBlock}>block {r.block.toLocaleString()}</span>
+          <span className={styles.rcAmt}>{r.amount} USDC.e</span>
+          <span className={styles.rcNote}>{r.note}</span>
+          <span className={styles.rcState}>confirmed</span>
+        </a>
+      ))}
+      <p className={styles.rcFoot}>
+        {chain ? "read live from chain 2345" : "on GOAT mainnet, chain 2345"} · click any row to verify
+      </p>
     </div>
   );
 }
 
-/* Six-step agent loop that highlights the current step */
+/* The flow Agora is built toward. Only the steps marked live exist today:
+   pretending otherwise would undo the point of the whole page. */
 const PULSE_FLOW = [
-  { n: "01", label: "Request",   desc: "10k units · 0.42 USDC" },
-  { n: "02", label: "Bid",       desc: "0.38 · A100 · 120ms" },
-  { n: "03", label: "Escrow",    desc: "locked · GOAT mainnet" },
-  { n: "04", label: "Execute",   desc: "provider runs the job" },
-  { n: "05", label: "Verify",    desc: "output hash · matched" },
-  { n: "06", label: "Settle",    desc: "+0.38 USDC · x402" },
+  { n: "01", label: "Request",  desc: "an agent needs compute",        live: true  },
+  { n: "02", label: "Discover", desc: "an agent finds a provider",      live: false },
+  { n: "03", label: "Agree",    desc: "the two settle a price",         live: false },
+  { n: "04", label: "Pay",      desc: "x402 on GOAT mainnet",          live: true  },
+  { n: "05", label: "Execute",  desc: "provider runs the job",         live: true  },
+  { n: "06", label: "Receipt",  desc: "public, anyone can check",      live: true  },
 ];
 
 function PulseFlow() {
@@ -406,7 +338,12 @@ function PulseFlow() {
               )}
             </div>
             <div className={styles.pulseFlowBody}>
-              <div className={styles.pulseFlowLabel}>{s.label}</div>
+              <div className={styles.pulseFlowLabel}>
+                {s.label}
+                <span className={s.live ? styles.flowLive : styles.flowSoon}>
+                  {s.live ? "live" : "not built"}
+                </span>
+              </div>
               <div className={styles.pulseFlowDesc}>{s.desc}</div>
             </div>
             {current && (
@@ -1010,6 +947,10 @@ export default function AgoraPage() {
     return () => { alive = false; };
   }, []);
 
+  const latestBlock = chain && chain.payments.transactions.length
+    ? chain.payments.transactions[chain.payments.transactions.length - 1].block
+    : 14620856;
+
   const [waitlist, setWaitlist] = useState(null); // null | "signup" | "login"
   const closeWaitlist = useCallback(() => setWaitlist(null), []);
   const [selectedMode, setSelectedMode] = useState(0);
@@ -1286,27 +1227,27 @@ export default function AgoraPage() {
 
               {/* Row 1: Live counters */}
               <div className={styles.pulseCounters}>
-                <PulseCounter label="Agent ID"          value={82}           prefix="#" />
-                <PulseCounter label="x402 settled"      value={1}                     />
-                <PulseCounter label="Volume settled"    value={1.00} decimals={2} suffix=" USDC" />
-                <PulseCounter label="Avg settlement"    value={3.52} decimals={2} suffix="s" />
-                <PulseCounter label="Chain ID"          value={2345}                  />
-                <PulseCounter label="Block confirmed"   value={13770302}              />
+                <PulseCounter label="Agent ID"        value={82} prefix="#" />
+                <PulseCounter label="x402 settled"    value={chain ? chain.payments.settled : 3} />
+                <PulseCounter label="Volume settled"  value={chain ? chain.payments.volumeUsdce : 3} decimals={2} suffix=" USDC.e" />
+                <PulseCounter label="Agents transacting" value={chain ? chain.payments.uniqueAgents : 2} />
+                <PulseCounter label="Chain ID"        value={2345} />
+                <PulseCounter label="Latest block"    value={latestBlock} />
               </div>
 
               {/* Row 2: Graph + Flow side by side */}
               <div className={styles.pulseRow}>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>Settlement latency</p>
-                    <p className={styles.pulseCardHint}>request → confirmed, seconds</p>
+                    <p className={styles.pulseCardLabel}>Settled payments</p>
+                    <p className={styles.pulseCardHint}>every one, read from the chain</p>
                   </div>
-                  <PulseGraph />
+                  <Receipts chain={chain} />
                 </div>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
                     <p className={styles.pulseCardLabel}>Agent flow</p>
-                    <p className={styles.pulseCardHint}>runs end-to-end, zero humans</p>
+                    <p className={styles.pulseCardHint}>where Agora is today</p>
                   </div>
                   <PulseFlow />
                 </div>
