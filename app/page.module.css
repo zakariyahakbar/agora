@@ -1707,3 +1707,46 @@ a.wsCard:hover { border-color: rgba(242,131,34,.55); background: rgba(38,25,14,.
   width: 4px; height: 4px; border-radius: 999px; flex: 0 0 auto;
   background: #2ed573; box-shadow: 0 0 6px rgba(46,213,115,.9);
 }
+
+/* ══════════ PULSE — settled payments (replaces the old latency chart) ══════════ */
+.rcWrap { display: flex; flex-direction: column; gap: .1rem; padding: .2rem 0 0; }
+
+.rcRow {
+  display: grid;
+  grid-template-columns: 1.6rem 8.4rem 1fr auto auto;
+  align-items: baseline; gap: .8rem;
+  padding: .72rem .2rem;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  text-decoration: none;
+  transition: background 160ms ease, padding-left 160ms ease;
+}
+.rcRow:hover { background: rgba(255,255,255,.03); padding-left: .5rem; }
+.rcRow:last-of-type { border-bottom: none; }
+
+.rcIdx   { font-family: var(--font-mono,"DM Mono",monospace); font-size: .6rem; color: rgba(239,234,226,.28); }
+.rcBlock { font-family: var(--font-mono,"DM Mono",monospace); font-size: .78rem; color: rgba(239,234,226,.9); white-space: nowrap; }
+.rcAmt   { font-family: var(--font-mono,"DM Mono",monospace); font-size: .74rem; color: rgba(239,234,226,.55); white-space: nowrap; }
+.rcNote  { font-size: .72rem; color: rgba(239,234,226,.4); white-space: nowrap; }
+.rcState { font-family: var(--font-mono,"DM Mono",monospace); font-size: .68rem; color: #6ed696; white-space: nowrap; }
+
+.rcFoot {
+  margin: .9rem 0 0; font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(239,234,226,.28); font-family: var(--font-mono,"DM Mono",monospace);
+}
+
+/* live / not built badges on the flow */
+.flowLive, .flowSoon {
+  margin-left: .5rem; padding: .1rem .38rem; border-radius: 999px;
+  font-family: var(--font-mono,"DM Mono",monospace);
+  font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600;
+  vertical-align: middle;
+}
+.flowLive { color: #6ed696; background: rgba(46,213,115,.10); border: 1px solid rgba(46,213,115,.24); }
+.flowSoon { color: rgba(239,234,226,.42); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); }
+
+@media (max-width: 900px) {
+  .rcRow { grid-template-columns: 1.3rem 1fr auto; row-gap: .15rem; }
+  .rcNote { grid-column: 2 / 3; }
+  .rcAmt  { grid-column: 3 / 4; }
+  .rcState { grid-column: 3 / 4; }
+}
