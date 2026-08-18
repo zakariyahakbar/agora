@@ -205,30 +205,44 @@ function MediaSlot({ type, src, alt, fallback }) {
 
 /* Count-up counter that animates when scrolled into view */
 function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) {
+  /* Counts up when it scrolls into view, but never depends on that. The
+     observer fires unreliably inside the snap container, and this used to
+     leave the number sitting at 0. It also has to re-run when live chain data
+     replaces the fallback, or a counter shows a stale figure forever. */
   const [n, setN] = useState(0);
   const ref = useRef(null);
-  const started = useRef(false);
+
   useEffect(() => {
-    if (!ref.current) return;
-    const io = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !started.current) {
-        started.current = true;
-        const t0 = performance.now();
-        const dur = 1500;
-        let raf;
-        const tick = () => {
-          const p = Math.min(1, (performance.now() - t0) / dur);
-          const eased = 1 - Math.pow(1 - p, 3);
-          setN(value * eased);
-          if (p < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-        return () => raf && cancelAnimationFrame(raf);
-      }
-    }, { threshold: 0.35 });
-    io.observe(ref.current);
-    return () => io.disconnect();
+    let raf = null, cancelled = false, fired = false;
+
+    const run = () => {
+      const t0 = performance.now(), dur = 1300;
+      const tick = () => {
+        if (cancelled) return;
+        const p = Math.min(1, (performance.now() - t0) / dur);
+        setN(value * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) raf = requestAnimationFrame(tick);
+        else setN(value);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    const io = new IntersectionObserver((e) => {
+      if (e[0].isIntersecting && !fired) { fired = true; run(); }
+    }, { threshold: 0 });
+    if (ref.current) io.observe(ref.current);
+
+    /* whatever the observer does, the right number ends up on screen */
+    const safety = setTimeout(() => { if (!fired) { fired = true; run(); } }, 1200);
+
+    return () => {
+      cancelled = true;
+      io.disconnect();
+      clearTimeout(safety);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [value]);
+
   const display = decimals > 0 ? n.toFixed(decimals) : Math.round(n).toLocaleString();
   return (
     <div className={styles.pulseCounter} ref={ref}>
@@ -242,50 +256,92 @@ function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) 
   );
 }
 
-/* Every settled payment, read from the chain rather than typed in here.
-   This replaced a hand-written latency chart: inventing a graph of
-   settlements we had not made was the one thing this page cannot do. */
-function Receipts({ chain }) {
+/* Cumulative volume settled, plotted from the actual transactions.
+   Three points is a sparse chart, and that is the honest shape: one payment in
+   July, then two back to back in August. The previous version of this panel
+   was fourteen invented latency figures, which this page cannot afford. */
+function SettledChart({ chain }) {
   const FALLBACK = [
-    { block: 13770302, note: "self-to-self test", amount: "1.00" },
-    { block: 14620758, note: "to Aitch",          amount: "1.00" },
-    { block: 14620856, note: "to Aitch",          amount: "1.00" },
+    { block: 13770302, note: "self-to-self test" },
+    { block: 14620758, note: "to Aitch" },
+    { block: 14620856, note: "to Aitch" },
   ];
-  const rows = chain && chain.payments.transactions.length
-    ? chain.payments.transactions.map((t) => ({
-        block: t.block,
-        note: /self/i.test(t.note || "") ? "self-to-self test" : "to Aitch",
-        amount: "1.00",
-        tx: t.tx,
-      }))
+  const txs = chain && chain.payments.transactions.length
+    ? chain.payments.transactions
     : FALLBACK;
 
+  const W = 520, H = 210, padL = 40, padR = 22, padT = 18, padB = 34;
+  const cw = W - padL - padR, ch = H - padT - padB;
+
+  /* Plotted by payment, not by block. Two of these sit 98 blocks apart inside
+     an 850,000 block span, so a true block axis stacks them on one pixel.
+     Sequence keeps every point readable and the block numbers stay on the
+     axis, so nothing is hidden. */
+  const yMax = Math.max(3, txs.length);
+  const n = txs.length;
+  const px = (i) => padL + (n === 1 ? cw / 2 : (i / (n - 1)) * cw * 0.88 + cw * 0.06);
+  const py = (v) => padT + ch - (v / yMax) * ch;
+
+  let d = `M${padL},${py(0)}`;
+  txs.forEach((t, i) => {
+    d += ` L${px(i)},${py(i)} L${px(i)},${py(i + 1)}`;
+  });
+  d += ` L${padL + cw},${py(n)}`;
+  const area = `${d} L${padL + cw},${py(0)} L${padL},${py(0)} Z`;
+
   return (
-    <div className={styles.rcWrap}>
-      {rows.map((r, i) => (
-        <a
-          key={r.block}
-          className={styles.rcRow}
-          href={r.tx ? `https://explorer.goat.network/tx/${r.tx}` : "https://8004scan.io/agents/goat/82"}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className={styles.rcIdx}>{String(i + 1).padStart(2, "0")}</span>
-          <span className={styles.rcBlock}>block {r.block.toLocaleString()}</span>
-          <span className={styles.rcAmt}>{r.amount} USDC.e</span>
-          <span className={styles.rcNote}>{r.note}</span>
-          <span className={styles.rcState}>confirmed</span>
-        </a>
-      ))}
-      <p className={styles.rcFoot}>
-        {chain ? "read live from chain 2345" : "on GOAT mainnet, chain 2345"} · click any row to verify
-      </p>
+    <div className={styles.chWrap}>
+      <svg viewBox={`0 0 ${W} ${H}`} className={styles.chSvg} role="img"
+           aria-label="Cumulative USDC.e settled">
+        <defs>
+          <linearGradient id="chFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f28322" stopOpacity="0.30" />
+            <stop offset="100%" stopColor="#f28322" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {Array.from({ length: yMax + 1 }, (_, v) => (
+          <g key={v}>
+            <line x1={padL} y1={py(v)} x2={padL + cw} y2={py(v)}
+              stroke="rgba(239,234,226,.07)" strokeWidth="0.5" strokeDasharray="2 4" />
+            <text x={padL - 9} y={py(v) + 3} textAnchor="end" fontSize="9"
+              fill="rgba(239,234,226,.34)" fontFamily="var(--font-mono, DM Mono, monospace)">{v}</text>
+          </g>
+        ))}
+
+        <path d={area} fill="url(#chFill)" />
+        <path d={d} fill="none" stroke="#f28322" strokeWidth="1.7"
+              strokeLinecap="round" strokeLinejoin="round" />
+
+        {txs.map((t, i) => (
+          <g key={t.block}>
+            <circle cx={px(i)} cy={py(i + 1)} r="7.5" fill="#f28322" opacity="0.16" />
+            <circle cx={px(i)} cy={py(i + 1)} r="3.4" fill="#f28322" />
+            <text x={px(i)} y={H - 12} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}
+              fontSize="8.5" fill="rgba(239,234,226,.34)"
+              fontFamily="var(--font-mono, DM Mono, monospace)">{t.block.toLocaleString()}</text>
+          </g>
+        ))}
+      </svg>
+
+      <div className={styles.chRows}>
+        {txs.map((t, i) => (
+          <a key={t.block} className={styles.chRow}
+             href={t.tx ? `https://explorer.goat.network/tx/${t.tx}` : "https://8004scan.io/agents/goat/82"}
+             target="_blank" rel="noopener noreferrer">
+            <span className={styles.chDot} />
+            <span className={styles.chBlock}>{t.block.toLocaleString()}</span>
+            <span className={styles.chNote}>
+              {/self/i.test(t.note || "") ? "self-to-self test" : "paid Aitch"}
+            </span>
+            <span className={styles.chAmt}>1.00</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
 
-/* The flow Agora is built toward. Only the steps marked live exist today:
-   pretending otherwise would undo the point of the whole page. */
 const PULSE_FLOW = [
   { n: "01", label: "Request",  desc: "an agent needs compute",        live: true  },
   { n: "02", label: "Discover", desc: "an agent finds a provider",      live: false },
@@ -1239,10 +1295,10 @@ export default function AgoraPage() {
               <div className={styles.pulseRow}>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>Settled payments</p>
-                    <p className={styles.pulseCardHint}>every one, read from the chain</p>
+                    <p className={styles.pulseCardLabel}>USDC.e settled</p>
+                    <p className={styles.pulseCardHint}>cumulative, by payment</p>
                   </div>
-                  <Receipts chain={chain} />
+                  <SettledChart chain={chain} />
                 </div>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
