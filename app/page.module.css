@@ -1889,3 +1889,7 @@ a.wsCard:hover { border-color: rgba(242,131,34,.55); background: rgba(38,25,14,.
   .tlCheck { font-size: .52rem; }
   .tlBody { padding-bottom: .8rem; }
 }
+
+/* smooth cumulative curve above the timeline */
+.cvSvg { width: 100%; height: auto; display: block; margin: .1rem 0 1.1rem; }
+@media (max-width: 640px) { .cvSvg { max-height: 118px; margin-bottom: .8rem; } }
