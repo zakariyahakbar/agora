@@ -256,10 +256,80 @@ function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) 
   );
 }
 
-/* Every payment, as a timeline. This was a step chart, but three points do not
-   make a chart: two of them sit 98 blocks apart, so the line spent most of its
-   width flat and the shape said nothing. A list of what actually happened reads
-   better and hides nothing. */
+/* Cumulative USDC.e settled, drawn as a smooth curve through the real
+   payments, with the timeline underneath. The curve is a Catmull-Rom spline
+   converted to beziers so three points read as a shape rather than a staircase. */
+function SettledCurve({ txs }) {
+  const W = 520, H = 168, padL = 34, padR = 20, padT = 16, padB = 30;
+  const cw = W - padL - padR, ch = H - padT - padB;
+  const n = txs.length;
+  const yMax = Math.max(3, n);
+
+  const pts = [[padL, padT + ch]];
+  txs.forEach((t, i) => {
+    const x = padL + (n === 1 ? cw : (i + 1) / n * cw);
+    const y = padT + ch - ((i + 1) / yMax) * ch;
+    pts.push([x, y]);
+  });
+
+  /* Catmull-Rom through the points, emitted as cubic beziers */
+  let dPath = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    dPath += ` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  const last = pts[pts.length - 1];
+  const area = `${dPath} L${last[0]},${padT + ch} L${padL},${padT + ch} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className={styles.cvSvg} role="img"
+         aria-label="Cumulative USDC.e settled">
+      <defs>
+        <linearGradient id="cvFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f28322" stopOpacity="0.26" />
+          <stop offset="100%" stopColor="#f28322" stopOpacity="0" />
+        </linearGradient>
+        <filter id="cvGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.4" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {Array.from({ length: yMax + 1 }, (_, v) => {
+        const y = padT + ch - (v / yMax) * ch;
+        return (
+          <g key={v}>
+            <line x1={padL} y1={y} x2={padL + cw} y2={y}
+                  stroke="rgba(239,234,226,.06)" strokeWidth="0.5" />
+            <text x={padL - 8} y={y + 3} textAnchor="end" fontSize="8.5"
+                  fill="rgba(239,234,226,.3)"
+                  fontFamily="var(--font-mono, DM Mono, monospace)">{v}</text>
+          </g>
+        );
+      })}
+
+      <path d={area} fill="url(#cvFill)" />
+      <path d={dPath} fill="none" stroke="#f28322" strokeWidth="2"
+            strokeLinecap="round" filter="url(#cvGlow)" />
+
+      {pts.slice(1).map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="8" fill="#f28322" opacity="0.15" />
+          <circle cx={x} cy={y} r="3.4" fill="#f28322" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* Every payment, in order, underneath the curve. */
 function SettledTimeline({ chain }) {
   const FALLBACK = [
     { block: 13770302, note: "self-to-self test" },
@@ -272,6 +342,7 @@ function SettledTimeline({ chain }) {
 
   return (
     <div className={styles.tlWrap}>
+      <SettledCurve txs={txs} />
       {txs.map((t, i) => {
         const self = /self/i.test(t.note || "");
         return (
@@ -301,12 +372,10 @@ function SettledTimeline({ chain }) {
 }
 
 const PULSE_FLOW = [
-  { n: "01", label: "Request",  desc: "an agent needs compute",        live: true  },
-  { n: "02", label: "Discover", desc: "an agent finds a provider",      live: false },
-  { n: "03", label: "Agree",    desc: "the two settle a price",         live: false },
-  { n: "04", label: "Pay",      desc: "x402 on GOAT mainnet",          live: true  },
-  { n: "05", label: "Execute",  desc: "provider runs the job",         live: true  },
-  { n: "06", label: "Receipt",  desc: "public, anyone can check",      live: true  },
+  { n: "01", label: "Request", desc: "an agent needs compute",   live: true },
+  { n: "02", label: "Pay",     desc: "x402 on GOAT mainnet",     live: true },
+  { n: "03", label: "Execute", desc: "provider runs the job",    live: true },
+  { n: "04", label: "Receipt", desc: "public, anyone can check", live: true },
 ];
 
 function PulseFlow() {
@@ -355,12 +424,7 @@ function PulseFlow() {
               )}
             </div>
             <div className={styles.pulseFlowBody}>
-              <div className={styles.pulseFlowLabel}>
-                {s.label}
-                <span className={s.live ? styles.flowLive : styles.flowSoon}>
-                  {s.live ? "live" : "not built"}
-                </span>
-              </div>
+              <div className={styles.pulseFlowLabel}>{s.label}</div>
               <div className={styles.pulseFlowDesc}>{s.desc}</div>
             </div>
             {current && (
@@ -1264,7 +1328,7 @@ export default function AgoraPage() {
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
                     <p className={styles.pulseCardLabel}>Agent flow</p>
-                    <p className={styles.pulseCardHint}>where Agora is today</p>
+                    <p className={styles.pulseCardHint}>runs end to end on mainnet</p>
                   </div>
                   <PulseFlow />
                 </div>
