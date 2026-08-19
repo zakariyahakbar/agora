@@ -1893,3 +1893,34 @@ a.wsCard:hover { border-color: rgba(242,131,34,.55); background: rgba(38,25,14,.
 /* smooth cumulative curve above the timeline */
 .cvSvg { width: 100%; height: auto; display: block; margin: .1rem 0 1.1rem; }
 @media (max-width: 640px) { .cvSvg { max-height: 118px; margin-bottom: .8rem; } }
+
+/* ══════════ MOBILE HERO — declutter ══════════
+   Three full-width buttons, a two-line subhead and wrapping stat labels made
+   this the busiest screen on the site. Two buttons carry the weight, the third
+   drops to a quiet link, and the card loses everything that repeats. */
+@media (max-width: 640px) {
+  .s1Sub { font-size: .78rem; line-height: 1.55; margin: .55rem 0 1.2rem; }
+
+  .btnThird {
+    min-height: auto !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgba(239,234,226,.5) !important;
+    font-size: .62rem !important;
+    letter-spacing: .16em !important;
+    padding: .5rem 0 !important;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-color: rgba(239,234,226,.22);
+  }
+
+  .heroCard { padding: .95rem .9rem; gap: .5rem; }
+  .heroStats { gap: .55rem; }
+  .heroStatN { font-size: 1.15rem; }
+  .heroStatL { font-size: .45rem; letter-spacing: .09em; white-space: nowrap; }
+
+  /* "verified on-chain" already sits at the top of this card */
+  .heroPill { display: none; }
+  .heroAward { margin: .6rem 0 0; padding-top: .6rem; }
+}
