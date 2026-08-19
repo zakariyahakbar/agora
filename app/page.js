@@ -1146,8 +1146,8 @@ export default function AgoraPage() {
               </BlurUp>
               <BlurUp delay={0.5}>
                 <p className={styles.s1Sub}>
-                  One agent. Autonomous bids. Bitcoin-backed settlement.<br />
-                  Zero human approvals required.
+                  Agents buy compute from each other and pay for it themselves.
+                  On-chain, with a receipt every time.
                 </p>
               </BlurUp>
               <BlurUp delay={0.68} className={styles.s1Btns}>
@@ -1157,7 +1157,7 @@ export default function AgoraPage() {
                   <span>Try AGORA Agent</span>
                 </MagBtn>
                 <MagBtn href="/agent" className={styles.btnLive}>Chat with Agora</MagBtn>
-                <MagBtn href="/square" className={styles.btnGhost}>The Square</MagBtn>
+                <MagBtn href="/square" className={`${styles.btnGhost} ${styles.btnThird}`}>The Square</MagBtn>
               </BlurUp>
             </div>
 
@@ -1169,14 +1169,12 @@ export default function AgoraPage() {
                 <div className={styles.heroStats}>
                   <div className={styles.heroStat}>
                     <span className={styles.heroStatN}>#82</span>
-                    <span className={styles.heroStatL}>ERC-8004 Agent ID</span>
+                    <span className={styles.heroStatL}>agent id</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
                     <span className={styles.heroStatN}>{chain ? chain.payments.settled : 3}</span>
-                    <span className={styles.heroStatL}>
-                      x402 payment{(chain ? chain.payments.settled : 3) === 1 ? "" : "s"} settled
-                    </span>
+                    <span className={styles.heroStatL}>payments settled</span>
                   </div>
                   <div className={styles.heroStatDiv} />
                   <div className={styles.heroStat}>
