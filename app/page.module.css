@@ -1768,3 +1768,124 @@ a.wsCard:hover { border-color: rgba(242,131,34,.55); background: rgba(38,25,14,.
   .chBlock { font-size: .66rem; }
   .chNote { font-size: .64rem; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE PASS
+   The pulse section held six stat cards, a chart and a six-step
+   flow inside one 100dvh snap section, so the flow ran off the
+   bottom of a phone. Everything below shrinks that to fit, and
+   clears the fixed nav.
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* nav clearance: nothing should sit under the floating bar */
+  .section { padding-top: 4.2rem; }
+  .s1 { padding-top: 0; }
+
+  /* pulse: three rows of two, much shorter */
+  .pulseCounters { gap: .45rem !important; }
+  .pulseCounters > * { padding: .55rem .6rem !important; border-radius: 12px !important; }
+  .pulseCounterLabel { font-size: .48rem !important; letter-spacing: .09em !important; }
+  .pulseCounterValue { font-size: 1.1rem !important; }
+  .pulseCounterN { font-size: 1.1rem !important; }
+  .pulseCounterAffix { font-size: .55rem !important; }
+
+  .pulseCard { padding: .8rem .85rem !important; border-radius: 14px !important; }
+  .pulseCardLabel { font-size: .82rem !important; }
+  .pulseCardHint { font-size: .5rem !important; }
+
+  /* chart: shorter, and the block labels are too dense at this width */
+  .chSvg { max-height: 118px; }
+  .chRow { padding: .34rem .2rem; grid-template-columns: 7px 5.4rem 1fr auto; gap: .45rem; }
+  .chBlock { font-size: .6rem; }
+  .chNote  { font-size: .58rem; }
+  .chAmt   { font-size: .58rem; }
+
+  /* flow: tighter rows so all six fit */
+  .pulseFlowRow { padding: .42rem .55rem !important; border-radius: 10px !important; }
+  .pulseFlowNum { width: 1.35rem !important; height: 1.35rem !important; font-size: .5rem !important; }
+  .pulseFlowLabel { font-size: .76rem !important; }
+  .pulseFlowDesc { font-size: .58rem !important; }
+  .flowLive, .flowSoon { font-size: .42rem; padding: .06rem .3rem; margin-left: .35rem; }
+
+  /* the sponsor marquee is meant to run past the edge, but it should not
+     create a horizontal scrollbar on a phone */
+  .sponsorStrip { overflow: hidden; }
+}
+
+/* short phones: give the pulse section room to breathe by scrolling
+   instead of clipping, snap points still work per section */
+@media (max-width: 640px) and (max-height: 800px) {
+  .pulseCounters > * { padding: .45rem .55rem !important; }
+  .pulseCounterValue, .pulseCounterN { font-size: .98rem !important; }
+  .chSvg { max-height: 96px; }
+  .pulseFlowRow { padding: .34rem .5rem !important; }
+  .pulseFlowDesc { display: none; }
+}
+
+/* Sections are locked to 100dvh with overflow hidden, which is fine on a
+   desktop but clipped the taller sections on a phone: the agent-flow card ran
+   off the bottom of the pulse section and could not be reached at all.
+   On mobile they grow instead, and still snap to the top of each. */
+@media (max-width: 640px) {
+  .section {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding-top: 5rem;
+    padding-bottom: 2.5rem;
+  }
+  /* the hero is meant to be exactly one screen */
+  .s1 { height: 100dvh; min-height: 100dvh; overflow: hidden; padding-top: 0; }
+}
+
+/* ══════════ PULSE — settled payment timeline ══════════ */
+.tlWrap { display: flex; flex-direction: column; padding: .35rem 0 0; }
+
+.tlRow {
+  display: grid; grid-template-columns: 16px 1fr auto;
+  gap: .85rem; align-items: start;
+  padding: .05rem 0; text-decoration: none;
+  transition: opacity 160ms ease;
+}
+.tlRow:hover { opacity: .82; }
+
+.tlRail { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: .38rem; height: 100%; }
+.tlDot {
+  width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto;
+  background: #f28322; box-shadow: 0 0 10px rgba(242,131,34,.55);
+}
+.tlLine { flex: 1; width: 1px; background: linear-gradient(180deg, rgba(242,131,34,.4), rgba(242,131,34,.1)); margin-top: 3px; }
+
+.tlBody { display: flex; flex-direction: column; gap: .1rem; padding-bottom: 1.05rem; }
+.tlTop { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+.tlAmt {
+  font-family: var(--font-mono,"DM Mono",monospace);
+  font-size: .95rem; color: #efeae2; letter-spacing: -.01em;
+}
+.tlAmt em { font-style: normal; font-size: .68rem; color: rgba(239,234,226,.45); }
+.tlWho { font-size: .72rem; color: rgba(239,234,226,.42); }
+.tlBlock {
+  font-family: var(--font-mono,"DM Mono",monospace);
+  font-size: .64rem; color: rgba(239,234,226,.32);
+}
+
+.tlCheck {
+  font-family: var(--font-mono,"DM Mono",monospace);
+  font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
+  color: #6ed696; padding-top: .32rem; white-space: nowrap;
+}
+
+.tlFoot {
+  margin: .35rem 0 0;
+  font-size: .58rem; letter-spacing: .09em; text-transform: uppercase;
+  color: rgba(239,234,226,.26);
+  font-family: var(--font-mono,"DM Mono",monospace);
+}
+
+@media (max-width: 640px) {
+  .tlAmt { font-size: .84rem; }
+  .tlWho { font-size: .64rem; }
+  .tlBlock { font-size: .58rem; }
+  .tlCheck { font-size: .52rem; }
+  .tlBody { padding-bottom: .8rem; }
+}
