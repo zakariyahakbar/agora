@@ -256,11 +256,11 @@ function PulseCounter({ label, value, decimals = 0, prefix = "", suffix = "" }) 
   );
 }
 
-/* Cumulative volume settled, plotted from the actual transactions.
-   Three points is a sparse chart, and that is the honest shape: one payment in
-   July, then two back to back in August. The previous version of this panel
-   was fourteen invented latency figures, which this page cannot afford. */
-function SettledChart({ chain }) {
+/* Every payment, as a timeline. This was a step chart, but three points do not
+   make a chart: two of them sit 98 blocks apart, so the line spent most of its
+   width flat and the shape said nothing. A list of what actually happened reads
+   better and hides nothing. */
+function SettledTimeline({ chain }) {
   const FALLBACK = [
     { block: 13770302, note: "self-to-self test" },
     { block: 14620758, note: "to Aitch" },
@@ -270,74 +270,32 @@ function SettledChart({ chain }) {
     ? chain.payments.transactions
     : FALLBACK;
 
-  const W = 520, H = 210, padL = 40, padR = 22, padT = 18, padB = 34;
-  const cw = W - padL - padR, ch = H - padT - padB;
-
-  /* Plotted by payment, not by block. Two of these sit 98 blocks apart inside
-     an 850,000 block span, so a true block axis stacks them on one pixel.
-     Sequence keeps every point readable and the block numbers stay on the
-     axis, so nothing is hidden. */
-  const yMax = Math.max(3, txs.length);
-  const n = txs.length;
-  const px = (i) => padL + (n === 1 ? cw / 2 : (i / (n - 1)) * cw * 0.88 + cw * 0.06);
-  const py = (v) => padT + ch - (v / yMax) * ch;
-
-  let d = `M${padL},${py(0)}`;
-  txs.forEach((t, i) => {
-    d += ` L${px(i)},${py(i)} L${px(i)},${py(i + 1)}`;
-  });
-  d += ` L${padL + cw},${py(n)}`;
-  const area = `${d} L${padL + cw},${py(0)} L${padL},${py(0)} Z`;
-
   return (
-    <div className={styles.chWrap}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.chSvg} role="img"
-           aria-label="Cumulative USDC.e settled">
-        <defs>
-          <linearGradient id="chFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f28322" stopOpacity="0.30" />
-            <stop offset="100%" stopColor="#f28322" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-
-        {Array.from({ length: yMax + 1 }, (_, v) => (
-          <g key={v}>
-            <line x1={padL} y1={py(v)} x2={padL + cw} y2={py(v)}
-              stroke="rgba(239,234,226,.07)" strokeWidth="0.5" strokeDasharray="2 4" />
-            <text x={padL - 9} y={py(v) + 3} textAnchor="end" fontSize="9"
-              fill="rgba(239,234,226,.34)" fontFamily="var(--font-mono, DM Mono, monospace)">{v}</text>
-          </g>
-        ))}
-
-        <path d={area} fill="url(#chFill)" />
-        <path d={d} fill="none" stroke="#f28322" strokeWidth="1.7"
-              strokeLinecap="round" strokeLinejoin="round" />
-
-        {txs.map((t, i) => (
-          <g key={t.block}>
-            <circle cx={px(i)} cy={py(i + 1)} r="7.5" fill="#f28322" opacity="0.16" />
-            <circle cx={px(i)} cy={py(i + 1)} r="3.4" fill="#f28322" />
-            <text x={px(i)} y={H - 12} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}
-              fontSize="8.5" fill="rgba(239,234,226,.34)"
-              fontFamily="var(--font-mono, DM Mono, monospace)">{t.block.toLocaleString()}</text>
-          </g>
-        ))}
-      </svg>
-
-      <div className={styles.chRows}>
-        {txs.map((t, i) => (
-          <a key={t.block} className={styles.chRow}
+    <div className={styles.tlWrap}>
+      {txs.map((t, i) => {
+        const self = /self/i.test(t.note || "");
+        return (
+          <a key={t.block} className={styles.tlRow}
              href={t.tx ? `https://explorer.goat.network/tx/${t.tx}` : "https://8004scan.io/agents/goat/82"}
              target="_blank" rel="noopener noreferrer">
-            <span className={styles.chDot} />
-            <span className={styles.chBlock}>{t.block.toLocaleString()}</span>
-            <span className={styles.chNote}>
-              {/self/i.test(t.note || "") ? "self-to-self test" : "paid Aitch"}
+            <span className={styles.tlRail}>
+              <span className={styles.tlDot} />
+              {i < txs.length - 1 && <span className={styles.tlLine} />}
             </span>
-            <span className={styles.chAmt}>1.00</span>
+            <span className={styles.tlBody}>
+              <span className={styles.tlTop}>
+                <span className={styles.tlAmt}>1.00 <em>USDC.e</em></span>
+                <span className={styles.tlWho}>{self ? "self-to-self test" : "paid Aitch"}</span>
+              </span>
+              <span className={styles.tlBlock}>block {t.block.toLocaleString()}</span>
+            </span>
+            <span className={styles.tlCheck}>confirmed</span>
           </a>
-        ))}
-      </div>
+        );
+      })}
+      <p className={styles.tlFoot}>
+        {chain ? "read live from chain 2345" : "GOAT mainnet, chain 2345"} · tap any row to verify
+      </p>
     </div>
   );
 }
@@ -379,7 +337,10 @@ function PulseFlow() {
   return (
     <div className={styles.pulseFlow} ref={ref}>
       {PULSE_FLOW.map((s, i) => {
-        const done = !isResetting && i < active;
+        /* A step that is not built must never render a completed tick, whatever
+           the walkthrough animation is doing. It was showing a green check next
+           to the words "not built". */
+        const done = !isResetting && i < active && s.live;
         const current = !isResetting && i === active;
         return (
           <div key={s.n}
@@ -1277,8 +1238,8 @@ export default function AgoraPage() {
             <div className={styles.pulseWrap}>
               <div className={styles.pulseHead}>
                 <InView><p className={styles.pyEyebrow}>Agora · in numbers</p></InView>
-                <SlideUp className={`${styles.pyTitle} ${styles.pulseHeadTitle}`} delay={0.05}>Live pulse.</SlideUp>
-                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic} ${styles.pulseHeadTitle}`} delay={0.13}>Verifiable receipts.</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pulseHeadTitle}`} delay={0.05}>Every payment</SlideUp>
+                <SlideUp className={`${styles.pyTitle} ${styles.pyTitleItalic} ${styles.pulseHeadTitle}`} delay={0.13}>leaves a receipt.</SlideUp>
               </div>
 
               {/* Row 1: Live counters */}
@@ -1295,10 +1256,10 @@ export default function AgoraPage() {
               <div className={styles.pulseRow}>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
-                    <p className={styles.pulseCardLabel}>USDC.e settled</p>
-                    <p className={styles.pulseCardHint}>cumulative, by payment</p>
+                    <p className={styles.pulseCardLabel}>Settled payments</p>
+                    <p className={styles.pulseCardHint}>every one, in order</p>
                   </div>
-                  <SettledChart chain={chain} />
+                  <SettledTimeline chain={chain} />
                 </div>
                 <div className={styles.pulseCard}>
                   <div className={styles.pulseCardHead}>
